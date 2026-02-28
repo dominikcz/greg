@@ -135,8 +135,8 @@
 	.catalog {
 		display: flex;
 		flex-flow: column nowrap;
-		background-color: var(--catalog-background);
-		color: var(--catalog-color);
+		background-color: var(--greg-background);
+		color: var(--greg-color);
 		height: 100vh;
 		overflow: hidden;
 	}
@@ -146,10 +146,10 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		height: var(--catalog-header-height);
+		height: var(--greg-header-height);
 		padding: 0 1.25rem;
-		background-color: var(--catalog-header-background);
-		border-bottom: 1px solid var(--catalog-border-color);
+		background-color: var(--greg-header-background);
+		border-bottom: 1px solid var(--greg-border-color);
 		flex-shrink: 0;
 		z-index: 10;
 		gap: 1rem;
@@ -168,7 +168,7 @@
 		gap: 0.5rem;
 		font-size: 1rem;
 		font-weight: 700;
-		color: var(--catalog-color);
+		color: var(--greg-color);
 		text-decoration: none;
 		white-space: nowrap;
 		letter-spacing: -0.01em;
@@ -178,22 +178,22 @@
 			width: 22px;
 			height: 22px;
 			flex-shrink: 0;
-			background-color: var(--catalog-accent);
+			background-color: var(--greg-accent);
 			mask: url('/greg.svg') center / contain no-repeat;
 			-webkit-mask: url('/greg.svg') center / contain no-repeat;
 		}
 
 		&:hover {
-			color: var(--catalog-accent);
+			color: var(--greg-accent);
 		}
 	}
 
 	.version-badge {
 		font-size: 0.7rem;
 		font-weight: 500;
-		color: var(--catalog-menu-section-color);
-		background: var(--catalog-menu-background);
-		border: 1px solid var(--catalog-border-color);
+		color: var(--greg-menu-section-color);
+		background: var(--greg-menu-background);
+		border: 1px solid var(--greg-border-color);
 		border-radius: 999px;
 		padding: 0.1rem 0.5rem;
 	}
@@ -210,21 +210,21 @@
 	.search-input {
 		width: 100%;
 		padding: 0.4rem 0.75rem;
-		background-color: var(--catalog-menu-background);
-		border: 1px solid var(--catalog-border-color);
+		background-color: var(--greg-menu-background);
+		border: 1px solid var(--greg-border-color);
 		border-radius: 6px;
-		color: var(--catalog-color);
+		color: var(--greg-color);
 		font-size: 0.875rem;
 		outline: none;
 		transition: border-color 0.15s, box-shadow 0.15s;
 
 		&::placeholder {
-			color: var(--catalog-menu-section-color);
+			color: var(--greg-menu-section-color);
 		}
 
 		&:focus {
-			border-color: var(--catalog-accent);
-			box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.15);
+			border-color: var(--greg-accent);
+			box-shadow: 0 0 0 3px var(--greg-accent-light);
 		}
 	}
 
@@ -234,10 +234,11 @@
 		flex-flow: row nowrap;
 		flex: 1;
 		overflow: hidden;
+		width: 100%
 	}
 
 	.splitter {
-		background-color: var(--catalog-border-color);
+		background-color: var(--greg-border-color);
 		width: 1px;
 		cursor: col-resize;
 		flex-shrink: 0;
@@ -245,31 +246,31 @@
 		transition: background-color 0.15s;
 
 		&:hover {
-			background-color: var(--catalog-accent);
+			background-color: var(--greg-accent);
 		}
 	}
 
 	aside {
 		width: 16rem;
-		background-color: var(--catalog-menu-background);
+		background-color: var(--greg-menu-background);
 		padding: 1rem 0.75rem;
 		display: flex;
 		flex-flow: column nowrap;
 		gap: 0.4rem;
 		flex-shrink: 0;
 		overflow-y: auto;
-		border-right: 1px solid var(--catalog-border-color);
+		border-right: 1px solid var(--greg-border-color);
 
 		&.properties {
 			width: 280px;
 			border-right: none;
-			border-left: 1px solid var(--catalog-border-color);
+			border-left: 1px solid var(--greg-border-color);
 			padding: 1rem;
 		}
 	}
 
 	main {
-		background-color: var(--catalog-main-background);
+		background-color: var(--greg-main-background);
 		padding: 2rem 3rem;
 		width: 100%;
 		display: flex;
@@ -277,15 +278,14 @@
 		gap: 0.5em;
 		justify-content: flex-start;
 		overflow-y: auto;
-		max-width: 860px;
 
 		h1 {
 			font-size: 1.8rem;
 			font-weight: 700;
-			border-bottom: 1px solid var(--catalog-border-color);
+			border-bottom: 1px solid var(--greg-border-color);
 			padding-bottom: 0.5rem;
 			margin-bottom: 0.5rem;
-			color: var(--catalog-color);
+			color: var(--greg-color);
 		}
 	}
 </style>

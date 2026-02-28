@@ -5,4 +5,4 @@
 	const modules = import.meta.glob(['/docs/**/*.md']);
 </script>
 
-<MarkdownDocs {rootPath} {modules} version="0.1.0" />
+<MarkdownDocs {rootPath} {modules} version={__VERSION__} />

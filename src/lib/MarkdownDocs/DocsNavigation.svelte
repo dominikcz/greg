@@ -53,23 +53,23 @@
 	}
 
 	.nav-section-title {
-		font-size: 0.7rem;
+		font-size: 0.8rem;
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
-		color: var(--catalog-menu-section-color);
+		color: var(--greg-menu-section-color);
 		padding: 0.25rem 0.5rem;
 		display: block;
 		text-decoration: none;
 		border-radius: 5px;
 
 		&:hover {
-			color: var(--catalog-color);
-			background-color: var(--catalog-menu-hover-background);
+			color: var(--greg-color);
+			background-color: var(--greg-menu-hover-background);
 		}
 
 		&.active {
-			color: var(--catalog-accent);
+			color: var(--greg-accent);
 		}
 	}
 </style>

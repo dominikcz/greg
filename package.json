@@ -1,7 +1,7 @@
 {
   "name": "greg",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.2.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,16 +9,17 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "mdsvex": "^0.12.6",
     "sass-embedded": "^1.97.3",
-    "svelte": "^5.45.2",
+    "svelte": "^5.53.6",
     "vite": "^8.0.0-beta.13"
   },
   "overrides": {
     "vite": "^8.0.0-beta.13"
   },
   "dependencies": {
+    "@lucide/svelte": "^0.575.0",
     "github-markdown-css": "^5.9.0"
   }
 }

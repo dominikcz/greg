@@ -5,8 +5,9 @@
 </script>
 
 <script lang="ts">
-	import Self from './TreeViewItem.svelte';
-	import type { TreeViewItem } from './treeViewTypes';
+	import Self from "./TreeViewItem.svelte";
+	import type { TreeViewItem } from "./treeViewTypes";
+	import { ChevronRight } from "@lucide/svelte";
 
 	interface TreeViewItemProps {
 		item: TreeViewItem;
@@ -14,16 +15,22 @@
 		depth: number;
 		navigate: (path: string) => void;
 	}
-	let { item, active = '', depth = 0, navigate }: TreeViewItemProps = $props();
+	let {
+		item,
+		active = "",
+		depth = 0,
+		navigate,
+	}: TreeViewItemProps = $props();
 
 	// Inicjalizacja stanu rozwinięcia
 	let expanded = $state(false);
 	// Automatycznie rozwiń jeśli aktywna ścieżka jest w tej gałęzi
-	let shouldExpand = $derived(active.startsWith(item.link) && item.link !== active);
+	let shouldExpand = $derived(
+		active.startsWith(item.link) && item.link !== active,
+	);
 	$effect(() => {
 		if (shouldExpand && !expanded) expanded = true;
 	});
-	let arrowDown = $derived(expanded);
 
 	function toggle() {
 		_expansionState.set(item.link, !expanded);
@@ -45,9 +52,17 @@
 <ul>
 	<li>
 		{#if item.children.length}
-			<a href={item.link} onclick={handleToggleClick} class:active={active == item.link}>
-				<span class="arrow" class:arrowDown>&#x25b6</span>
-				{#if item.status}<span class={item.status}></span>{/if}{item.label}
+			<a
+				href={item.link}
+				onclick={handleToggleClick}
+				class="arrow"
+				class:active={active == item.link}
+			>
+				<span class="chevron" class:expanded>
+					<ChevronRight />
+				</span>
+				{#if item.status}<span class={item.status}
+					></span>{/if}{item.label}
 			</a>
 			{#if expanded}
 				{#each item.children as child}
@@ -55,8 +70,13 @@
 				{/each}
 			{/if}
 		{:else}
-			<a href={item.link} class="no-arrow" class:active={active == item.link} onclick={handleClick}
-				>{#if item.status}<span class={item.status}></span>{/if}{item.label}</a
+			<a
+				href={item.link}
+				class="no-arrow"
+				class:active={active == item.link}
+				onclick={handleClick}
+				>{#if item.status}<span class={item.status}
+					></span>{/if}{item.label}</a
 			>
 		{/if}
 	</li>
@@ -71,7 +91,7 @@
 		:global(ul) {
 			padding-inline-start: 0.85rem;
 			margin-top: 0.1rem;
-			border-left: 1px solid var(--catalog-border-color);
+			border-left: 1px solid var(--greg-border-color);
 			margin-left: 0.6rem;
 		}
 		li {
@@ -85,22 +105,26 @@
 
 	.arrow {
 		cursor: pointer;
-		display: inline-block;
-		vertical-align: baseline;
-		font-size: 70%;
-		transition: transform 180ms ease;
-		color: var(--catalog-menu-section-color);
-	}
+		display: flex;
 
-	.arrowDown {
-		transform: rotate(90deg);
+		.chevron {
+			display: flex;
+			align-items: center;
+			transition: transform 0.2s ease;
+			transform: rotate(0deg);
+			flex-shrink: 0;
+
+			&.expanded {
+				transform: rotate(90deg);
+			}
+		}
 	}
 
 	a {
 		padding: 0.3rem 0.5rem;
 		display: block;
 		text-decoration: none;
-		color: var(--catalog-menu-color);
+		color: var(--greg-menu-color);
 		border-radius: 5px;
 		font-size: 0.875rem;
 		line-height: 1.5rem;
@@ -110,21 +134,21 @@
 		}
 
 		&:hover {
-			background-color: var(--catalog-menu-hover-background);
-			color: var(--catalog-color);
+			background-color: var(--greg-menu-hover-background);
+			color: var(--greg-color);
 		}
 
 		&.active {
-			background-color: var(--catalog-accent-light);
-			color: var(--catalog-accent);
+			background-color: var(--greg-accent-light);
+			color: var(--greg-accent);
 			font-weight: 600;
 
 			.arrow {
-				color: var(--catalog-accent);
+				color: var(--greg-accent);
 			}
 
 			&:hover {
-				background-color: var(--catalog-accent-light);
+				background-color: var(--greg-accent-light);
 			}
 		}
 	}
