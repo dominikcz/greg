@@ -22,7 +22,18 @@
 	let filterMenu = $derived(menu.filter((x: any) => x.label.toLowerCase().includes(filter.toLowerCase())));
 	let flat = $derived(flattenMenu(menu));
 
-	let active = $derived(decodeURI(window.location.pathname));
+	// SPA routing — aktualizowany przez navigate() i popstate
+	let active = $state(decodeURI(window.location.pathname));
+
+	function navigate(path: string) {
+		if (decodeURI(window.location.pathname) === path) return;
+		history.pushState(null, '', path);
+		active = path;
+	}
+
+	function handlePopState() {
+		active = decodeURI(window.location.pathname);
+	}
 
 	// resolve the module key for the current path
 	// active = e.g. '/docs/folder1/test' or '/docs/folder1' or '/docs'
@@ -57,6 +68,11 @@
 
 	setPortalsContext();
 
+	$effect(() => {
+		window.addEventListener('popstate', handlePopState);
+		return () => window.removeEventListener('popstate', handlePopState);
+	});
+
 	function hndMouseDown(e: MouseEvent) {
 		dragging = true;
 	}
@@ -78,11 +94,8 @@
 <div class="catalog" onmousemove={hndMouseMove} onmouseup={hndMouseUp}>
 	<header class="site-header">
 		<div class="header-left">
-			<a href={rootPath} class="site-title">
-				<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-					<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-				</svg>
+			<a href={rootPath} class="site-title" onclick={(e) => { e.preventDefault(); navigate(rootPath); }}>
+				<span class="site-logo" role="img" aria-label="Greg logo"></span>
 				{mainTitle}
 			</a>
 			{#if version}
@@ -96,7 +109,7 @@
 
 	<div class="catalog-body">
 		<aside bind:this={aside}>
-			<DocsNavigation menu={filterMenu} {rootPath} {active} />
+			<DocsNavigation menu={filterMenu} {rootPath} {active} {navigate} />
 		</aside>
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
 		<div class="splitter" bind:this={splitter} onmousedown={hndMouseDown}></div>
@@ -160,9 +173,14 @@
 		white-space: nowrap;
 		letter-spacing: -0.01em;
 
-		svg {
-			color: var(--catalog-accent);
+		.site-logo {
+			display: inline-block;
+			width: 22px;
+			height: 22px;
 			flex-shrink: 0;
+			background-color: var(--catalog-accent);
+			mask: url('/greg.svg') center / contain no-repeat;
+			-webkit-mask: url('/greg.svg') center / contain no-repeat;
 		}
 
 		&:hover {

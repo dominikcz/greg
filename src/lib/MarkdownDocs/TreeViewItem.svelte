@@ -12,33 +12,50 @@
 		item: TreeViewItem;
 		active: string;
 		depth: number;
+		navigate: (path: string) => void;
 	}
-	let { item, active = '', depth = 0 }: TreeViewItemProps = $props();
+	let { item, active = '', depth = 0, navigate }: TreeViewItemProps = $props();
 
-	// maintain expansion state — use $derived so it reacts to active changes
-	let expanded = $state(_expansionState.get(item.link) ?? active.startsWith(item.link) ?? false);
+	// Inicjalizacja stanu rozwinięcia
+	let expanded = $state(false);
+	// Automatycznie rozwiń jeśli aktywna ścieżka jest w tej gałęzi
+	let shouldExpand = $derived(active.startsWith(item.link) && item.link !== active);
+	$effect(() => {
+		if (shouldExpand && !expanded) expanded = true;
+	});
 	let arrowDown = $derived(expanded);
 
 	function toggle() {
 		_expansionState.set(item.link, !expanded);
 		expanded = !expanded;
 	}
+
+	function handleClick(e: MouseEvent) {
+		e.preventDefault();
+		navigate(item.link);
+	}
+
+	function handleToggleClick(e: MouseEvent) {
+		e.preventDefault();
+		toggle();
+		navigate(item.link);
+	}
 </script>
 
 <ul>
 	<li>
 		{#if item.children.length}
-			<a href={item.link} onclick={toggle} class:active={active == item.link}>
+			<a href={item.link} onclick={handleToggleClick} class:active={active == item.link}>
 				<span class="arrow" class:arrowDown>&#x25b6</span>
 				{#if item.status}<span class={item.status}></span>{/if}{item.label}
 			</a>
 			{#if expanded}
 				{#each item.children as child}
-					<Self item={child} depth={depth + 1} {active} />
+					<Self item={child} depth={depth + 1} {active} {navigate} />
 				{/each}
 			{/if}
 		{:else}
-			<a href={item.link} class="no-arrow" class:active={active == item.link}
+			<a href={item.link} class="no-arrow" class:active={active == item.link} onclick={handleClick}
 				>{#if item.status}<span class={item.status}></span>{/if}{item.label}</a
 			>
 		{/if}

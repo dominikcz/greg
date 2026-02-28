@@ -1,6 +1,7 @@
 export interface TreeViewItem {
     label: string;
     link: string;
-    status: string;
-    children: [TreeViewItem];
+    status?: string;
+    type?: string;
+    children: TreeViewItem[];
 }

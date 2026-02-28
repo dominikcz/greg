@@ -1,12 +1,15 @@
 <script lang="ts">
 	import TreeView from "./TreeView.svelte";
 
-	export interface CatalogProps {
-		modules: Record<string, () => Promise<unknown>>;
+	import type { TreeViewItem } from './treeViewTypes';
+
+	interface DocsNavigationProps {
+		menu: TreeViewItem[];
 		active: string;
-		rootPath: string;
+		rootPath?: string;
+		navigate: (path: string) => void;
 	}
-	let { menu, active = '', rootPath = './' }: CatalogProps = $props();
+	let { menu, active = '', rootPath = './', navigate }: DocsNavigationProps = $props();
 
 	// Top-level items with children become section headers; leaf items render directly
 	let sections = $derived(menu.filter((item: any) => item.children && item.children.length > 0));
@@ -15,7 +18,7 @@
 
 <nav>
 	{#if topLeaves.length > 0}
-		<TreeView tree={topLeaves} {active} />
+		<TreeView tree={topLeaves} {active} {navigate} />
 	{/if}
 	{#each sections as section}
 		<div class="nav-section">
@@ -23,8 +26,9 @@
 				href={section.link}
 				class="nav-section-title"
 				class:active={active === section.link}
+				onclick={(e) => { e.preventDefault(); navigate(section.link); }}
 			>{section.label}</a>
-			<TreeView tree={section.children} {active} />
+			<TreeView tree={section.children} {active} {navigate} />
 		</div>
 	{/each}
 </nav>
