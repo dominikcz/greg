@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import DocsNavigation from './DocsNavigation.svelte';
+	import Spinner from './../spinner/spinner.svelte';
 	import { prepareMenu, flattenMenu, getBreadcrumb } from './docsUtils';
 	import 'github-markdown-css';
 	import './../scss/markdownDocs.scss';
@@ -115,7 +116,11 @@
 		<div class="splitter" bind:this={splitter} onmousedown={hndMouseDown}></div>
 		<main class:markdown-body={isMarkdown}>
 			{#if activeModule}
-				{#await activeModule() then mod}
+				{#await activeModule()}
+					<div class="spinner-wrap">
+						<Spinner />
+					</div>
+				{:then mod}
 					{@const MdComponent = mod.default}
 					<MdComponent />
 				{/await}
@@ -286,6 +291,22 @@
 			padding-bottom: 0.5rem;
 			margin-bottom: 0.5rem;
 			color: var(--greg-color);
+		}
+	}
+
+	.spinner-wrap {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+		:global(.loader::before),
+		:global(.loader::after) {
+			box-shadow: 0 0 0 3px var(--greg-accent) inset;
+			filter: drop-shadow(40px 40px 0 var(--greg-accent));
+		}
+		:global(.loader::after) {
+			filter: drop-shadow(-40px 40px 0 var(--greg-accent));
 		}
 	}
 </style>
