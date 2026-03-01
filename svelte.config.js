@@ -10,7 +10,8 @@ import { remarkImports } from './src/lib/MarkdownDocs/remarkImports.js';
 
 import { remarkGlobalComponents } from './src/lib/MarkdownDocs/remarkGlobalComponents.js';
 import { remarkCustomAnchors } from './src/lib/MarkdownDocs/remarkCustomAnchors.js';
-import remarkAttr from 'remark-attr';
+import { remarkInlineAttrs } from './src/lib/MarkdownDocs/remarkInlineAttrs.js';
+import { remarkEscapeSvelte } from './src/lib/MarkdownDocs/remarkEscapeSvelte.js';
 import { remarkMathToHtml } from './src/lib/MarkdownDocs/remarkMathToHtml.js';
 
 // ── Greg config ────────────────────────────────────────────────────────────────
@@ -91,14 +92,14 @@ const mdsvexOptions = {
 		},
 	},
 	remarkPlugins: [
-		remarkAttr,
-		[remarkImports, { sourceRoot: markdownSourceRoot, docsDir: markdownDocsDir }],
+		remarkInlineAttrs,
 		remarkGlobalComponents,
 		remarkCodeMeta,
 		remarkContainers,
+		[remarkImports, { sourceRoot: markdownSourceRoot, docsDir: markdownDocsDir }],
 		remarkCustomAnchors,
 		...(gregConfig.markdown.math ? [remarkMathToHtml] : []),
-		// remarkEscapeSvelte,
+		remarkEscapeSvelte,
 	],
 	rehypePlugins: [
 		rehypeSlug,

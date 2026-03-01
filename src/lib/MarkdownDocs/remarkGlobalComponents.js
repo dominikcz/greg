@@ -17,14 +17,15 @@ const COMPONENTS_IMPORT =
   `TeamPage, TeamPageTitle, TeamPageSection } from '$components/index.js';`;
 
 const SCRIPT_OPEN_RE  = /^<script(\b[^>]*)>/i;
+const SCRIPT_SETUP_ATTR_RE = /\bsetup\b/i;
 const SCRIPT_CLOSE_RE = /<\/script\s*>/i;
 
 /**
  * Return the index of the first `html` node whose value begins with
- * a <script> tag, searching only the first few nodes.
+ * a <script> tag, searching all top-level nodes.
  */
 function findScriptNodeIndex(children) {
-  for (let i = 0; i < Math.min(children.length, 4); i++) {
+  for (let i = 0; i < children.length; i++) {
     const node = children[i];
     if (node.type === 'html' && SCRIPT_OPEN_RE.test(node.value.trimStart())) {
       return i;
@@ -42,11 +43,17 @@ export function remarkGlobalComponents() {
     const idx = findScriptNodeIndex(children);
 
     if (idx !== -1) {
-      // Merge: inject the import after the opening <script …> tag
+      // Merge: inject the import after the opening <script …> tag.
+      // If the existing script has a `setup` attribute (Vue syntax), strip it
+      // so Svelte sees a standard <script> block.
       const node = children[idx];
       node.value = node.value.replace(
         SCRIPT_OPEN_RE,
-        (match) => `${match}\n  ${COMPONENTS_IMPORT}`,
+        (match, attrs) => {
+          const cleanAttrs = attrs.replace(SCRIPT_SETUP_ATTR_RE, '').trim();
+          const openTag = cleanAttrs ? `<script ${cleanAttrs}>` : '<script>';
+          return `${openTag}\n  ${COMPONENTS_IMPORT}`;
+        },
       );
     } else {
       // Prepend a fresh <script> block
