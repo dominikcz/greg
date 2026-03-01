@@ -395,8 +395,8 @@ a {
             user-select: none;
 
             &::before {
-                content: '▶';
-                font-size: 0.6em;
+                content: '►';
+                font-size: 0.8em;
                 transition: transform 0.2s ease;
                 color: var(--greg-accent);
                 flex-shrink: 0;
@@ -411,5 +411,57 @@ a {
         & > *:not(summary) {
             margin-top: 0.75rem;
         }
+    }
+}
+
+/* ── Code Groups ───────────────────────────────── */
+.markdown-body .rehype-code-group {
+    display: grid;
+    gap: 0;
+    margin: 1rem 0;
+}
+
+.markdown-body .rcg-tab-container {
+    display: flex;
+    border-bottom: 1px solid var(--greg-border-color);
+    gap: 0.25rem;
+    padding: 0 0.25rem;
+    background: color-mix(in srgb, var(--greg-menu-background) 85%, transparent);
+    border-radius: 8px 8px 0 0;
+}
+
+.markdown-body .rcg-tab {
+    padding: 0.45rem 0.8rem;
+    cursor: pointer;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--greg-menu-color);
+    font-weight: 500;
+    border-radius: 6px 6px 0 0;
+
+    &.active {
+        border-bottom-color: var(--greg-accent);
+        color: var(--greg-accent);
+        font-weight: 700;
+    }
+}
+
+.markdown-body .rcg-block {
+    display: none;
+    overflow-x: auto;
+    border: 1px solid var(--greg-border-color);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    background: var(--greg-main-background);
+    padding: 0.25rem;
+
+    &.active {
+        display: block;
+    }
+
+    > * {
+        margin-top: 0;
+        margin-bottom: 0;
     }
 }

@@ -1,32 +1,86 @@
 import { mdsvex, escapeSvelte } from 'mdsvex'
-import { createHighlighter } from 'shiki';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import { createHighlighter } from 'shiki';
 import { rehypeTocPlaceholder } from './src/lib/MarkdownDocs/rehypeToc.js';
-import remarkDirective from 'remark-directive';
-import { remarkContainers } from './src/lib/MarkdownDocs/remarkContainers.js';
+import { remarkContainers, rehypeContainers } from './src/lib/MarkdownDocs/remarkContainers.js';
+import rehypeCodeGroup from './src/lib/MarkdownDocs/rehypeCodeGroup.js';
+import { remarkCodeMeta } from './src/lib/MarkdownDocs/remarkCodeMeta.js';
 
-const theme = 'github-dark';
+const shikiTheme = 'github-dark';
+const shikiDefaultLang = 'txt';
+const shikiLangAliases = {
+	js: 'javascript',
+	ts: 'typescript',
+	sh: 'bash',
+	shell: 'bash',
+	zsh: 'bash',
+	yml: 'yaml',
+	md: 'markdown',
+};
+
+function parseFenceInfo(lang, metastring) {
+	const normalizedLang = String(lang ?? '').trim().toLowerCase() || shikiDefaultLang;
+	const meta = String(metastring ?? '').trim();
+	const titleMatch = meta.match(/\[([^\]]+)\]/);
+	const title = titleMatch?.[1]?.trim() ?? '';
+
+	return { lang: normalizedLang, title };
+}
+
+function encodeAttribute(value) {
+	return String(value ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function injectCodeMetadata(html, lang, title) {
+	const langAttr = ` data-code-lang="${encodeAttribute(lang)}"`;
+	const titleAttr = title ? ` data-code-title="${encodeAttribute(title)}"` : '';
+	return html.replace('<pre', `<pre${langAttr}${titleAttr}`);
+}
+
 const highlighter = await createHighlighter({
-	themes: [theme],
-	langs: ['javascript', 'typescript']
+	themes: [shikiTheme],
+	langs: [
+		'javascript',
+		'typescript',
+		'bash',
+		'json',
+		'html',
+		'css',
+		'yaml',
+		'markdown',
+		'svelte',
+		'txt',
+	],
 });
 
 /** @type {import('mdsvex').MdsvexOptions} */
 const mdsvexOptions = {
 	highlight: {
-		highlighter: async (code, lang = 'text') => {
-			const html = escapeSvelte(highlighter.codeToHtml(code, { lang, theme }));
+		highlighter: (code, lang = shikiDefaultLang, metastring = '') => {
+			const parsed = parseFenceInfo(lang, metastring);
+			const normalizedLang = parsed.lang;
+			const mappedLang = shikiLangAliases[normalizedLang] ?? normalizedLang;
+			const safeLang = highlighter.getLoadedLanguages().includes(normalizedLang) ? normalizedLang : shikiDefaultLang;
+			const html = escapeSvelte(
+				injectCodeMetadata(highlighter.codeToHtml(code, {
+					lang: highlighter.getLoadedLanguages().includes(mappedLang) ? mappedLang : safeLang,
+					theme: shikiTheme,
+				}), mappedLang, parsed.title)
+			);
+
 			return `{@html \`${html}\` }`;
-		}
+		},
 	},
 	remarkPlugins: [
-		remarkDirective,
+		remarkCodeMeta,
 		remarkContainers,
 	],
 	rehypePlugins: [
 		rehypeSlug,
 		[rehypeAutolinkHeadings, { behavior: 'wrap' }],
+		rehypeContainers,
+		rehypeCodeGroup,
 		rehypeTocPlaceholder,
 	],
 }

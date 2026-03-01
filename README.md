@@ -5,7 +5,7 @@ TODO:
 - komponenty z rehype:
   - [x] TOC
   - [x] Custom Containers 
-  - [ ] code groups
+  - [x] code groups
   - [x] slugs + autolinks
   - [x] shiki
   - [ ] include MD: <!--@include: ./__partial.md-->

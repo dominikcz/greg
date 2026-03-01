@@ -1,26 +1,31 @@
-import { visit } from 'unist-util-visit';
-
 /**
- * Remark plugin: transforms ::: directives into VitePress-compatible containers.
+ * Remark + Rehype plugins for VitePress-style ::: containers.
  *
- * Supported types: info, tip, warning, danger, details
+ * Architecture: two-phase, no inner sub-pipeline needed.
  *
- * Syntax (compatible with VitePress / markdown-it-container):
- *   ::: info [Custom Title]
- *   content
- *   :::
+ * 1. remarkContainers (remark plugin)
+ *    Finds ::: syntax and wraps inner mdast nodes in a custom
+ *    `containerBlock` node. Inner content stays as real mdast nodes
+ *    so the normal pipeline processes them (rehype-shiki, rehype-slug, etc.)
  *
- *   ::: details [Custom Title] [{open}]
- *   content
- *   :::
+ * 2. rehypeContainers (rehype plugin)
+ *    Visits `container-block` hast elements and emits the final
+ *    <div class="custom-block …">…</div> or <details>…</details> HTML.
  *
- * @typedef {Object} ContainersOptions
- * @property {string} infoLabel    - Default label for info. Default: 'INFO'
- * @property {string} tipLabel     - Default label for tip. Default: 'TIP'
- * @property {string} warningLabel - Default label for warning. Default: 'WARNING'
- * @property {string} dangerLabel  - Default label for danger. Default: 'DANGER'
- * @property {string} detailsLabel - Default label for details. Default: 'Details'
+ * Handles two AST shapes produced by remark:
+ *
+ * A) Single paragraph (content has no blank lines — remark collapses to one node):
+ *    paragraph { text: "::: info\nContent\n:::" }
+ *
+ * B) Multi-node span (content has blank lines or block elements like code fences):
+ *    paragraph { text: "::: info Title" }
+ *    ... block content nodes ...
+ *    paragraph { text: ":::" }
+ *
+ * Does NOT require remark-directive or any sub-pipeline.
  */
+
+import { visit } from 'unist-util-visit';
 
 const defaultLabels = {
 	infoLabel: 'INFO',
@@ -31,87 +36,181 @@ const defaultLabels = {
 };
 
 const knownTypes = ['info', 'tip', 'warning', 'danger', 'details'];
+const OPEN_LINE_RE = /^:::[ \t]+(\w+)(?:[ \t]+(.+?))?[ \t]*$/;
+const CLOSE_LINE_RE = /^:::[ \t]*$/;
+
+function getDefaultLabel(type, labels) {
+	return {
+		info: labels.infoLabel,
+		tip: labels.tipLabel,
+		warning: labels.warningLabel,
+		danger: labels.dangerLabel,
+		details: labels.detailsLabel,
+	}[type] ?? type.toUpperCase();
+}
+
+/** Creates a custom mdast node that carries container type/title + inner mdast children. */
+function containerBlockNode(type, rawTitle, children) {
+	return {
+		type: 'containerBlock',
+		containerType: type,
+		rawTitle,
+		data: {
+			hName: 'div',
+			hProperties: {
+				className: ['container-block'],
+				'data-type': type,
+				'data-title': rawTitle,
+			},
+		},
+		children,
+	};
+}
+
+function nodeToText(node) {
+	if (node.type === 'text' || node.type === 'inlineCode') return node.value ?? '';
+	if (node.children) return node.children.map(nodeToText).join('');
+	return '';
+}
+
+// ─── Remark plugin ────────────────────────────────────────────────────────────
 
 export function remarkContainers(userOptions = {}) {
+	return (tree) => {
+		const children = tree.children;
+
+		// Pass 1: single-paragraph containers (no blank lines — remark collapses to one paragraph)
+		for (let i = 0; i < children.length; i++) {
+			const node = children[i];
+			if (node.type !== 'paragraph') continue;
+
+			const firstChild = node.children?.[0];
+			if (!firstChild || firstChild.type !== 'text') continue;
+			const firstLine = firstChild.value.split('\n')[0].trim();
+			const openMatch = firstLine.match(OPEN_LINE_RE);
+			if (!openMatch) continue;
+
+			const lastChild = node.children[node.children.length - 1];
+			if (!lastChild || lastChild.type !== 'text') continue;
+			const lastLine = lastChild.value.split('\n').at(-1).trim();
+			if (!CLOSE_LINE_RE.test(lastLine)) continue;
+
+			const type = openMatch[1].toLowerCase();
+			if (!knownTypes.includes(type)) continue;
+
+			// Strip open/close lines, keep remaining inline nodes as mdast children
+			const innerChildren = [];
+			for (let ci = 0; ci < node.children.length; ci++) {
+				const c = node.children[ci];
+				const isFirst = ci === 0;
+				const isLast = ci === node.children.length - 1;
+
+				if (isFirst && isLast) {
+					const afterFirst = c.value.slice(c.value.indexOf('\n') + 1);
+					const beforeLast = afterFirst.slice(0, afterFirst.lastIndexOf('\n'));
+					if (beforeLast.trim()) innerChildren.push({ ...c, value: beforeLast });
+				} else if (isFirst) {
+					const afterFirst = c.value.slice(c.value.indexOf('\n') + 1);
+					if (afterFirst) innerChildren.push({ ...c, value: afterFirst });
+				} else if (isLast) {
+					const beforeLast = c.value.slice(0, c.value.lastIndexOf('\n'));
+					if (beforeLast) innerChildren.push({ ...c, value: beforeLast });
+				} else {
+					innerChildren.push(c);
+				}
+			}
+
+			// Wrap inline children in a paragraph so remarkRehype processes them normally
+			const innerNodes = innerChildren.length
+				? [{ type: 'paragraph', children: innerChildren }]
+				: [];
+
+			children.splice(i, 1, containerBlockNode(type, openMatch[2] || '', innerNodes));
+		}
+
+		// Pass 2: multi-node spans (open para + block content + close para)
+		const spans = [];
+		const stack = [];
+		for (let i = 0; i < children.length; i++) {
+			const node = children[i];
+			if (node.type !== 'paragraph') continue;
+			const text = nodeToText(node).trim();
+			if (text.includes('\n')) continue; // handled in Pass 1
+			const openMatch = text.match(OPEN_LINE_RE);
+			if (openMatch) {
+				stack.push({ openIdx: i, type: openMatch[1], title: openMatch[2] || '' });
+				continue;
+			}
+			if (CLOSE_LINE_RE.test(text) && stack.length > 0) {
+				const frame = stack.pop();
+				if (stack.length === 0) spans.push({ ...frame, closeIdx: i });
+			}
+		}
+		for (const span of spans.reverse()) {
+			const { openIdx, closeIdx, type, title: rawTitle } = span;
+			const lcType = type.toLowerCase();
+			if (!knownTypes.includes(lcType)) continue;
+			const innerNodes = children.slice(openIdx + 1, closeIdx);
+			children.splice(openIdx, closeIdx - openIdx + 1, containerBlockNode(lcType, rawTitle, innerNodes));
+		}
+	};
+}
+
+// ─── Rehype plugin ────────────────────────────────────────────────────────────
+// Runs after all other rehype plugins (shiki, slug, etc.) have processed children.
+// Replaces the intermediate <div class="container-block"> with the final markup.
+
+export function rehypeContainers(userOptions = {}) {
 	const labels = { ...defaultLabels, ...userOptions };
 
 	return (tree) => {
-		visit(tree, (node) => {
-			// remark-directive creates containerDirective nodes
-			if (node.type !== 'containerDirective') return;
+		visit(tree, 'element', (node, index, parent) => {
+			if (
+				node.tagName !== 'div' ||
+				!node.properties?.className?.includes('container-block')
+			) return;
 
-			const type = node.name?.toLowerCase();
-			if (!knownTypes.includes(type)) return;
+			const type = node.properties['data-type'];
+			const rawTitle = node.properties['data-title'] ?? '';
 
-			// Extract custom title from directive label (e.g. ::: tip My Title)
-			// remark-directive puts inline children as the label node
-			const labelNode = node.children.find((c) => c.data?.directiveLabel);
-			let title = '';
-			if (labelNode) {
-				title = extractText(labelNode);
-				// Remove the label node from children so it doesn't appear in content
-				node.children = node.children.filter((c) => !c.data?.directiveLabel);
-			}
-
-			// Check for {open} attribute on details
-			const isOpen = node.attributes?.open !== undefined || /\{open\}/.test(title);
-			title = title.replace(/\s*\{open\}\s*$/, '').trim();
-
-			if (!title) {
-				title = getDefaultLabel(type, labels);
-			}
+			const isOpen = /\{open\}/i.test(rawTitle);
+			let title = rawTitle.replace(/\s*\{open\}\s*$/i, '').trim();
+			if (!title) title = getDefaultLabel(type, labels);
 
 			if (type === 'details') {
-				// Render as <details> / <summary>
-				node.data = node.data || {};
-				node.data.hName = 'details';
-				node.data.hProperties = {
-					className: ['custom-block', 'details'],
-					...(isOpen ? { open: true } : {}),
-				};
-
-				// Prepend <summary> node
-				node.children.unshift({
-					type: 'paragraph',
-					data: {
-						hName: 'summary',
-						hProperties: { className: ['custom-block-title'] },
+				parent.children.splice(index, 1, {
+					type: 'element',
+					tagName: 'details',
+					properties: {
+						className: ['custom-block', 'details'],
+						...(isOpen ? { open: true } : {}),
 					},
-					children: [{ type: 'text', value: title }],
+					children: [
+						{
+							type: 'element',
+							tagName: 'summary',
+							properties: { className: ['custom-block-title'] },
+							children: [{ type: 'text', value: title }],
+						},
+						...node.children,
+					],
 				});
 			} else {
-				// Render as <div class="custom-block {type}">
-				node.data = node.data || {};
-				node.data.hName = 'div';
-				node.data.hProperties = { className: ['custom-block', type] };
-
-				// Prepend title <p class="custom-block-title">
-				node.children.unshift({
-					type: 'paragraph',
-					data: {
-						hName: 'p',
-						hProperties: { className: ['custom-block-title'] },
-					},
-					children: [{ type: 'text', value: title }],
+				parent.children.splice(index, 1, {
+					type: 'element',
+					tagName: 'div',
+					properties: { className: ['custom-block', type] },
+					children: [
+						{
+							type: 'element',
+							tagName: 'p',
+							properties: { className: ['custom-block-title'] },
+							children: [{ type: 'text', value: title }],
+						},
+						...node.children,
+					],
 				});
 			}
 		});
 	};
-}
-
-function getDefaultLabel(type, labels) {
-	switch (type) {
-		case 'info':    return labels.infoLabel;
-		case 'tip':     return labels.tipLabel;
-		case 'warning': return labels.warningLabel;
-		case 'danger':  return labels.dangerLabel;
-		case 'details': return labels.detailsLabel;
-		default:        return type.toUpperCase();
-	}
-}
-
-function extractText(node) {
-	let text = '';
-	visit(node, 'text', (t) => { text += t.value; });
-	return text.trim();
 }

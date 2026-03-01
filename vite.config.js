@@ -11,6 +11,11 @@ export default defineConfig({
     __NAME__: `"${pkg.name}"`,
     __VERSION__: `"${pkg.version}"`,
   },
+  test: {
+    environment: 'node',
+    include: ['src/**/*.test.js'],
+    testTimeout: 30000,
+  },
 })
 
 
