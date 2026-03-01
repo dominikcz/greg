@@ -9,14 +9,20 @@
 
 	type Props = {
 		rootPath: string;
-		modules: Record<string, () => Promise<any>>;
 		children?: Snippet;
 		properties?: Snippet;
 		version: string;
 		mainTitle?: string;
 	};
 
-	let { children, modules, rootPath = '/', properties, version = '', mainTitle = "Greg"}: Props = $props();
+	let { children, rootPath = '/docs', properties, version = '', mainTitle = "Greg"}: Props = $props();
+
+	const allModules = import.meta.glob('/docs/**/*.md');
+	// Filter out partials (files starting with __)
+	const modules = Object.fromEntries(
+		Object.entries(allModules).filter(([k]) => !k.split('/').pop()!.startsWith('__'))
+	);
+
 	let menu = $derived(prepareMenu(modules, rootPath));
 
 	let filter = $state('');
