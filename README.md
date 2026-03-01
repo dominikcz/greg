@@ -3,11 +3,11 @@
 TODO:
 
 - komponenty z rehype:
-  - [ ] TOC
+  - [x] TOC
   - [ ] Custom Containers 
   - [ ] code groups
-  - [ ] slugs + autolinks
-  - [ ] shiki
+  - [x] slugs + autolinks
+  - [x] shiki
   - [ ] include MD: <!--@include: ./__partial.md-->
   - [ ] code snippets: <<< @/filepath
 - [ ] wyszukiwanie

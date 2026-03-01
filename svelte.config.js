@@ -1,5 +1,8 @@
 import { mdsvex, escapeSvelte } from 'mdsvex'
 import { createHighlighter } from 'shiki';
+import rehypeSlug from 'rehype-slug';
+import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import { rehypeTocPlaceholder } from './src/lib/MarkdownDocs/rehypeToc.js';
 
 const theme = 'github-dark';
 const highlighter = await createHighlighter({
@@ -15,6 +18,11 @@ const mdsvexOptions = {
 			return `{@html \`${html}\` }`;
 		}
 	},
+	rehypePlugins: [
+		rehypeSlug,
+		[rehypeAutolinkHeadings, { behavior: 'wrap' }],
+		rehypeTocPlaceholder,
+	],
 }
 /** @type {import("@sveltejs/vite-plugin-svelte").SvelteConfig} */
 export default {
