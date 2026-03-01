@@ -418,4 +418,34 @@ describe('imports — snippets and markdown includes', () => {
 		expect(html).toContain('Nested content.');
 		expect(html).not.toContain('Included section');
 	});
+
+	it('resolves $docs alias in snippet imports', async () => {
+		const html = await processMarkdown('<<< $docs/markdown/snippet.js#snippet{2,2}', { filename: testFile });
+		expect(html).toContain('..');
+		expect(html).not.toContain('export default foo');
+	});
+
+	it('resolves $docs alias in markdown includes', async () => {
+		const html = await processMarkdown('<!--@include: $docs/markdown/__partial-basic.md-->', { filename: testFile });
+		expect(html).toContain('<h3 id="configuration">');
+		expect(html).toContain('Can be created using <code>.foorc.json</code>.');
+	});
+
+	it('expands $docs alias in markdown links', async () => {
+		const html = await processMarkdown('[Go to code]($docs/markdown/code.md)', { filename: testFile });
+		expect(html).toContain('href="docs/markdown/code.md"');
+	});
+
+	it('expands $docs alias in image sources', async () => {
+		const html = await processMarkdown('![alt]($docs/images/logo.png)', { filename: testFile });
+		expect(html).toContain('src="docs/images/logo.png"');
+	});
+
+	it('$docs alias respects custom docsDir', async () => {
+		const html = await processMarkdown('[link]($docs/foo.md)', {
+			filename: testFile,
+			imports: { sourceRoot: process.cwd(), docsDir: 'documentation' },
+		});
+		expect(html).toContain('href="documentation/foo.md"');
+	});
 });

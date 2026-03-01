@@ -76,13 +76,26 @@ function getCurrentDir(file, sourceRoot, docsDir) {
 }
 
 /**
+ * Expand the `$docs` alias in a path string.
+ * `$docs/foo` → `<docsDir>/foo`,  `$docs` alone → `<docsDir>`
+ */
+function expandDocsAlias(specPath, docsDir) {
+	if (specPath === '$docs') return docsDir;
+	if (specPath.startsWith('$docs/')) return docsDir + specPath.slice(5);
+	return specPath;
+}
+
+/**
  * Resolve an import specifier to an absolute file path.
  *
  *   @/path  or  @path   →  <sourceRoot>/path
+ *   $docs/path           →  <sourceRoot>/<docsDir>/path
  *   /path               →  <docsRoot>/path
  *   ./path  ../path     →  <currentDir>/path
  */
 function resolveImportPath(specPath, currentDir, sourceRoot, docsDir) {
+	const expanded = expandDocsAlias(specPath, docsDir);
+	if (expanded !== specPath) return path.resolve(sourceRoot, expanded);
 	if (specPath === '@') return sourceRoot;
 	if (specPath.startsWith('@/')) return path.resolve(sourceRoot, specPath.slice(2));
 	if (specPath.startsWith('@')) return path.resolve(sourceRoot, specPath.slice(1));
@@ -323,12 +336,23 @@ function markNodesBaseDir(nodes, baseDir) {
 	}
 }
 
+/** Expand `$docs` alias in link/image URLs (remark AST). */
+function expandAliasInUrls(node, docsDir) {
+	if ((node.type === 'link' || node.type === 'image') && typeof node.url === 'string') {
+		const expanded = expandDocsAlias(node.url, docsDir);
+		if (expanded !== node.url) node.url = expanded;
+	}
+}
+
 async function transformChildren(children, currentDir, sourceRoot, docsDir, depth) {
 	if (!Array.isArray(children) || depth > 20) return;
 
 	for (let i = 0; i < children.length; i++) {
 		const node = children[i];
 		const nodeDir = node?.data?.__includeDir || currentDir;
+
+		// Expand $docs alias in links and images
+		expandAliasInUrls(node, docsDir);
 
 		if (
 			node?.type === 'paragraph' &&
