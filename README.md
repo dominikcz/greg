@@ -8,8 +8,8 @@ TODO:
   - [x] code groups
   - [x] slugs + autolinks
   - [x] shiki
-  - [ ] include MD: <!--@include: ./__partial.md-->
-  - [ ] code snippets: <<< @/filepath
+  - [x] include MD: <!--@include: ./__partial.md-->
+  - [x] code snippets: <<< @/filepath
 - [ ] wyszukiwanie
 - [ ] integracja z AI
 - [ ] konfiguracja

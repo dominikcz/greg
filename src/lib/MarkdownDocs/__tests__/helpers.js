@@ -12,6 +12,9 @@ import rehypeCodeGroup from '../rehypeCodeGroup.js';
 import { remarkContainers, rehypeContainers } from '../remarkContainers.js';
 import { rehypeTocPlaceholder } from '../rehypeToc.js';
 import { remarkCodeMeta } from '../remarkCodeMeta.js';
+import { remarkImports } from '../remarkImports.js';
+
+const defaultImportsOptions = { sourceRoot: globalThis.process.cwd(), docsDir: 'docs' };
 
 // Single shared processor — created once so shiki's lazy grammar loading
 // only happens on first call, not per-test.
@@ -19,9 +22,10 @@ let _processor = null;
 
 async function getProcessor(opts = {}) {
 	// If custom options are passed, build a one-off processor
-	if (opts.containers || opts.toc) {
+	if (opts.containers || opts.toc || opts.imports) {
 		return unified()
 			.use(remarkParse)
+			.use(remarkImports, opts.imports ?? defaultImportsOptions)
 			.use(remarkCodeMeta)
 			.use(remarkContainers, opts.containers ?? {})
 			.use(remarkRehype, { allowDangerousHtml: true })
@@ -35,6 +39,7 @@ async function getProcessor(opts = {}) {
 	if (!_processor) {
 		_processor = unified()
 			.use(remarkParse)
+			.use(remarkImports, defaultImportsOptions)
 			.use(remarkCodeMeta)
 			.use(remarkContainers)
 			.use(remarkRehype, { allowDangerousHtml: true })
@@ -50,5 +55,10 @@ async function getProcessor(opts = {}) {
 
 export async function process(markdown, opts = {}) {
 	const processor = await getProcessor(opts);
-	return String(await processor.process(markdown));
+	const input = opts.vfile
+		? { ...opts.vfile, value: markdown }
+		: opts.filename
+			? { value: markdown, path: opts.filename }
+			: markdown;
+	return String(await processor.process(input));
 }

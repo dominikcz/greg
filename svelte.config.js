@@ -6,9 +6,12 @@ import { rehypeTocPlaceholder } from './src/lib/MarkdownDocs/rehypeToc.js';
 import { remarkContainers, rehypeContainers } from './src/lib/MarkdownDocs/remarkContainers.js';
 import rehypeCodeGroup from './src/lib/MarkdownDocs/rehypeCodeGroup.js';
 import { remarkCodeMeta } from './src/lib/MarkdownDocs/remarkCodeMeta.js';
+import { remarkImports } from './src/lib/MarkdownDocs/remarkImports.js';
 
 const shikiTheme = 'github-dark';
 const shikiDefaultLang = 'txt';
+const markdownSourceRoot = process.cwd();
+const markdownDocsDir = 'docs';
 const shikiLangAliases = {
 	js: 'javascript',
 	ts: 'typescript',
@@ -73,6 +76,7 @@ const mdsvexOptions = {
 		},
 	},
 	remarkPlugins: [
+		[remarkImports, { sourceRoot: markdownSourceRoot, docsDir: markdownDocsDir }],
 		remarkCodeMeta,
 		remarkContainers,
 	],
