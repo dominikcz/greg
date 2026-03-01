@@ -1,5 +1,5 @@
 export function prepareMenu(modules, base) {
-    const paths = Object.keys(modules);
+    const paths = Object.keys(modules).filter(p => !p.split('/').pop().startsWith('__'));
     const root = [];
 
     // Sort so index.md files are processed first — they define the folder nodes
