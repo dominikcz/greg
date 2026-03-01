@@ -304,3 +304,112 @@ a {
         }
     }
 }
+
+/* ── Custom Containers ───────────────────────────── */
+.custom-block {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    border: 1px solid transparent;
+
+    .custom-block-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin: 0 0 0.4rem 0;
+        padding: 0;
+        text-transform: uppercase;
+    }
+
+    p:last-child { margin-bottom: 0; }
+
+    // ── info ──
+    &.info {
+        background: color-mix(in srgb, #646cff 8%, transparent);
+        border-color: color-mix(in srgb, #646cff 30%, transparent);
+        .custom-block-title { color: #646cff; }
+
+        @media (prefers-color-scheme: dark) {
+            background: color-mix(in srgb, #ff6f61 8%, transparent);
+            border-color: color-mix(in srgb, #ff6f61 30%, transparent);
+            .custom-block-title { color: #ff6f61; }
+        }
+    }
+
+    // ── tip ──
+    &.tip {
+        background: color-mix(in srgb, #42b883 8%, transparent);
+        border-color: color-mix(in srgb, #42b883 30%, transparent);
+        .custom-block-title { color: #2d9e68; }
+
+        @media (prefers-color-scheme: dark) {
+            background: color-mix(in srgb, #a8c97f 8%, transparent);
+            border-color: color-mix(in srgb, #a8c97f 30%, transparent);
+            .custom-block-title { color: #a8c97f; }
+        }
+    }
+
+    // ── warning ──
+    &.warning {
+        background: color-mix(in srgb, #daa520 8%, transparent);
+        border-color: color-mix(in srgb, #daa520 30%, transparent);
+        .custom-block-title { color: #b8860b; }
+
+        @media (prefers-color-scheme: dark) {
+            background: color-mix(in srgb, #daa520 10%, transparent);
+            border-color: color-mix(in srgb, #daa520 35%, transparent);
+            .custom-block-title { color: #daa520; }
+        }
+    }
+
+    // ── danger ──
+    &.danger {
+        background: color-mix(in srgb, #e53e3e 8%, transparent);
+        border-color: color-mix(in srgb, #e53e3e 30%, transparent);
+        .custom-block-title { color: #c53030; }
+
+        @media (prefers-color-scheme: dark) {
+            background: color-mix(in srgb, #ff4500 10%, transparent);
+            border-color: color-mix(in srgb, #ff4500 35%, transparent);
+            .custom-block-title { color: #ff4500; }
+        }
+    }
+
+    // ── details ──
+    &.details {
+        background: var(--greg-code-background);
+        border-color: var(--greg-border-color);
+
+        summary.custom-block-title {
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--greg-color);
+            margin: 0;
+            user-select: none;
+
+            &::before {
+                content: '▶';
+                font-size: 0.6em;
+                transition: transform 0.2s ease;
+                color: var(--greg-accent);
+                flex-shrink: 0;
+            }
+        }
+
+        &[open] > summary.custom-block-title::before {
+            transform: rotate(90deg);
+        }
+
+        // Content inside open details
+        & > *:not(summary) {
+            margin-top: 0.75rem;
+        }
+    }
+}

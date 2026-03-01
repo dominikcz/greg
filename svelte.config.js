@@ -3,6 +3,8 @@ import { createHighlighter } from 'shiki';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import { rehypeTocPlaceholder } from './src/lib/MarkdownDocs/rehypeToc.js';
+import remarkDirective from 'remark-directive';
+import { remarkContainers } from './src/lib/MarkdownDocs/remarkContainers.js';
 
 const theme = 'github-dark';
 const highlighter = await createHighlighter({
@@ -18,6 +20,10 @@ const mdsvexOptions = {
 			return `{@html \`${html}\` }`;
 		}
 	},
+	remarkPlugins: [
+		remarkDirective,
+		remarkContainers,
+	],
 	rehypePlugins: [
 		rehypeSlug,
 		[rehypeAutolinkHeadings, { behavior: 'wrap' }],

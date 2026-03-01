@@ -4,7 +4,7 @@ TODO:
 
 - komponenty z rehype:
   - [x] TOC
-  - [ ] Custom Containers 
+  - [x] Custom Containers 
   - [ ] code groups
   - [x] slugs + autolinks
   - [x] shiki
