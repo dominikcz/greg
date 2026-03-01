@@ -1,11 +1,14 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { tick } from 'svelte';
 	import DocsNavigation from './DocsNavigation.svelte';
+	import SearchModal from './SearchModal.svelte';
 	import Spinner from './../spinner/spinner.svelte';
 	import { prepareMenu, flattenMenu, getBreadcrumb } from './docsUtils';
 	import 'github-markdown-css';
 	import './../scss/markdownDocs.scss';
 	import { Slot, setPortalsContext } from './../portal';
+	import { Sun, Moon } from '@lucide/svelte';
 
 	type Props = {
 		rootPath: string;
@@ -24,10 +27,31 @@
 	);
 
 	let menu = $derived(prepareMenu(modules, rootPath));
-
-	let filter = $state('');
-	let filterMenu = $derived(menu.filter((x: any) => x.label.toLowerCase().includes(filter.toLowerCase())));
 	let flat = $derived(flattenMenu(menu));
+
+	// Theme toggle
+	function getSystemTheme(): 'light' | 'dark' {
+		return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	}
+	let theme = $state<'light' | 'dark'>(
+		(localStorage.getItem('greg-theme') as 'light' | 'dark') ?? getSystemTheme()
+	);
+	$effect(() => { localStorage.setItem('greg-theme', theme); });
+
+	// Full-text search modal
+	let searchOpen = $state(false);
+
+	function openSearch() { searchOpen = true; }
+	function closeSearch() { searchOpen = false; }
+
+	function navigateFromSearch(path: string, anchor?: string) {
+		navigate(path);
+		if (anchor) {
+			tick().then(() => setTimeout(() => {
+				document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 120));
+		}
+	}
 
 	// SPA routing — aktualizowany przez navigate() i popstate
 	let active = $state(decodeURI(window.location.pathname));
@@ -78,6 +102,18 @@
 	$effect(() => {
 		window.addEventListener('popstate', handlePopState);
 		return () => window.removeEventListener('popstate', handlePopState);
+	});
+
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+			e.preventDefault();
+			openSearch();
+		}
+	}
+
+	$effect(() => {
+		window.addEventListener('keydown', handleGlobalKeydown);
+		return () => window.removeEventListener('keydown', handleGlobalKeydown);
 	});
 
 	function hndMouseDown(e: MouseEvent) {
@@ -140,7 +176,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-<div class="catalog" onmousemove={hndMouseMove} onmouseup={hndMouseUp} onclick={handleCodeGroupClick} onkeydown={handleCodeGroupKeydown}>
+<div class="catalog" data-theme={theme} onmousemove={hndMouseMove} onmouseup={hndMouseUp} onclick={handleCodeGroupClick} onkeydown={handleCodeGroupKeydown}>
 	<header class="site-header">
 		<div class="header-left">
 			<a href={rootPath} class="site-title" onclick={(e) => { e.preventDefault(); navigate(rootPath); }}>
@@ -152,13 +188,37 @@
 			{/if}
 		</div>
 		<div class="header-right">
-			<input class="search-input" type="text" placeholder="Search…" bind:value={filter} />
+			<div class="theme-group" role="group" aria-label="Color theme">
+				<button
+					class="theme-btn"
+					class:active={theme === 'light'}
+					onclick={() => theme = 'light'}
+					type="button"
+					aria-label="Light mode"
+					aria-pressed={theme === 'light'}
+				><Sun size={15} /></button>
+				<button
+					class="theme-btn"
+					class:active={theme === 'dark'}
+					onclick={() => theme = 'dark'}
+					type="button"
+					aria-label="Dark mode"
+					aria-pressed={theme === 'dark'}
+				><Moon size={15} /></button>
+			</div>
+			<button class="search-trigger" onclick={openSearch} type="button">
+				<svg class="search-trigger-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+				</svg>
+				<span class="search-trigger-label">Search…</span>
+				<span class="search-trigger-hint"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+			</button>
 		</div>
 	</header>
 
 	<div class="catalog-body">
 		<aside bind:this={aside}>
-			<DocsNavigation menu={filterMenu} {rootPath} {active} {navigate} />
+			<DocsNavigation menu={menu} {rootPath} {active} {navigate} />
 		</aside>
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
 		<div class="splitter" bind:this={splitter} onmousedown={hndMouseDown}></div>
@@ -182,6 +242,7 @@
 			<Slot name="properties" />
 		</aside>
 	</div>
+	<SearchModal bind:open={searchOpen} onClose={closeSearch} onNavigate={navigateFromSearch} />
 </div>
 
 <style lang="scss">
@@ -260,24 +321,95 @@
 		max-width: 24rem;
 	}
 
-	.search-input {
+	.theme-group {
+		display: flex;
+		border: 1px solid var(--greg-border-color);
+		border-radius: 6px;
+		flex-shrink: 0;
+	}
+
+	.theme-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: none;
+		border-radius: 0;
+		padding: 0.38rem 0.5rem;
+		color: var(--greg-menu-section-color);
+		cursor: pointer;
+		transition: background 0.15s, color 0.15s;
+		outline: none;
+
+		&:first-child {
+			border-radius: 5px 0 0 5px;
+		}
+
+		&:last-child {
+			border-radius: 0 5px 5px 0;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--greg-accent);
+			outline-offset: 2px;
+		}
+
+		&:hover:not(.active) {
+			background: var(--greg-menu-hover-background);
+			color: var(--greg-color);
+		}
+
+		&.active {
+			background: var(--greg-accent-light);
+			color: var(--greg-accent);
+		}
+	}
+
+	.search-trigger {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 		width: 100%;
-		padding: 0.4rem 0.75rem;
+		padding: 0.38rem 0.75rem;
 		background-color: var(--greg-menu-background);
 		border: 1px solid var(--greg-border-color);
 		border-radius: 6px;
-		color: var(--greg-color);
+		color: var(--greg-menu-section-color);
 		font-size: 0.875rem;
-		outline: none;
+		cursor: pointer;
 		transition: border-color 0.15s, box-shadow 0.15s;
+		font-family: inherit;
 
-		&::placeholder {
-			color: var(--greg-menu-section-color);
+		&:hover {
+			border-color: var(--greg-accent);
+			color: var(--greg-color);
 		}
 
-		&:focus {
-			border-color: var(--greg-accent);
-			box-shadow: 0 0 0 3px var(--greg-accent-light);
+		.search-trigger-icon {
+			width: 15px;
+			height: 15px;
+			flex-shrink: 0;
+		}
+
+		.search-trigger-label {
+			flex: 1;
+			text-align: left;
+		}
+
+		.search-trigger-hint {
+			display: flex;
+			gap: 0.15rem;
+			flex-shrink: 0;
+
+			kbd {
+				background: var(--greg-background);
+				border: 1px solid var(--greg-border-color);
+				border-radius: 3px;
+				padding: 0.05rem 0.3rem;
+				font-size: 0.65rem;
+				line-height: 1.5;
+				font-family: inherit;
+			}
 		}
 	}
 

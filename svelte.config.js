@@ -8,6 +8,8 @@ import rehypeCodeGroup from './src/lib/MarkdownDocs/rehypeCodeGroup.js';
 import { remarkCodeMeta } from './src/lib/MarkdownDocs/remarkCodeMeta.js';
 import { remarkImports } from './src/lib/MarkdownDocs/remarkImports.js';
 
+import { remarkGlobalComponents } from './src/lib/MarkdownDocs/remarkGlobalComponents.js';
+
 const shikiTheme = 'github-dark';
 const shikiDefaultLang = 'txt';
 const markdownSourceRoot = process.cwd();
@@ -77,6 +79,7 @@ const mdsvexOptions = {
 	},
 	remarkPlugins: [
 		[remarkImports, { sourceRoot: markdownSourceRoot, docsDir: markdownDocsDir }],
+		remarkGlobalComponents,
 		remarkCodeMeta,
 		remarkContainers,
 	],

@@ -1,4 +1,4 @@
-:root {
+@mixin greg-light-vars {
     /* Light theme (default) */
     --greg-background: #ffffff;
     --greg-main-background: #ffffff;
@@ -24,47 +24,134 @@
     --greg-toc-link-color: #4a4a6a;
     --greg-toc-link-hover: #646cff;
 
+    /* ── Semantic status colors (light) ─────────── */
+    --greg-info-border:      rgba(100, 108, 255, 0.45);
+    --greg-info-text:        #646cff;
+    --greg-info-bg:          rgba(100, 108, 255, 0.08);
+
+    --greg-tip-border:       rgba(66, 184, 131, 0.45);
+    --greg-tip-text:         #2d9e68;
+    --greg-tip-bg:           rgba(66, 184, 131, 0.08);
+
+    --greg-warning-border:   rgba(201, 126, 10, 0.45);
+    --greg-warning-text:     #7d4e00;
+    --greg-warning-bg:       rgba(201, 126, 10, 0.08);
+
+    --greg-danger-border:    rgba(224, 82, 82, 0.45);
+    --greg-danger-text:      #c81d1d;
+    --greg-danger-bg:        rgba(224, 82, 82, 0.08);
+
+    --greg-success-border:   rgba(26, 127, 55, 0.45);
+    --greg-success-text:     #1a7f37;
+    --greg-success-bg:       rgba(26, 127, 55, 0.08);
+
+    --greg-sponsor-color:    #db6da0;
+    --greg-sponsor-bg:       rgba(219, 109, 160, 0.08);
+
+    --greg-code-inline-color: #e4004a;
+}
+
+:root {
+    @include greg-light-vars;
+}
+
+@mixin greg-dark-vars {
+    /* Dark theme — warm ember palette */
+    --greg-background: #1c1c1c;
+    --greg-main-background: #1c1c1c;
+    --greg-menu-background: #141414;
+    --greg-header-background: #141414;
+
+    /* tekst */
+    --greg-color: rgba(226, 228, 233, 0.82);
+    --greg-menu-color: #d9c9b5;
+    --greg-menu-section-color: #8a7a68;
+
+    /* aktywny element */
+    --greg-menu-active-background-params: 255, 111, 97;
+    --greg-menu-active-background: #ff6f61;
+    --greg-menu-active-color: #1c1c1c;
+    --greg-menu-hover-background: rgba(255, 111, 97, 0.12);
+
+    /* kod */
+    --greg-code-background: #0f0f0f;
+    --greg-code-color: #f5e8d8;
+
+    /* obramowania i akcenty */
+    --greg-border-color: #2e2a26;
+    --greg-accent: #ff6f61;
+    --greg-accent-light: rgba(255, 111, 97, 0.13);
+
+    --greg-header-height: 3.5rem;
+
+    /* TOC */
+    --greg-toc-color: #f5e8d8;
+    --greg-toc-link-color: #d9c9b5;
+    --greg-toc-link-hover: #ff6f61;
+
+    /* ── Semantic status colors (dark) ──────── */
+    --greg-info-border:      rgba(255, 111, 97, 0.45);
+    --greg-info-text:        #ff6f61;
+    --greg-info-bg:          rgba(255, 111, 97, 0.08);
+
+    --greg-tip-border:       rgba(168, 201, 127, 0.45);
+    --greg-tip-text:         #a8c97f;
+    --greg-tip-bg:           rgba(168, 201, 127, 0.08);
+
+    --greg-warning-border:   rgba(233, 169, 61, 0.45);
+    --greg-warning-text:     #f5c842;
+    --greg-warning-bg:       rgba(233, 169, 61, 0.08);
+
+    --greg-danger-border:    rgba(224, 82, 82, 0.45);
+    --greg-danger-text:      #ff7a7a;
+    --greg-danger-bg:        rgba(224, 82, 82, 0.10);
+
+    --greg-success-border:   rgba(168, 201, 127, 0.45);
+    --greg-success-text:     #a8c97f;
+    --greg-success-bg:       rgba(168, 201, 127, 0.08);
+
+    --greg-sponsor-color:    #e2829b;
+    --greg-sponsor-bg:       rgba(226, 130, 155, 0.10);
+
+    --greg-code-inline-color: #daa520;
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        /* Dark theme — warm ember palette */
-        --greg-background: #1c1c1c;
-        --greg-main-background: #1c1c1c;
-        --greg-menu-background: #141414;
-        --greg-header-background: #141414;
-
-        /* tekst */
-        --greg-color: rgba(226, 228, 233, 0.82);
-        --greg-menu-color: #d9c9b5;
-        --greg-menu-section-color: #8a7a68;
-
-        /* aktywny element */
-        --greg-menu-active-background-params: 255, 111, 97;
-        --greg-menu-active-background: #ff6f61;
-        --greg-menu-active-color: #1c1c1c;
-        --greg-menu-hover-background: rgba(255, 111, 97, 0.12);
-
-        /* kod */
-        --greg-code-background: #0f0f0f;
-        --greg-code-color: #f5e8d8;
-
-        /* obramowania i akcenty */
-        --greg-border-color: #2e2a26;
-        --greg-accent: #ff6f61;
-        --greg-accent-light: rgba(255, 111, 97, 0.13);
-
-        --greg-header-height: 3.5rem;
-
-        /* TOC */
-        --greg-toc-color: #f5e8d8;
-        --greg-toc-link-color: #d9c9b5;
-        --greg-toc-link-hover: #ff6f61;
-    }
+    :root { @include greg-dark-vars; }
 }
 
-.markdown-body {
-    // Light theme variables for github-markdown
+.catalog[data-theme="dark"] {
+    @include greg-dark-vars;
+}
+
+.catalog[data-theme="light"] {
+    @include greg-light-vars;
+}
+
+@mixin greg-dark-markdown-vars {
+    --focus-outlineColor: #ff6f61;
+    --fgColor-default: #f5e8d8;
+    --fgColor-muted: #8a7a68;
+    --fgColor-accent: #ff6f61;
+    --fgColor-success: #a8c97f;
+    --fgColor-attention: #daa520;
+    --fgColor-danger: #ff4500;
+    --fgColor-done: #d4956a;
+    --bgColor-default: var(--greg-background);
+    --bgColor-muted: #141414;
+    --bgColor-neutral-muted: var(--greg-code-background);
+    --bgColor-attention-muted: rgba(218, 165, 32, 0.15);
+    --borderColor-default: #2e2a26;
+    --borderColor-muted: #2e2a2699;
+    --borderColor-neutral-muted: #2e2a2699;
+    --borderColor-accent-emphasis: #ff6f61;
+    --borderColor-success-emphasis: #a8c97f;
+    --borderColor-attention-emphasis: #daa520;
+    --borderColor-danger-emphasis: #ff4500;
+    --borderColor-done-emphasis: #d4956a;
+}
+
+@mixin greg-light-markdown-vars {
     --focus-outlineColor: #646cff;
     --fgColor-default: #1a1a2e;
     --fgColor-muted: #6e7681;
@@ -85,42 +172,31 @@
     --borderColor-attention-emphasis: #9a6700;
     --borderColor-danger-emphasis: #cf222e;
     --borderColor-done-emphasis: #6f42c1;
+}
+
+.markdown-body {
+    @include greg-light-markdown-vars;
 
     @media (prefers-color-scheme: dark) {
-        --focus-outlineColor: #ff6f61;
-        --fgColor-default: #f5e8d8;
-        --fgColor-muted: #8a7a68;
-        --fgColor-accent: #ff6f61;
-        --fgColor-success: #a8c97f;
-        --fgColor-attention: #daa520;
-        --fgColor-danger: #ff4500;
-        --fgColor-done: #d4956a;
-        --bgColor-default: var(--greg-background);
-        --bgColor-muted: #141414;
-        --bgColor-neutral-muted: var(--greg-code-background);
-        --bgColor-attention-muted: rgba(218, 165, 32, 0.15);
-        --borderColor-default: #2e2a26;
-        --borderColor-muted: #2e2a2699;
-        --borderColor-neutral-muted: #2e2a2699;
-        --borderColor-accent-emphasis: #ff6f61;
-        --borderColor-success-emphasis: #a8c97f;
-        --borderColor-attention-emphasis: #daa520;
-        --borderColor-danger-emphasis: #ff4500;
-        --borderColor-done-emphasis: #d4956a;
+        @include greg-dark-markdown-vars;
+    }
+
+    .catalog[data-theme="dark"] & {
+        @include greg-dark-markdown-vars;
+    }
+
+    .catalog[data-theme="light"] & {
+        @include greg-light-markdown-vars;
     }
 
     :not(pre)>code {
         background-color: var(--greg-code-background);
-        color: #e4004a;
+        color: var(--greg-code-inline-color);
         padding: 0.2rem 0.4rem;
         border-radius: 4px;
         font-size: .875em;
         overflow-wrap: break-word;
         border: 1px solid var(--greg-border-color);
-
-        @media (prefers-color-scheme: dark) {
-            color: #daa520;
-        }
     }
 
     pre {
@@ -325,54 +401,30 @@ a {
 
     // ── info ──
     &.info {
-        background: color-mix(in srgb, #646cff 8%, transparent);
-        border-color: color-mix(in srgb, #646cff 30%, transparent);
-        .custom-block-title { color: #646cff; }
-
-        @media (prefers-color-scheme: dark) {
-            background: color-mix(in srgb, #ff6f61 8%, transparent);
-            border-color: color-mix(in srgb, #ff6f61 30%, transparent);
-            .custom-block-title { color: #ff6f61; }
-        }
+        background: var(--greg-info-bg);
+        border-color: var(--greg-info-border);
+        .custom-block-title { color: var(--greg-info-text); }
     }
 
     // ── tip ──
     &.tip {
-        background: color-mix(in srgb, #42b883 8%, transparent);
-        border-color: color-mix(in srgb, #42b883 30%, transparent);
-        .custom-block-title { color: #2d9e68; }
-
-        @media (prefers-color-scheme: dark) {
-            background: color-mix(in srgb, #a8c97f 8%, transparent);
-            border-color: color-mix(in srgb, #a8c97f 30%, transparent);
-            .custom-block-title { color: #a8c97f; }
-        }
+        background: var(--greg-tip-bg);
+        border-color: var(--greg-tip-border);
+        .custom-block-title { color: var(--greg-tip-text); }
     }
 
     // ── warning ──
     &.warning {
-        background: color-mix(in srgb, #daa520 8%, transparent);
-        border-color: color-mix(in srgb, #daa520 30%, transparent);
-        .custom-block-title { color: #b8860b; }
-
-        @media (prefers-color-scheme: dark) {
-            background: color-mix(in srgb, #daa520 10%, transparent);
-            border-color: color-mix(in srgb, #daa520 35%, transparent);
-            .custom-block-title { color: #daa520; }
-        }
+        background: var(--greg-warning-bg);
+        border-color: var(--greg-warning-border);
+        .custom-block-title { color: var(--greg-warning-text); }
     }
 
     // ── danger ──
     &.danger {
-        background: color-mix(in srgb, #e53e3e 8%, transparent);
-        border-color: color-mix(in srgb, #e53e3e 30%, transparent);
-        .custom-block-title { color: #c53030; }
-
-        @media (prefers-color-scheme: dark) {
-            background: color-mix(in srgb, #ff4500 10%, transparent);
-            border-color: color-mix(in srgb, #ff4500 35%, transparent);
-            .custom-block-title { color: #ff4500; }
-        }
+        background: var(--greg-danger-bg);
+        border-color: var(--greg-danger-border);
+        .custom-block-title { color: var(--greg-danger-text); }
     }
 
     // ── details ──

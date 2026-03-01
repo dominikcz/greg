@@ -49,54 +49,46 @@
 	}
 </script>
 
-<ul>
-	<li>
-		{#if item.children.length}
-			<a
-				href={item.link}
-				onclick={handleToggleClick}
-				class="arrow"
-				class:active={active == item.link}
-			>
-				<span class="chevron" class:expanded>
-					<ChevronRight />
-				</span>
-				{#if item.status}<span class={item.status}
-					></span>{/if}{item.label}
-			</a>
-			{#if expanded}
+<li>
+	{#if item.children.length}
+		<a
+			href={item.link}
+			onclick={handleToggleClick}
+			class="arrow"
+			class:active={active == item.link}
+		>
+			<span class="chevron" class:expanded>
+				<ChevronRight />
+			</span>
+			{#if item.status}<span class={item.status}></span>{/if}{item.label}
+		</a>
+		{#if expanded}
+			<ul>
 				{#each item.children as child}
 					<Self item={child} depth={depth + 1} {active} {navigate} />
 				{/each}
-			{/if}
-		{:else}
-			<a
-				href={item.link}
-				class="no-arrow"
-				class:active={active == item.link}
-				onclick={handleClick}
-				>{#if item.status}<span class={item.status}
-					></span>{/if}{item.label}</a
-			>
+			</ul>
 		{/if}
-	</li>
-</ul>
+	{:else}
+		<a
+			href={item.link}
+			class="no-arrow"
+			class:active={active == item.link}
+			onclick={handleClick}
+		>{#if item.status}<span class={item.status}></span>{/if}{item.label}</a>
+	{/if}
+</li>
 
 <style lang="scss">
+	li {
+		line-height: 1.5rem;
+	}
+
 	ul {
-		margin: 0;
 		list-style: none;
-		user-select: none;
-		padding-inline-start: 0;
-		:global(ul) {
-			padding-inline-start: 0.85rem;
-			margin-top: 0.1rem;
-			border-left: 1px solid var(--greg-border-color);
-			margin-left: 0.6rem;
-		}
-		li {
-			line-height: 1.5rem;
-		}
+		padding-inline-start: 0.85rem;
+		margin: 0.1rem 0 0 0.6rem;
+		border-left: 1px solid var(--greg-border-color);
 	}
 
 	.no-arrow {

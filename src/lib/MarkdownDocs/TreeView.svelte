@@ -11,16 +11,17 @@
 	let { tree, active = '', class: className = '', navigate }: TreeViewProps = $props();
 </script>
 
-<div class="tree-view {className}">
+<ul class="tree-view {className}">
 	{#each tree as item(item.link || item.label)}
 		<TreeViewItem {item} depth={0} {active} {navigate} />
 	{/each}
-</div>
+</ul>
 
 <style>
-	.tree-view{
-		display: flex;
-		flex-flow: column nowrap;
-		gap: 0.4rem;
+	.tree-view {
+		margin: 0;
+		list-style: none;
+		padding-inline-start: 0;
+		user-select: none;
 	}
 </style>
