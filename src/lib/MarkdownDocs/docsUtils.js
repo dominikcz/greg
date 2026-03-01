@@ -1,5 +1,5 @@
 export function prepareMenu(modules, base) {
-    const paths = Object.keys(modules).filter(p => !p.split('/').pop().startsWith('__'));
+    const paths = Object.keys(modules);
     const root = [];
 
     // Sort so index.md files are processed first — they define the folder nodes
@@ -101,29 +101,6 @@ export function getBreadcrumb(active, flat) {
     const last = parts[parts.length - 1];
     return last.charAt(0).toUpperCase() + last.slice(1);
 }
-
-// export function prepareVitestTree(results) {
-//     const root = [];
-
-//     results.forEach(testFile => {
-//         testFile.assertionResults.forEach(test => {
-//             let currentLevel = root;
-//             let idx = test.ancestorTitles.join('/');
-//             let child = currentLevel.find(child => child.link === idx);
-//             if (!child) {
-//                 child = {
-//                     label: test.ancestorTitles.toSpliced(-1),
-//                     link: idx,
-//                     children: []
-//                 };
-//                 currentLevel.push(child);
-//             }
-//             currentLevel = child.children;
-//         });
-//     });
-
-//     return root;
-// }
 
 function parseVitestResult(collection) {
     const root = {};

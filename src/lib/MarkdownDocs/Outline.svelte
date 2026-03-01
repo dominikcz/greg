@@ -81,28 +81,19 @@
 	});
 
 	// IntersectionObserver — highlight the topmost visible heading
-	let observer: IntersectionObserver | null = null;
-	const visible = new Set<string>();
-
-	function pickActive() {
-		if (!items.length) { activeId = ''; return; }
-		// Pick the first item (in document order) that is currently visible
-		const first = items.find(it => visible.has(it.id));
-		activeId = first?.id ?? '';
-	}
-
 	$effect(() => {
-		observer?.disconnect();
-		visible.clear();
 		if (!container || !items.length) return;
 
-		observer = new IntersectionObserver(
+		const visible = new Set<string>();
+
+		const observer = new IntersectionObserver(
 			(entries) => {
 				for (const e of entries) {
 					if (e.isIntersecting) visible.add(e.target.id);
 					else visible.delete(e.target.id);
 				}
-				pickActive();
+				// Pick the first item (in document order) that is currently visible
+				activeId = items.find(it => visible.has(it.id))?.id ?? '';
 			},
 			{ rootMargin: '0px 0px -80% 0px', threshold: 0 }
 		);
@@ -112,11 +103,11 @@
 			if (el) observer.observe(el);
 		}
 
-		return () => observer?.disconnect();
+		return () => observer.disconnect();
 	});
 
 	function scrollTo(id: string) {
-		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		container?.querySelector(`#${CSS.escape(id)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 	}
 
 	const minDepth = $derived(items.length ? Math.min(...items.map(i => i.depth)) : 2);

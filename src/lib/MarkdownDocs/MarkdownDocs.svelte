@@ -7,7 +7,7 @@
 	import { prepareMenu, flattenMenu, getBreadcrumb } from './docsUtils';
 	import 'github-markdown-css';
 	import './../scss/markdownDocs.scss';
-	import { Slot, setPortalsContext } from './../portal';
+	import { setPortalsContext } from './../portal';
 	import { Sun, Moon } from '@lucide/svelte';
 	import CarbonAds from '../components/CarbonAds.svelte';
 	import Outline from './Outline.svelte';
@@ -116,17 +116,11 @@
 
 	let title = $derived(getBreadcrumb(active, flat));
 
-	let aside: HTMLElement;
-	let splitter: HTMLElement;
+	let aside = $state<HTMLElement | undefined>(undefined);
+	let splitter = $state<HTMLElement | undefined>(undefined);
 	let dragging = false;
-	let moveX: number;
 
 	setPortalsContext();
-
-	$effect(() => {
-		window.addEventListener('popstate', handlePopState);
-		return () => window.removeEventListener('popstate', handlePopState);
-	});
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -136,23 +130,25 @@
 	}
 
 	$effect(() => {
+		window.addEventListener('popstate', handlePopState);
 		window.addEventListener('keydown', handleGlobalKeydown);
-		return () => window.removeEventListener('keydown', handleGlobalKeydown);
+		return () => {
+			window.removeEventListener('popstate', handlePopState);
+			window.removeEventListener('keydown', handleGlobalKeydown);
+		};
 	});
 
-	function hndMouseDown(e: MouseEvent) {
+	function hndMouseDown() {
 		dragging = true;
 	}
 
 	function hndMouseMove(e: MouseEvent) {
-		moveX = e.x;
-		if (dragging) {
-			aside.style.width = moveX - splitter.getBoundingClientRect().width / 2 + 'px';
-			e.preventDefault();
-		}
+		if (!dragging || !aside || !splitter) return;
+		aside.style.width = e.x - splitter.getBoundingClientRect().width / 2 + 'px';
+		e.preventDefault();
 	}
 
-	function hndMouseUp(e: MouseEvent) {
+	function hndMouseUp() {
 		dragging = false;
 	}
 
@@ -327,7 +323,7 @@
 				{@render children?.()}
 			{/if}
 		</main>
-		<aside class="greg-aside-outline" class:hidden={!outlineNorm && !carbonAds && !properties}>
+		<aside class="greg-aside-outline" class:hidden={!outlineNorm && !carbonAds}>
 			{#if outlineNorm}
 				<Outline
 					container={mainEl}
