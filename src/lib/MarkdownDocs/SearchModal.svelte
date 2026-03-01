@@ -35,8 +35,8 @@
     let query = $state('');
     let results = $state<SearchResult[]>([]);
     let selectedIndex = $state(0);
-    let inputEl: HTMLInputElement;
-    let listEl: HTMLUListElement;
+    let inputEl = $state<HTMLInputElement | undefined>(undefined);
+    let listEl = $state<HTMLUListElement | undefined>(undefined);
     let fuse: Fuse<SearchEntry> | null = null;
     let indexLoaded = $state(false);
     let indexError = $state(false);
@@ -244,7 +244,6 @@
 </script>
 
 {#if open}
-    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
         class="search-backdrop"
         onclick={handleBackdropClick}
@@ -252,6 +251,7 @@
         role="dialog"
         aria-modal="true"
         aria-label="Search"
+        tabindex="-1"
     >
         <div class="search-modal">
             <!-- Input row -->

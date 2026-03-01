@@ -9,16 +9,40 @@
 	import './../scss/markdownDocs.scss';
 	import { Slot, setPortalsContext } from './../portal';
 	import { Sun, Moon } from '@lucide/svelte';
+	import CarbonAds from '../components/CarbonAds.svelte';
+	import Outline from './Outline.svelte';
+
+	type CarbonAdsOptions = {
+		code: string;
+		placement: string;
+	};
+
+	type OutlineLevel = false | number | [number, number] | 'deep';
+	type OutlineOption = OutlineLevel | { level?: OutlineLevel; label?: string };
 
 	type Props = {
 		rootPath: string;
 		children?: Snippet;
-		properties?: Snippet;
 		version: string;
 		mainTitle?: string;
+		carbonAds?: CarbonAdsOptions;
+		/** VitePress-compatible outline option. false = disabled, [2,3] = default. */
+		outline?: OutlineOption;
 	};
 
-	let { children, rootPath = '/docs', properties, version = '', mainTitle = "Greg"}: Props = $props();
+	let { children, rootPath = '/docs', version = '', mainTitle = "Greg", carbonAds, outline = [2, 3] }: Props = $props();
+
+	// Resolve outline to { level, label } shape
+	const outlineNorm = $derived.by(() => {
+		if (outline === false) return null;
+		if (typeof outline === 'object' && !Array.isArray(outline) && ('level' in outline || 'label' in outline)) {
+			const o = outline as { level?: OutlineLevel; label?: string };
+			return { level: o.level ?? [2, 3] as [number, number], label: o.label ?? 'On this page' };
+		}
+		return { level: outline as OutlineLevel, label: 'On this page' };
+	});
+
+	let mainEl = $state<HTMLElement | undefined>(undefined);
 
 	const allModules = import.meta.glob('/docs/**/*.md');
 	// Filter out partials (files starting with __)
@@ -173,6 +197,71 @@
 		event.preventDefault();
 		handleCodeGroupClick(event as unknown as MouseEvent);
 	}
+
+	const EXTERNAL_RE = /^(?:[a-z][a-z\d+\-.]*:|\/{2})/i;
+
+	/**
+	 * Intercept clicks on <a> tags inside rendered markdown and perform
+	 * SPA navigation consistent with VitePress routing rules:
+	 *  - relative and absolute internal links → navigate()
+	 *  - .md / .html extensions are stripped
+	 *  - /path/index → /path (clean URLs)
+	 *  - hash-only links (#anchor) → smooth-scroll without navigation
+	 *  - external links are left to the browser
+	 */
+	function handleInternalLinks(event: MouseEvent) {
+		const target = event.target as HTMLElement | null;
+		const anchor = target?.closest('a');
+		if (!anchor) return;
+
+		const href = anchor.getAttribute('href');
+		if (!href) return;
+
+		// Leave external links and links with any explicit target to the browser
+		// (VitePress: {target="_self"} forces a real page load for non-SPA pages)
+		if (EXTERNAL_RE.test(href) || anchor.target) return;
+
+		// Hash-only (#section): scroll within the current page
+		if (href.startsWith('#')) {
+			event.preventDefault();
+			document.getElementById(href.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			return;
+		}
+
+		// Split path and hash fragment
+		const hashIdx = href.indexOf('#');
+		const pathPart = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
+		const hashPart = hashIdx >= 0 ? href.slice(hashIdx + 1) : '';
+
+		// Resolve path: absolute stays as-is, relative is resolved against the
+		// current page URL so the browser's URL resolution logic handles ../
+		let resolvedPath: string;
+		if (pathPart.startsWith('/')) {
+			resolvedPath = pathPart;
+		} else {
+			// Use URL API for correct relative-path resolution (handles ./ and ../)
+			try {
+				resolvedPath = new URL(pathPart, window.location.origin + active).pathname;
+			} catch {
+				return; // malformed URL, leave to browser
+			}
+		}
+
+		// VitePress: strip .md and .html extensions
+		resolvedPath = resolvedPath.replace(/\.(md|html)$/i, '');
+
+		// VitePress: /path/index → /path (clean URLs for index files)
+		resolvedPath = resolvedPath.replace(/\/index$/, '') || rootPath;
+
+		event.preventDefault();
+		navigate(resolvedPath);
+
+		if (hashPart) {
+			tick().then(() => setTimeout(() => {
+				document.getElementById(hashPart)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}, 120));
+		}
+	}
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
@@ -222,14 +311,15 @@
 		</aside>
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
 		<div class="splitter" bind:this={splitter} onmousedown={hndMouseDown}></div>
-		<main class:markdown-body={isMarkdown}>
+		<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+		<main bind:this={mainEl} class:markdown-body={isMarkdown} onclick={handleInternalLinks}>
 			{#if activeModule}
 				{#await activeModule()}
 					<div class="spinner-wrap">
 						<Spinner />
 					</div>
 				{:then mod}
-					{@const MdComponent = mod.default}
+					{@const MdComponent = (mod as any).default}
 					<MdComponent />
 				{/await}
 			{:else if title}
@@ -237,9 +327,22 @@
 				{@render children?.()}
 			{/if}
 		</main>
-		<aside class="properties">
-			{@render properties?.()}
-			<Slot name="properties" />
+		<aside class="greg-aside-outline" class:hidden={!outlineNorm && !carbonAds && !properties}>
+			{#if outlineNorm}
+				<Outline
+					container={mainEl}
+					level={outlineNorm.level}
+					label={outlineNorm.label}
+					{active}
+				/>
+			{/if}
+			{#if carbonAds}
+				<CarbonAds
+					code={carbonAds.code}
+					placement={carbonAds.placement}
+					{active}
+				/>
+			{/if}
 		</aside>
 	</div>
 	<SearchModal bind:open={searchOpen} onClose={closeSearch} onNavigate={navigateFromSearch} />
@@ -446,11 +549,16 @@
 		overflow-y: auto;
 		border-right: 1px solid var(--greg-border-color);
 
-		&.properties {
+		&.greg-aside-outline {
 			width: 280px;
 			border-right: none;
 			border-left: 1px solid var(--greg-border-color);
 			padding: 1rem;
+			overflow-y: auto;
+		}
+
+		&.hidden {
+			display: none;
 		}
 	}
 

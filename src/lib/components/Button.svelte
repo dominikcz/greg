@@ -31,6 +31,9 @@
     let isExternal = $derived(!!href && EXTERNAL_RE.test(href));
     let resolvedTarget = $derived(target ?? (isExternal ? '_blank' : undefined));
     let resolvedRel = $derived(rel ?? (isExternal ? 'noreferrer' : undefined));
+    let resolvedRole = $derived(
+        resolvedTag === 'a' || resolvedTag === 'button' ? undefined : 'button'
+    );
 </script>
 
 <svelte:element
@@ -39,6 +42,7 @@
     {href}
     target={resolvedTarget}
     rel={resolvedRel}
+    role={resolvedRole}
     {onclick}
 >
     {#if children}

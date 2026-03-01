@@ -8,6 +8,7 @@
 
 export { default as Badge }          from './Badge.svelte';
 export { default as Button }         from './Button.svelte';
+export { default as CarbonAds }      from './CarbonAds.svelte';
 export { default as Image }          from './Image.svelte';
 export { default as Link }           from './Link.svelte';
 export { default as Feature }        from './Feature.svelte';

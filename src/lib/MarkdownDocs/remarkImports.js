@@ -233,8 +233,26 @@ function inferLang(filePath, langOverride) {
 	return extToLang[ext] ?? ext.replace(/^\./, '') ?? '';
 }
 
+/** Reconstruct raw text from an inline mdast node (text, linkReference, image, etc.) */
+function inlineNodeText(node) {
+	if (!node) return '';
+	if (node.type === 'text' || node.type === 'inlineCode') return node.value ?? '';
+	if (node.type === 'linkReference') {
+		const label = node.label ?? node.identifier ?? '';
+		return `[${label}]`;
+	}
+	if (node.type === 'link') return node.children?.map(inlineNodeText).join('') ?? '';
+	if (node.children) return node.children.map(inlineNodeText).join('');
+	return '';
+}
+
 async function readText(filePath) {
-	return fs.readFile(filePath, 'utf8');
+	try {
+		return await fs.readFile(filePath, 'utf8');
+	} catch (err) {
+		if (err.code === 'ENOENT') return null;
+		throw err;
+	}
 }
 
 function parseSnippetSpec(raw) {
@@ -280,6 +298,15 @@ async function buildSnippetNode(rawSpec, currentDir, sourceRoot, docsDir) {
 	assertInsideRoot(absolutePath, sourceRoot);
 	let content = await readText(absolutePath);
 
+	if (content === null) {
+		return {
+			type: 'code',
+			lang: 'text',
+			meta: '',
+			value: `[remarkImports] File not found: ${absolutePath}`,
+		};
+	}
+
 	if (parsed.regionOrAnchor) {
 		content = selectRegion(content, parsed.regionOrAnchor);
 	}
@@ -313,10 +340,15 @@ async function buildIncludeNodes(rawSpec, currentDir, sourceRoot, docsDir) {
 	assertInsideRoot(absolutePath, sourceRoot);
 	let content = await readText(absolutePath);
 
+	if (content === null) {
+		return { nodes: [{ type: 'paragraph', children: [{ type: 'text', value: `[remarkImports] File not found: ${absolutePath}` }] }], includeDir: currentDir };
+	}
+
 	if (parsed.regionOrAnchor) {
 		const byRegion = selectRegion(content, parsed.regionOrAnchor);
 		content = byRegion === content ? selectMarkdownSectionByAnchor(content, parsed.regionOrAnchor) : byRegion;
 	}
+
 	if (parsed.rangePart) {
 		content = selectLines(content, parsed.rangePart);
 	}
@@ -336,11 +368,43 @@ function markNodesBaseDir(nodes, baseDir) {
 	}
 }
 
-/** Expand `$docs` alias in link/image URLs (remark AST). */
+const EXTERNAL_URL_RE = /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i;
+
+/**
+ * Normalize a link URL to match VitePress routing conventions:
+ *  - Strip .md extension   (e.g. ./routing.md  →  ./routing)
+ *  - Strip .html extension (e.g. ./routing.html →  ./routing)
+ *  - Collapse /index suffix (e.g. ./guide/index →  ./guide)
+ * Only applied to internal (non-external) links, not to images.
+ */
+function normalizeInternalLinkUrl(url) {
+	if (EXTERNAL_URL_RE.test(url)) return url;
+	// Separate the hash fragment, if any
+	const hashIdx = url.indexOf('#');
+	const pathPart = hashIdx >= 0 ? url.slice(0, hashIdx) : url;
+	const hashPart = hashIdx >= 0 ? url.slice(hashIdx) : '';
+
+	let normalized = pathPart
+		.replace(/\.(md|html)$/i, '')  // strip .md / .html
+		.replace(/\/index$/, '');      // /foo/index → /foo
+
+	return (normalized || '.') + hashPart;
+}
+
+/** Expand `$docs` alias in link/image URLs (remark AST), and normalize internal link URLs. */
 function expandAliasInUrls(node, docsDir) {
 	if ((node.type === 'link' || node.type === 'image') && typeof node.url === 'string') {
 		const expanded = expandDocsAlias(node.url, docsDir);
 		if (expanded !== node.url) node.url = expanded;
+	}
+	// Normalize internal link URLs to VitePress routing conventions (links only, not images).
+	// Skip normalization when the link has an explicit target attribute (e.g. {target="_self"}),
+	// which signals a non-VitePress page where the .html extension must be preserved.
+	if (node.type === 'link' && typeof node.url === 'string') {
+		const hasExplicitTarget = node.data?.hProperties?.target;
+		if (!hasExplicitTarget) {
+			node.url = normalizeInternalLinkUrl(node.url);
+		}
 	}
 }
 
@@ -354,13 +418,11 @@ async function transformChildren(children, currentDir, sourceRoot, docsDir, dept
 		// Expand $docs alias in links and images
 		expandAliasInUrls(node, docsDir);
 
-		if (
-			node?.type === 'paragraph' &&
-			Array.isArray(node.children) &&
-			node.children.length === 1 &&
-			node.children[0]?.type === 'text'
-		) {
-			const line = String(node.children[0].value ?? '').trim();
+		if (node?.type === 'paragraph' && Array.isArray(node.children)) {
+			// Reconstruct the raw line by joining all inline node values.
+			// This handles cases where remark-parse splits the line into multiple
+			// inline nodes, e.g. `[title]` becoming a linkReference child.
+			const line = node.children.map(inlineNodeText).join('').trim();
 			const snippetMatch = line.match(SNIPPET_RE);
 			if (snippetMatch?.[1]) {
 				const snippetNode = await buildSnippetNode(snippetMatch[1].trim(), nodeDir, sourceRoot, docsDir);

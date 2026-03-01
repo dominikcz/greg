@@ -9,6 +9,20 @@ import { remarkCodeMeta } from './src/lib/MarkdownDocs/remarkCodeMeta.js';
 import { remarkImports } from './src/lib/MarkdownDocs/remarkImports.js';
 
 import { remarkGlobalComponents } from './src/lib/MarkdownDocs/remarkGlobalComponents.js';
+import { remarkEscapeSvelte } from './src/lib/MarkdownDocs/remarkEscapeSvelte.js';
+import { remarkCustomAnchors } from './src/lib/MarkdownDocs/remarkCustomAnchors.js';
+import remarkAttr from 'remark-attr';
+import { remarkMathToHtml } from './src/lib/MarkdownDocs/remarkMathToHtml.js';
+
+// ── Greg config ────────────────────────────────────────────────────────────────
+// Mirrors the VitePress convention:  export default { markdown: { math: true } }
+const gregConfig = {
+	markdown: {
+		/** Enable $…$ / $$…$$ math rendering via MathJax SVG. Default: false. */
+		math: false,
+	},
+};
+// ───────────────────────────────────────────────────────────────────────────────
 
 const shikiTheme = 'github-dark';
 const shikiDefaultLang = 'txt';
@@ -78,10 +92,14 @@ const mdsvexOptions = {
 		},
 	},
 	remarkPlugins: [
+		remarkAttr,
 		[remarkImports, { sourceRoot: markdownSourceRoot, docsDir: markdownDocsDir }],
 		remarkGlobalComponents,
 		remarkCodeMeta,
 		remarkContainers,
+		remarkCustomAnchors,
+		...(gregConfig.markdown.math ? [remarkMathToHtml] : []),
+		// remarkEscapeSvelte,
 	],
 	rehypePlugins: [
 		rehypeSlug,
