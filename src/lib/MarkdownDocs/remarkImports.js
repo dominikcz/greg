@@ -1,5 +1,4 @@
 import fs from 'node:fs/promises';
-import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
@@ -28,206 +27,75 @@ const extToLang = {
 	'.yaml': 'yaml',
 };
 
-const MARKDOWN_EXTENSIONS = new Set(['.md', '.svx']);
-
 function escapeRegExp(value) {
 	return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function toPosix(value) {
-	return String(value ?? '').replace(/\\/g, '/');
-}
+// ── Path resolution (3 rules + guard) ──────────────────────────────
 
-function isWindowsAbsolute(value) {
-	return /^[a-zA-Z]:[\\/]/.test(value);
-}
+/**
+ * Derive the directory of the current .md file from VFile metadata.
+ *
+ * Handles three forms that mdsvex / vite-plugin-svelte may provide:
+ *   1. Filesystem absolute   C:\…\docs\md\file.md   /home/…/docs/md/file.md
+ *   2. Virtual absolute      /docs/md/file.md  (with docsDir prefix)
+ *                            /md/file.md       (without docsDir prefix)
+ *   3. Relative              md/file.md        (resolved via file.cwd)
+ *
+ * Falls back to <sourceRoot>/<docsDir> when no path info is available.
+ */
+function getCurrentDir(file, sourceRoot, docsDir) {
+	const docsRoot = path.resolve(sourceRoot, docsDir);
+	const raw =
+		file?.path ||
+		(Array.isArray(file?.history) && file.history.length > 0
+			? file.history[file.history.length - 1]
+			: null);
+	if (!raw) return docsRoot;
 
-function normalizeDocsDir(value) {
-	const normalized = toPosix(String(value ?? 'docs')).replace(/^\/+|\/+$/g, '');
-	return normalized || 'docs';
-}
+	const normalized = path.normalize(raw);
 
-function pickPreferredPath(candidates) {
-	const values = candidates.filter(Boolean);
-	for (const candidate of values) {
-		if (existsSync(candidate)) return candidate;
-	}
-	return values[0] ?? null;
-}
-
-function toAbsoluteFilePath(candidate, sourceRoot, docsDir) {
-	const raw = String(candidate ?? '').trim();
-	if (!raw) return null;
-
-	if (raw.startsWith('file://')) {
-		try {
-			const url = new URL(raw);
-			return path.normalize(decodeURIComponent(url.pathname));
-		} catch {
-			return null;
-		}
+	// Real filesystem absolute (starts inside sourceRoot or has a drive letter)
+	if (
+		path.isAbsolute(normalized) &&
+		(normalized.startsWith(sourceRoot) || /^[a-zA-Z]:/.test(normalized))
+	) {
+		return path.dirname(normalized);
 	}
 
-	if (isWindowsAbsolute(raw)) {
-		return path.normalize(raw);
+	// Virtual absolute  /docs/… or /markdown/…
+	if (raw.startsWith('/')) {
+		const stripped = raw.replace(/^\/+/, '');
+		const firstSeg = stripped.split(/[\\/]/)[0];
+		const base = firstSeg === docsDir ? sourceRoot : docsRoot;
+		return path.dirname(path.join(base, stripped));
 	}
 
-	const posix = toPosix(raw);
-	if (posix.startsWith('/')) {
-		const relative = posix.replace(/^\/+/, '');
-		const fromRoot = path.resolve(sourceRoot, `.${posix}`);
-		const fromDocsDir = relative.startsWith(`${docsDir}/`) ? null : path.resolve(sourceRoot, docsDir, relative);
-		return pickPreferredPath([fromDocsDir, fromRoot]);
-	}
-
-	if (posix.includes('/')) {
-		const fromRoot = path.resolve(sourceRoot, posix);
-		const fromDocsDir = posix.startsWith(`${docsDir}/`) ? null : path.resolve(sourceRoot, docsDir, posix);
-		return pickPreferredPath([fromRoot, fromDocsDir]);
-	}
-
-	return null;
+	// Relative — resolve against file.cwd or sourceRoot
+	return path.dirname(path.resolve(file?.cwd || sourceRoot, raw));
 }
 
-function isLikelyDocsRoute(absolutePath, sourceRoot, docsDir) {
-	const relative = toPosix(path.relative(sourceRoot, absolutePath));
-	if (!relative || relative.startsWith('..')) return false;
-	return relative === docsDir || relative.startsWith(`${docsDir}/`);
+/**
+ * Resolve an import specifier to an absolute file path.
+ *
+ *   @/path  or  @path   →  <sourceRoot>/path
+ *   /path               →  <docsRoot>/path
+ *   ./path  ../path     →  <currentDir>/path
+ */
+function resolveImportPath(specPath, currentDir, sourceRoot, docsDir) {
+	if (specPath === '@') return sourceRoot;
+	if (specPath.startsWith('@/')) return path.resolve(sourceRoot, specPath.slice(2));
+	if (specPath.startsWith('@')) return path.resolve(sourceRoot, specPath.slice(1));
+	if (specPath.startsWith('/')) return path.resolve(sourceRoot, docsDir, specPath.slice(1));
+	return path.resolve(currentDir, specPath);
 }
 
-function getDocsRoot(sourceRoot, docsDir) {
-	return path.resolve(sourceRoot, docsDir);
-}
-
-function isPathInside(childPath, parentPath) {
-	const relative = path.relative(parentPath, childPath);
-	return !!relative && !relative.startsWith('..') && !path.isAbsolute(relative);
-}
-
-function findMarkdownFileByBaseName(docsRoot, baseName) {
-	if (!existsSync(docsRoot)) return null;
-
-	const wantedNames = new Set();
-	if (baseName.endsWith('.md') || baseName.endsWith('.svx')) {
-		wantedNames.add(baseName);
-	} else {
-		wantedNames.add(`${baseName}.md`);
-		wantedNames.add(`${baseName}.svx`);
+/** Throw if resolvedPath escapes the source root. */
+function assertInsideRoot(resolvedPath, sourceRoot) {
+	const rel = path.relative(sourceRoot, resolvedPath);
+	if (rel.startsWith('..') || path.isAbsolute(rel)) {
+		throw new Error(`Import path "${resolvedPath}" escapes the source root "${sourceRoot}"`);
 	}
-
-	const matches = [];
-	const stack = [docsRoot];
-
-	while (stack.length && matches.length < 2) {
-		const current = stack.pop();
-		if (!current) continue;
-
-		for (const entry of readdirSync(current, { withFileTypes: true })) {
-			const absolute = path.join(current, entry.name);
-			if (entry.isDirectory()) {
-				stack.push(absolute);
-				continue;
-			}
-			if (entry.isFile() && wantedNames.has(entry.name)) {
-				matches.push(absolute);
-				if (matches.length >= 2) break;
-			}
-		}
-	}
-
-	return matches.length === 1 ? matches[0] : null;
-}
-
-function findFileByRelativeTail(docsRoot, specPath) {
-	if (!existsSync(docsRoot)) return null;
-
-	const raw = toPosix(String(specPath ?? '').trim());
-	if (!raw) return null;
-	const tail = raw.replace(/^\.\//, '').replace(/^\/+/, '');
-	if (!tail) return null;
-
-	const matches = [];
-	const stack = [docsRoot];
-
-	while (stack.length && matches.length < 2) {
-		const current = stack.pop();
-		if (!current) continue;
-
-		for (const entry of readdirSync(current, { withFileTypes: true })) {
-			const absolute = path.join(current, entry.name);
-			if (entry.isDirectory()) {
-				stack.push(absolute);
-				continue;
-			}
-			if (!entry.isFile()) continue;
-
-			const relative = toPosix(path.relative(docsRoot, absolute));
-			if (relative === tail || relative.endsWith(`/${tail}`)) {
-				matches.push(absolute);
-				if (matches.length >= 2) break;
-			}
-		}
-	}
-
-	return matches.length === 1 ? matches[0] : null;
-}
-
-function getMarkdownNameCandidates(file) {
-	const names = [];
-	const data = file?.data ?? {};
-
-	if (typeof file?.basename === 'string') names.push(file.basename);
-	if (typeof file?.stem === 'string' && file.stem) names.push(file.stem);
-	if (typeof data.basename === 'string') names.push(data.basename);
-	if (typeof data.stem === 'string' && data.stem) names.push(data.stem);
-
-	return names
-		.map((value) => String(value).trim())
-		.filter(Boolean)
-		.map((value) => value.split(/[?#]/, 1)[0]);
-}
-
-function getSourceDirFromVFile(file, sourceRoot, docsDir) {
-	const candidates = [];
-
-	if (file?.path) candidates.push(file.path);
-	if (Array.isArray(file?.history)) candidates.push(...file.history);
-
-	const data = file?.data ?? {};
-	if (data.path) candidates.push(data.path);
-	if (data.filePath) candidates.push(data.filePath);
-	if (data.filepath) candidates.push(data.filepath);
-	if (data.filename) candidates.push(data.filename);
-
-	for (const candidate of candidates) {
-		const absolute = toAbsoluteFilePath(candidate, sourceRoot, docsDir);
-		if (!absolute) continue;
-
-		if (isLikelyDocsRoute(absolute, sourceRoot, docsDir)) {
-			const docsRoot = getDocsRoot(sourceRoot, docsDir);
-			if (path.normalize(absolute) === path.normalize(docsRoot)) {
-				return docsRoot;
-			}
-			return path.dirname(absolute);
-		}
-
-		const ext = path.extname(absolute).toLowerCase();
-		if (MARKDOWN_EXTENSIONS.has(ext)) {
-			return path.dirname(absolute);
-		}
-	}
-
-	const docsRoot = getDocsRoot(sourceRoot, docsDir);
-	for (const name of getMarkdownNameCandidates(file)) {
-		const found = findMarkdownFileByBaseName(docsRoot, name);
-		if (!found) continue;
-		const dir = path.dirname(found);
-		if (isPathInside(dir, docsRoot) || path.normalize(dir) === path.normalize(docsRoot)) {
-			return dir;
-		}
-	}
-
-	return sourceRoot;
 }
 
 function parseTitle(value) {
@@ -356,37 +224,6 @@ async function readText(filePath) {
 	return fs.readFile(filePath, 'utf8');
 }
 
-function resolvePath(specPath, currentDir, sourceRoot) {
-	if (specPath === '@') {
-		return sourceRoot;
-	}
-	if (specPath.startsWith('@/')) {
-		return path.resolve(sourceRoot, specPath.slice(2));
-	}
-	if (specPath.startsWith('@')) {
-		return path.resolve(sourceRoot, specPath.slice(1));
-	}
-	if (path.isAbsolute(specPath)) {
-		return specPath;
-	}
-	return path.resolve(currentDir, specPath);
-}
-
-function resolvePathWithFallback(specPath, currentDir, sourceRoot, docsDir) {
-	const resolved = resolvePath(specPath, currentDir, sourceRoot);
-	if (specPath.startsWith('@') || path.isAbsolute(specPath)) {
-		return resolved;
-	}
-
-	if (existsSync(resolved)) {
-		return resolved;
-	}
-
-	const docsRoot = getDocsRoot(sourceRoot, docsDir);
-	const fallback = findFileByRelativeTail(docsRoot, specPath);
-	return fallback ?? resolved;
-}
-
 function parseSnippetSpec(raw) {
 	const withTitle = parseTitle(raw);
 	const withBraces = parseBraces(withTitle.text);
@@ -426,7 +263,8 @@ function buildCodeMeta(title, metaTail) {
 
 async function buildSnippetNode(rawSpec, currentDir, sourceRoot, docsDir) {
 	const parsed = parseSnippetSpec(rawSpec);
-	const absolutePath = resolvePathWithFallback(parsed.filePart, currentDir, sourceRoot, docsDir);
+	const absolutePath = resolveImportPath(parsed.filePart, currentDir, sourceRoot, docsDir);
+	assertInsideRoot(absolutePath, sourceRoot);
 	let content = await readText(absolutePath);
 
 	if (parsed.regionOrAnchor) {
@@ -458,7 +296,8 @@ function parseIncludeSpec(raw) {
 
 async function buildIncludeNodes(rawSpec, currentDir, sourceRoot, docsDir) {
 	const parsed = parseIncludeSpec(rawSpec);
-	const absolutePath = resolvePathWithFallback(parsed.filePart, currentDir, sourceRoot, docsDir);
+	const absolutePath = resolveImportPath(parsed.filePart, currentDir, sourceRoot, docsDir);
+	assertInsideRoot(absolutePath, sourceRoot);
 	let content = await readText(absolutePath);
 
 	if (parsed.regionOrAnchor) {
@@ -526,10 +365,10 @@ async function transformChildren(children, currentDir, sourceRoot, docsDir, dept
 
 export function remarkImports(options = {}) {
 	const sourceRoot = path.resolve(options.sourceRoot ?? options.rootDir ?? process.cwd());
-	const docsDir = normalizeDocsDir(options.docsDir ?? 'docs');
+	const docsDir = String(options.docsDir ?? 'docs').replace(/^\/+|\/+$/g, '') || 'docs';
 
 	return async (tree, file) => {
-		const currentDir = getSourceDirFromVFile(file, sourceRoot, docsDir);
+		const currentDir = getCurrentDir(file, sourceRoot, docsDir);
 		await transformChildren(tree.children, currentDir, sourceRoot, docsDir, 0);
 	};
 }

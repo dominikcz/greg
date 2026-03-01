@@ -365,29 +365,22 @@ describe('imports — snippets and markdown includes', () => {
 		expect(html).toContain('export default foo');
 	});
 
-	it('resolves relative snippet path using markdown basename fallback', async () => {
-		const html = await processMarkdown('<<< ./snippet.js', {
-			imports: {
-				sourceRoot: process.cwd(),
-				docsDir: 'docs',
-			},
-			vfile: {
-				basename: 'includes.md',
-			},
+	it('resolves snippet path with absolute / prefix from docsRoot', async () => {
+		const html = await processMarkdown('<<< /markdown/snippet.js', {
+			filename: testFile,
+			imports: { sourceRoot: process.cwd(), docsDir: 'docs' },
 		});
 		expect(html).toContain('function foo()');
 		expect(html).toContain('export default foo');
 	});
 
-	it('resolves relative snippet path using docsDir fallback search', async () => {
-		const html = await processMarkdown('<<< ./snippet.js', {
-			imports: {
-				sourceRoot: process.cwd(),
-				docsDir: 'docs',
-			},
-		});
-		expect(html).toContain('function foo()');
-		expect(html).toContain('export default foo');
+	it('throws on import path that escapes source root', async () => {
+		await expect(
+			processMarkdown('<<< ../../../etc/passwd', {
+				filename: '/docs/markdown/includes.md',
+				imports: { sourceRoot: process.cwd(), docsDir: 'docs' },
+			})
+		).rejects.toThrow('escapes the source root');
 	});
 
 	it('imports markdown via <!--@include: ...--> and processes it as normal markdown', async () => {
