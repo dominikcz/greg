@@ -189,6 +189,15 @@
         @include greg-light-markdown-vars;
     }
 
+    pre {
+        code {
+            display: block;
+            overflow: scroll;
+            padding: var(--base-size-16);
+            margin: 0;
+        }
+    }
+
     :not(pre)>code {
         background-color: var(--greg-code-background);
         color: var(--greg-code-inline-color);
@@ -200,7 +209,9 @@
     }
 
     pre {
-        overflow: initial;
+        overflow: visible;
+        scrollbar-gutter: stable;
+        padding: 0;
     }
 
     th {
