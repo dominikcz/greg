@@ -16,9 +16,8 @@ const COMPONENTS_IMPORT =
   `SocialLink, SocialLinks, TeamMember, TeamMembers, ` +
   `TeamPage, TeamPageTitle, TeamPageSection } from '$components/index.js';`;
 
-const SCRIPT_OPEN_RE  = /^<script(\b[^>]*)>/i;
+const SCRIPT_OPEN_RE = /^<script(\b[^>]*)>/i;
 const SCRIPT_SETUP_ATTR_RE = /\bsetup\b/i;
-const SCRIPT_CLOSE_RE = /<\/script\s*>/i;
 
 /**
  * Return the index of the first `html` node whose value begins with

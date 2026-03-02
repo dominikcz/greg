@@ -1,31 +1,35 @@
 /**
- * Remark + Rehype plugins for VitePress-style ::: containers.
+ * Remark + Rehype plugins for VitePress-style containers and GitHub-flavored alerts.
  *
  * Architecture: two-phase, no inner sub-pipeline needed.
  *
  * 1. remarkContainers (remark plugin)
- *    Finds ::: syntax and wraps inner mdast nodes in a custom
- *    `containerBlock` node. Inner content stays as real mdast nodes
- *    so the normal pipeline processes them (rehype-shiki, rehype-slug, etc.)
+ *    - Pass 0: converts GitHub-flavored alert blockquotes (`> [!NOTE]`) into
+ *      containerBlock nodes.
+ *    - Pass 1 & 2: converts `:::` fenced containers into containerBlock nodes.
+ *    Inner content stays as real mdast so the normal pipeline processes it
+ *    (rehype-shiki, rehype-slug, etc.)
  *
  * 2. rehypeContainers (rehype plugin)
  *    Visits `container-block` hast elements and emits the final
  *    <div class="custom-block …">…</div> or <details>…</details> HTML.
  *
- * Handles two AST shapes produced by remark:
+ * ::: container shapes produced by remark:
  *
- * A) Single paragraph (content has no blank lines — remark collapses to one node):
+ * A) Single paragraph (no blank lines — remark collapses to one node):
  *    paragraph { text: "::: info\nContent\n:::" }
  *
- * B) Multi-node span (content has blank lines or block elements like code fences):
+ * B) Multi-node span (blank lines or block elements inside):
  *    paragraph { text: "::: info Title" }
- *    ... block content nodes ...
+ *    ... block nodes ...
  *    paragraph { text: ":::" }
  *
  * Does NOT require remark-directive or any sub-pipeline.
  */
 
 import { visit } from 'unist-util-visit';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const defaultLabels = {
 	infoLabel: 'INFO',
@@ -36,8 +40,11 @@ const defaultLabels = {
 };
 
 const knownTypes = ['info', 'tip', 'warning', 'danger', 'details'];
+
 const OPEN_LINE_RE = /^:::[ \t]+(\w+)(?:[ \t]+(.+?))?[ \t]*$/;
 const CLOSE_LINE_RE = /^:::[ \t]*$/;
+
+/** Maps GitHub alert type names to VitePress container types. */
 const githubAlertTypeMap = {
 	note: 'info',
 	tip: 'tip',
@@ -46,21 +53,24 @@ const githubAlertTypeMap = {
 	caution: 'danger',
 };
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 function getDefaultLabel(type, labels) {
-	return {
-		info: labels.infoLabel,
-		tip: labels.tipLabel,
-		warning: labels.warningLabel,
-		danger: labels.dangerLabel,
-		details: labels.detailsLabel,
-	}[type] ?? type.toUpperCase();
+	return (
+		{
+			info: labels.infoLabel,
+			tip: labels.tipLabel,
+			warning: labels.warningLabel,
+			danger: labels.dangerLabel,
+			details: labels.detailsLabel,
+		}[type] ?? type.toUpperCase()
+	);
 }
 
-/** Creates a custom mdast node that carries container type/title + inner mdast children. */
+/** Creates a containerBlock mdast node carrying type/title + inner mdast children. */
 function containerBlockNode(type, rawTitle, children) {
 	return {
 		type: 'containerBlock',
-		containerType: type,
 		rawTitle,
 		data: {
 			hName: 'div',
@@ -74,6 +84,7 @@ function containerBlockNode(type, rawTitle, children) {
 	};
 }
 
+/** Recursively extracts plain text from an mdast node. */
 function nodeToText(node) {
 	if (node.type === 'text' || node.type === 'inlineCode') return node.value ?? '';
 	if (node.children) return node.children.map(nodeToText).join('');
@@ -81,83 +92,63 @@ function nodeToText(node) {
 }
 
 /**
- * Extracts the [!TYPE] label from the first child of a paragraph.
+ * Tries to parse a GitHub-flavored alert blockquote node.
  *
- * remark may parse `[!NOTE]` either as:
- *   - a plain `text` node with value `[!NOTE]`  (rare)
- *   - a `linkReference` node with child text `!NOTE` (common — remark treats it
- *     as an unresolved link reference)
+ * remark parses `[!NOTE]` as a `linkReference` (unresolved link), not plain
+ * text, so we handle both:
+ *   - `text`          node with value `[!NOTE]…`
+ *   - `linkReference` node whose text content is `!NOTE`
  *
- * Returns { alertKey, remainderChildren } or null.
+ * Returns `{ mappedType, title, innerNodes }` or `null`.
  */
-function extractAlertLabel(paragraphNode) {
-	const children = paragraphNode?.children;
-	if (!Array.isArray(children) || children.length === 0) return null;
+function parseGithubAlert(node) {
+	if (node?.type !== 'blockquote' || !node.children?.length) return null;
 
-	const first = children[0];
+	const firstPara = node.children[0];
+	if (firstPara?.type !== 'paragraph') return null;
 
-	// Case A: plain text "[!NOTE]…"
+	const paraChildren = firstPara.children ?? [];
+	const first = paraChildren[0];
+	if (!first) return null;
+
+	let alertKey, remainderChildren;
+
 	if (first.type === 'text') {
+		// "[!NOTE] some text" collapsed into a text node
 		const m = first.value.match(/^\[!([a-zA-Z]+)\]\s*/);
 		if (!m) return null;
-		const alertKey = m[1].toLowerCase();
-		// Remainder is the rest of the text in the same node + any siblings
-		const restText = first.value.slice(m[0].length);
-		const remainderChildren = restText
-			? [{ ...first, value: restText }, ...children.slice(1)]
-			: children.slice(1);
-		return { alertKey, remainderChildren };
-	}
-
-	// Case B: linkReference "[!NOTE]" (remark's normal parse result)
-	if (first.type === 'linkReference') {
-		const innerText = nodeToText(first); // e.g. "!NOTE"
-		const lm = innerText.match(/^!([a-zA-Z]+)$/);
-		if (!lm) return null;
-		const alertKey = lm[1].toLowerCase();
-		// Skip/trim soft-break immediately after the label if present
-		let rest = children.slice(1);
+		alertKey = m[1].toLowerCase();
+		const rest = first.value.slice(m[0].length);
+		remainderChildren = rest
+			? [{ ...first, value: rest }, ...paraChildren.slice(1)]
+			: paraChildren.slice(1);
+	} else if (first.type === 'linkReference') {
+		// remark's normal parse: `[!NOTE]` → linkReference{ label: "!NOTE" }
+		const m = nodeToText(first).match(/^!([a-zA-Z]+)$/);
+		if (!m) return null;
+		alertKey = m[1].toLowerCase();
+		// Trim leading soft-break / newline between `[!TYPE]` and content
+		let rest = paraChildren.slice(1);
 		if (rest[0]?.type === 'break' || rest[0]?.type === 'softbreak') {
 			rest = rest.slice(1);
 		} else if (rest[0]?.type === 'text' && rest[0].value.startsWith('\n')) {
 			const trimmed = rest[0].value.slice(1);
 			rest = trimmed ? [{ ...rest[0], value: trimmed }, ...rest.slice(1)] : rest.slice(1);
 		}
-		return { alertKey, remainderChildren: rest };
-	}
-
-	return null;
-}
-
-function parseGithubAlertFromBlockquote(node) {
-	if (node?.type !== 'blockquote' || !Array.isArray(node.children) || node.children.length === 0) {
+		remainderChildren = rest;
+	} else {
 		return null;
 	}
 
-	const firstPara = node.children[0];
-	if (!firstPara || firstPara.type !== 'paragraph') return null;
-
-	const extracted = extractAlertLabel(firstPara);
-	if (!extracted) return null;
-
-	const { alertKey, remainderChildren } = extracted;
 	const mappedType = githubAlertTypeMap[alertKey];
 	if (!mappedType) return null;
 
-	const title = alertKey.toUpperCase();
+	const innerNodes = [
+		...(remainderChildren.length ? [{ type: 'paragraph', children: remainderChildren }] : []),
+		...node.children.slice(1),
+	];
 
-	// Build inner mdast nodes:
-	// - if there is inline content on the same line as [!TYPE], wrap it in a paragraph
-	// - keep any subsequent block children from the blockquote
-	const subsequentBlocks = node.children.slice(1);
-	const innerNodes = [];
-
-	if (remainderChildren.length > 0) {
-		innerNodes.push({ type: 'paragraph', children: remainderChildren });
-	}
-	innerNodes.push(...subsequentBlocks);
-
-	return { mappedType, title, innerNodes };
+	return { mappedType, title: alertKey.toUpperCase(), innerNodes };
 }
 
 // ─── Remark plugin ────────────────────────────────────────────────────────────
@@ -166,38 +157,35 @@ export function remarkContainers(userOptions = {}) {
 	return (tree) => {
 		const children = tree.children;
 
-		// Pass 0: GitHub-flavored alerts (blockquote form)
+		// Pass 0 — GitHub-flavored alerts: `> [!NOTE]`
 		for (let i = 0; i < children.length; i++) {
-			const parsed = parseGithubAlertFromBlockquote(children[i]);
+			const parsed = parseGithubAlert(children[i]);
 			if (!parsed) continue;
-
-			children.splice(
-				i,
-				1,
-				containerBlockNode(parsed.mappedType, parsed.title, parsed.innerNodes)
-			);
+			children.splice(i, 1, containerBlockNode(parsed.mappedType, parsed.title, parsed.innerNodes));
 		}
 
-		// Pass 1: single-paragraph containers (no blank lines — remark collapses to one paragraph)
+		// Pass 1 — single-paragraph ::: containers (no blank lines inside)
 		for (let i = 0; i < children.length; i++) {
 			const node = children[i];
 			if (node.type !== 'paragraph') continue;
 
 			const firstChild = node.children?.[0];
-			if (!firstChild || firstChild.type !== 'text') continue;
+			if (firstChild?.type !== 'text') continue;
+
 			const firstLine = firstChild.value.split('\n')[0].trim();
 			const openMatch = firstLine.match(OPEN_LINE_RE);
 			if (!openMatch) continue;
 
 			const lastChild = node.children[node.children.length - 1];
-			if (!lastChild || lastChild.type !== 'text') continue;
+			if (lastChild?.type !== 'text') continue;
+
 			const lastLine = lastChild.value.split('\n').at(-1).trim();
 			if (!CLOSE_LINE_RE.test(lastLine)) continue;
 
 			const type = openMatch[1].toLowerCase();
 			if (!knownTypes.includes(type)) continue;
 
-			// Strip open/close lines, keep remaining inline nodes as mdast children
+			// Strip the opening and closing ::: lines; collect the inline nodes in between.
 			const innerChildren = [];
 			for (let ci = 0; ci < node.children.length; ci++) {
 				const c = node.children[ci];
@@ -205,39 +193,39 @@ export function remarkContainers(userOptions = {}) {
 				const isLast = ci === node.children.length - 1;
 
 				if (isFirst && isLast) {
-					const afterFirst = c.value.slice(c.value.indexOf('\n') + 1);
-					const beforeLast = afterFirst.slice(0, afterFirst.lastIndexOf('\n'));
-					if (beforeLast.trim()) innerChildren.push({ ...c, value: beforeLast });
+					const afterOpen = c.value.slice(c.value.indexOf('\n') + 1);
+					const content = afterOpen.slice(0, afterOpen.lastIndexOf('\n'));
+					if (content.trim()) innerChildren.push({ ...c, value: content });
 				} else if (isFirst) {
-					const afterFirst = c.value.slice(c.value.indexOf('\n') + 1);
-					if (afterFirst) innerChildren.push({ ...c, value: afterFirst });
+					const afterOpen = c.value.slice(c.value.indexOf('\n') + 1);
+					if (afterOpen) innerChildren.push({ ...c, value: afterOpen });
 				} else if (isLast) {
-					const beforeLast = c.value.slice(0, c.value.lastIndexOf('\n'));
-					if (beforeLast) innerChildren.push({ ...c, value: beforeLast });
+					const beforeClose = c.value.slice(0, c.value.lastIndexOf('\n'));
+					if (beforeClose) innerChildren.push({ ...c, value: beforeClose });
 				} else {
 					innerChildren.push(c);
 				}
 			}
 
-			// Wrap inline children in a paragraph so remarkRehype processes them normally
 			const innerNodes = innerChildren.length
 				? [{ type: 'paragraph', children: innerChildren }]
 				: [];
 
-			children.splice(i, 1, containerBlockNode(type, openMatch[2] || '', innerNodes));
+			children.splice(i, 1, containerBlockNode(type, openMatch[2] ?? '', innerNodes));
 		}
 
-		// Pass 2: multi-node spans (open para + block content + close para)
+		// Pass 2 — multi-node ::: containers (blank lines or block elements inside)
 		const spans = [];
 		const stack = [];
 		for (let i = 0; i < children.length; i++) {
 			const node = children[i];
 			if (node.type !== 'paragraph') continue;
 			const text = nodeToText(node).trim();
-			if (text.includes('\n')) continue; // handled in Pass 1
+			if (text.includes('\n')) continue; // already handled in Pass 1
+
 			const openMatch = text.match(OPEN_LINE_RE);
 			if (openMatch) {
-				stack.push({ openIdx: i, type: openMatch[1], title: openMatch[2] || '' });
+				stack.push({ openIdx: i, type: openMatch[1], title: openMatch[2] ?? '' });
 				continue;
 			}
 			if (CLOSE_LINE_RE.test(text) && stack.length > 0) {
@@ -245,8 +233,7 @@ export function remarkContainers(userOptions = {}) {
 				if (stack.length === 0) spans.push({ ...frame, closeIdx: i });
 			}
 		}
-		for (const span of spans.reverse()) {
-			const { openIdx, closeIdx, type, title: rawTitle } = span;
+		for (const { openIdx, closeIdx, type, title: rawTitle } of spans.reverse()) {
 			const lcType = type.toLowerCase();
 			if (!knownTypes.includes(lcType)) continue;
 			const innerNodes = children.slice(openIdx + 1, closeIdx);
@@ -256,25 +243,21 @@ export function remarkContainers(userOptions = {}) {
 }
 
 // ─── Rehype plugin ────────────────────────────────────────────────────────────
-// Runs after all other rehype plugins (shiki, slug, etc.) have processed children.
-// Replaces the intermediate <div class="container-block"> with the final markup.
+// Runs after rehype-shiki, rehype-slug, etc. have processed the inner content.
+// Replaces <div class="container-block"> with the final custom-block markup.
 
 export function rehypeContainers(userOptions = {}) {
 	const labels = { ...defaultLabels, ...userOptions };
 
 	return (tree) => {
 		visit(tree, 'element', (node, index, parent) => {
-			if (
-				node.tagName !== 'div' ||
-				!node.properties?.className?.includes('container-block')
-			) return;
+			if (node.tagName !== 'div' || !node.properties?.className?.includes('container-block')) return;
 
 			const type = node.properties['data-type'];
 			const rawTitle = node.properties['data-title'] ?? '';
 
 			const isOpen = /\{open\}/i.test(rawTitle);
-			let title = rawTitle.replace(/\s*\{open\}\s*$/i, '').trim();
-			if (!title) title = getDefaultLabel(type, labels);
+			const title = rawTitle.replace(/\s*\{open\}\s*$/i, '').trim() || getDefaultLabel(type, labels);
 
 			if (type === 'details') {
 				parent.children.splice(index, 1, {

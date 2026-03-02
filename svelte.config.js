@@ -7,7 +7,6 @@ import { remarkContainers, rehypeContainers } from './src/lib/MarkdownDocs/remar
 import rehypeCodeGroup from './src/lib/MarkdownDocs/rehypeCodeGroup.js';
 import { remarkCodeMeta } from './src/lib/MarkdownDocs/remarkCodeMeta.js';
 import { remarkImports } from './src/lib/MarkdownDocs/remarkImports.js';
-
 import { remarkGlobalComponents } from './src/lib/MarkdownDocs/remarkGlobalComponents.js';
 import { remarkCustomAnchors } from './src/lib/MarkdownDocs/remarkCustomAnchors.js';
 import { remarkInlineAttrs } from './src/lib/MarkdownDocs/remarkInlineAttrs.js';
@@ -77,17 +76,15 @@ const highlighter = await createHighlighter({
 const mdsvexOptions = {
 	highlight: {
 		highlighter: (code, lang = shikiDefaultLang, metastring = '') => {
-			const parsed = parseFenceInfo(lang, metastring);
-			const normalizedLang = parsed.lang;
-			const mappedLang = shikiLangAliases[normalizedLang] ?? normalizedLang;
-			const safeLang = highlighter.getLoadedLanguages().includes(normalizedLang) ? normalizedLang : shikiDefaultLang;
+			const { lang: rawLang, title } = parseFenceInfo(lang, metastring);
+			const mappedLang = shikiLangAliases[rawLang] ?? rawLang;
+			const loadedLangs = highlighter.getLoadedLanguages();
+			const safeLang = loadedLangs.includes(mappedLang) ? mappedLang
+				: loadedLangs.includes(rawLang) ? rawLang
+				: shikiDefaultLang;
 			const html = escapeSvelte(
-				injectCodeMetadata(highlighter.codeToHtml(code, {
-					lang: highlighter.getLoadedLanguages().includes(mappedLang) ? mappedLang : safeLang,
-					theme: shikiTheme,
-				}), mappedLang, parsed.title)
+				injectCodeMetadata(highlighter.codeToHtml(code, { lang: safeLang, theme: shikiTheme }), mappedLang, title)
 			);
-
 			return `{@html \`${html}\` }`;
 		},
 	},
@@ -111,10 +108,7 @@ const mdsvexOptions = {
 }
 /** @type {import("@sveltejs/vite-plugin-svelte").SvelteConfig} */
 export default {
-  extensions: ['.svelte', '.svx', '.md'],
-  // Consult https://svelte.dev/docs#compile-time-svelte-preprocess
-  // for more information about preprocessors
-  preprocess: mdsvex({ extensions: ['.svx', '.md'], ...mdsvexOptions }),
-}
-
+	extensions: ['.svelte', '.svx', '.md'],
+	preprocess: mdsvex({ extensions: ['.svx', '.md'], ...mdsvexOptions }),
+};
 

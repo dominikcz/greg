@@ -136,5 +136,3 @@ export function remarkMathToHtml() {
 		}
 	};
 }
-
-export default remarkMathToHtml;

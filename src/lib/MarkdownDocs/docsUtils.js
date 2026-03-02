@@ -1,3 +1,7 @@
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export function prepareMenu(modules, base) {
     const paths = Object.keys(modules);
     const root = [];
@@ -9,63 +13,55 @@ export function prepareMenu(modules, base) {
         return aIdx - bIdx;
     });
 
-    sorted.forEach(path => {
-        // path like: /docs/folder1/test.md  (base = '/docs')
-        const relativePath = path.startsWith(base) ? path.slice(base.length) : path;
+    for (const filePath of sorted) {
+        // filePath like: /docs/folder1/test.md  (base = '/docs')
+        const relativePath = filePath.startsWith(base) ? filePath.slice(base.length) : filePath;
         // parts: ['folder1', 'test.md'] or ['index.md'] or ['folder1', 'index.md']
         const parts = relativePath.replace(/^\//, '').split('/').filter(Boolean);
 
         let currentLevel = root;
 
-        parts.forEach((part, idx) => {
+        for (let idx = 0; idx < parts.length; idx++) {
+            const part = parts[idx];
             const isLast = idx === parts.length - 1;
-            const isIndex = part === 'index.md';
 
             if (isLast) {
-                if (isIndex) {
+                if (part === 'index.md') {
                     // index.md → represents the parent folder (or root if idx === 0)
-                    const folderParts = parts.slice(0, idx); // folder segments before index.md
-                    const link = folderParts.length
-                        ? base + '/' + folderParts.join('/')
-                        : base;
-                    const label = folderParts.length
+                    const folderParts = parts.slice(0, idx);
+                    const link = folderParts.length ? base + '/' + folderParts.join('/') : base;
+                    const rawLabel = folderParts.length
                         ? folderParts[folderParts.length - 1]
                         : base.split('/').filter(Boolean).pop() ?? 'Home';
-                    const labelCap = label.charAt(0).toUpperCase() + label.slice(1);
 
-                    // Find or create the node at currentLevel
                     let node = currentLevel.find(c => c.link === link);
                     if (!node) {
-                        node = { label: labelCap, link, children: [], type: 'md' };
+                        node = { label: capitalize(rawLabel), link, children: [], type: 'md' };
                         currentLevel.push(node);
                     } else {
-                        // Update type in case it was created as a folder without type
+                        // Upgrade type if the node was pre-created as a folder
                         node.type = 'md';
                     }
                 } else {
-                    // Regular .md file — create a leaf node
+                    // Regular .md file — leaf node
                     const fileName = part.replace(/\.md$/, '');
-                    const label = fileName.charAt(0).toUpperCase() + fileName.slice(1);
                     const link = base + '/' + parts.slice(0, idx).concat(fileName).join('/');
-
-                    const existing = currentLevel.find(c => c.link === link);
-                    if (!existing) {
-                        currentLevel.push({ label, link, children: [], type: 'md' });
+                    if (!currentLevel.find(c => c.link === link)) {
+                        currentLevel.push({ label: capitalize(fileName), link, children: [], type: 'md' });
                     }
                 }
             } else {
                 // Folder segment — find or create the node and descend
-                const title = part.charAt(0).toUpperCase() + part.slice(1);
                 const folderLink = base + '/' + parts.slice(0, idx + 1).join('/');
-                let child = currentLevel.find(c => c.label === title);
+                let child = currentLevel.find(c => c.label === capitalize(part));
                 if (!child) {
-                    child = { label: title, link: folderLink, children: [], type: 'folder' };
+                    child = { label: capitalize(part), link: folderLink, children: [], type: 'folder' };
                     currentLevel.push(child);
                 }
                 currentLevel = child.children;
             }
-        });
-    });
+        }
+    }
 
     return root.sort((a, b) => a.label.localeCompare(b.label));
 }
@@ -74,18 +70,11 @@ export function flattenMenu(menu) {
     const result = [];
 
     function flattenItem(item) {
-        result.push({
-            label: item.label,
-            link: item.link,
-            type: item.type
-        });
-
-        if (item.children && item.children.length > 0) {
-            item.children.forEach(child => flattenItem(child));
-        }
+        result.push({ label: item.label, link: item.link, type: item.type });
+        for (const child of item.children ?? []) flattenItem(child);
     }
 
-    menu.forEach(item => flattenItem(item));
+    for (const item of menu) flattenItem(item);
 
     return result;
 }
@@ -102,50 +91,3 @@ export function getBreadcrumb(active, flat) {
     return last.charAt(0).toUpperCase() + last.slice(1);
 }
 
-function parseVitestResult(collection) {
-    const root = {};
-
-    collection.forEach(item => {
-        let currentNode = root;
-
-        item.ancestorTitles.forEach((ancestor, index) => {
-            if (!currentNode[ancestor]) {
-                currentNode[ancestor] = { label: ancestor, children: [], status: item.status };
-            }
-            currentNode = currentNode[ancestor].children;
-        });
-
-        const existingTitle = currentNode.find(child => child.label === item.title);
-
-        if (!existingTitle) {
-            currentNode.push({ label: item.title, children: [], status: item.status });
-        }
-    });
-
-    function buildFinalStructure(node) {
-        return Object.values(node).map(child => {
-            return {
-                ...child,
-                children: buildFinalStructure(child.children)
-            };
-        });
-    }
-
-    return buildFinalStructure(root);
-}
-
-export function prepareVitestTree(results) {
-    const root = [];
-
-    results.forEach(test => {
-        let res = parseVitestResult(test.assertionResults);
-        if (res.length) {
-            root.push({
-                label: test.name.substring(test.name.indexOf('/src/lib')),
-                children: res,
-                status: test.status,
-            })
-        }
-    });
-    return root;
-}
