@@ -38,6 +38,13 @@ const defaultLabels = {
 const knownTypes = ['info', 'tip', 'warning', 'danger', 'details'];
 const OPEN_LINE_RE = /^:::[ \t]+(\w+)(?:[ \t]+(.+?))?[ \t]*$/;
 const CLOSE_LINE_RE = /^:::[ \t]*$/;
+const githubAlertTypeMap = {
+	note: 'info',
+	tip: 'tip',
+	important: 'warning',
+	warning: 'warning',
+	caution: 'danger',
+};
 
 function getDefaultLabel(type, labels) {
 	return {
@@ -73,11 +80,103 @@ function nodeToText(node) {
 	return '';
 }
 
+/**
+ * Extracts the [!TYPE] label from the first child of a paragraph.
+ *
+ * remark may parse `[!NOTE]` either as:
+ *   - a plain `text` node with value `[!NOTE]`  (rare)
+ *   - a `linkReference` node with child text `!NOTE` (common — remark treats it
+ *     as an unresolved link reference)
+ *
+ * Returns { alertKey, remainderChildren } or null.
+ */
+function extractAlertLabel(paragraphNode) {
+	const children = paragraphNode?.children;
+	if (!Array.isArray(children) || children.length === 0) return null;
+
+	const first = children[0];
+
+	// Case A: plain text "[!NOTE]…"
+	if (first.type === 'text') {
+		const m = first.value.match(/^\[!([a-zA-Z]+)\]\s*/);
+		if (!m) return null;
+		const alertKey = m[1].toLowerCase();
+		// Remainder is the rest of the text in the same node + any siblings
+		const restText = first.value.slice(m[0].length);
+		const remainderChildren = restText
+			? [{ ...first, value: restText }, ...children.slice(1)]
+			: children.slice(1);
+		return { alertKey, remainderChildren };
+	}
+
+	// Case B: linkReference "[!NOTE]" (remark's normal parse result)
+	if (first.type === 'linkReference') {
+		const innerText = nodeToText(first); // e.g. "!NOTE"
+		const lm = innerText.match(/^!([a-zA-Z]+)$/);
+		if (!lm) return null;
+		const alertKey = lm[1].toLowerCase();
+		// Skip/trim soft-break immediately after the label if present
+		let rest = children.slice(1);
+		if (rest[0]?.type === 'break' || rest[0]?.type === 'softbreak') {
+			rest = rest.slice(1);
+		} else if (rest[0]?.type === 'text' && rest[0].value.startsWith('\n')) {
+			const trimmed = rest[0].value.slice(1);
+			rest = trimmed ? [{ ...rest[0], value: trimmed }, ...rest.slice(1)] : rest.slice(1);
+		}
+		return { alertKey, remainderChildren: rest };
+	}
+
+	return null;
+}
+
+function parseGithubAlertFromBlockquote(node) {
+	if (node?.type !== 'blockquote' || !Array.isArray(node.children) || node.children.length === 0) {
+		return null;
+	}
+
+	const firstPara = node.children[0];
+	if (!firstPara || firstPara.type !== 'paragraph') return null;
+
+	const extracted = extractAlertLabel(firstPara);
+	if (!extracted) return null;
+
+	const { alertKey, remainderChildren } = extracted;
+	const mappedType = githubAlertTypeMap[alertKey];
+	if (!mappedType) return null;
+
+	const title = alertKey.toUpperCase();
+
+	// Build inner mdast nodes:
+	// - if there is inline content on the same line as [!TYPE], wrap it in a paragraph
+	// - keep any subsequent block children from the blockquote
+	const subsequentBlocks = node.children.slice(1);
+	const innerNodes = [];
+
+	if (remainderChildren.length > 0) {
+		innerNodes.push({ type: 'paragraph', children: remainderChildren });
+	}
+	innerNodes.push(...subsequentBlocks);
+
+	return { mappedType, title, innerNodes };
+}
+
 // ─── Remark plugin ────────────────────────────────────────────────────────────
 
 export function remarkContainers(userOptions = {}) {
 	return (tree) => {
 		const children = tree.children;
+
+		// Pass 0: GitHub-flavored alerts (blockquote form)
+		for (let i = 0; i < children.length; i++) {
+			const parsed = parseGithubAlertFromBlockquote(children[i]);
+			if (!parsed) continue;
+
+			children.splice(
+				i,
+				1,
+				containerBlockNode(parsed.mappedType, parsed.title, parsed.innerNodes)
+			);
+		}
 
 		// Pass 1: single-paragraph containers (no blank lines — remark collapses to one paragraph)
 		for (let i = 0; i < children.length; i++) {

@@ -52,6 +52,7 @@
 				text: n.textContent?.trim() ?? '',
 				depth: parseInt(n.tagName[1], 10),
 			}));
+		updateActiveByScroll();
 	}
 
 	let scanTimer: ReturnType<typeof setTimeout> | null = null;
@@ -80,30 +81,53 @@
 		};
 	});
 
-	// IntersectionObserver — highlight the topmost visible heading
+	// Scrollspy — highlight heading that is currently at/above the top edge
+	function updateActiveByScroll() {
+		if (!container || !items.length) {
+			activeId = '';
+			return;
+		}
+
+		const containerTop = container.getBoundingClientRect().top;
+		const topOffset = 72;
+		let currentId = items[0].id;
+
+		for (const item of items) {
+			const el = container.querySelector<HTMLElement>(`#${CSS.escape(item.id)}`);
+			if (!el) continue;
+			const top = el.getBoundingClientRect().top - containerTop;
+			if (top <= topOffset) currentId = item.id;
+			else break;
+		}
+
+		activeId = currentId;
+	}
+
+	let rafId: number | null = null;
+	function scheduleActiveUpdate() {
+		if (rafId !== null) cancelAnimationFrame(rafId);
+		rafId = requestAnimationFrame(() => {
+			rafId = null;
+			updateActiveByScroll();
+		});
+	}
+
+	// Keep active outline item in sync with container scroll and viewport changes
 	$effect(() => {
 		if (!container || !items.length) return;
 
-		const visible = new Set<string>();
+		scheduleActiveUpdate();
+		container.addEventListener('scroll', scheduleActiveUpdate, { passive: true });
+		window.addEventListener('resize', scheduleActiveUpdate);
 
-		const observer = new IntersectionObserver(
-			(entries) => {
-				for (const e of entries) {
-					if (e.isIntersecting) visible.add(e.target.id);
-					else visible.delete(e.target.id);
-				}
-				// Pick the first item (in document order) that is currently visible
-				activeId = items.find(it => visible.has(it.id))?.id ?? '';
-			},
-			{ rootMargin: '0px 0px -80% 0px', threshold: 0 }
-		);
-
-		for (const { id } of items) {
-			const el = container.querySelector(`#${CSS.escape(id)}`);
-			if (el) observer.observe(el);
-		}
-
-		return () => observer.disconnect();
+		return () => {
+			container.removeEventListener('scroll', scheduleActiveUpdate);
+			window.removeEventListener('resize', scheduleActiveUpdate);
+			if (rafId !== null) {
+				cancelAnimationFrame(rafId);
+				rafId = null;
+			}
+		};
 	});
 
 	function scrollTo(id: string) {
