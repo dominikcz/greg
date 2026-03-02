@@ -5,6 +5,7 @@ import { createHighlighter } from 'shiki';
 import { rehypeTocPlaceholder } from './src/lib/MarkdownDocs/rehypeToc.js';
 import { remarkContainers, rehypeContainers } from './src/lib/MarkdownDocs/remarkContainers.js';
 import rehypeCodeGroup from './src/lib/MarkdownDocs/rehypeCodeGroup.js';
+import rehypeCodeTitle from './src/lib/MarkdownDocs/rehypeCodeTitle.js';
 import { remarkCodeMeta } from './src/lib/MarkdownDocs/remarkCodeMeta.js';
 import { remarkImports } from './src/lib/MarkdownDocs/remarkImports.js';
 import { remarkGlobalComponents } from './src/lib/MarkdownDocs/remarkGlobalComponents.js';
@@ -103,6 +104,7 @@ const mdsvexOptions = {
 		[rehypeAutolinkHeadings, { behavior: 'wrap' }],
 		rehypeContainers,
 		rehypeCodeGroup,
+		rehypeCodeTitle,
 		rehypeTocPlaceholder,
 	],
 }

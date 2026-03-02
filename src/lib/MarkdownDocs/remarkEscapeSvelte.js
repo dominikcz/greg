@@ -1,9 +1,15 @@
 /**
  * remarkEscapeSvelte
  *
- * Escapes `{` and `}` in Markdown text/html nodes so Svelte's compiler doesn't
- * treat them as template expressions. Code nodes (inline code and code blocks)
- * are left untouched — mdsvex wraps those in `{@html}` itself.
+ * Escapes `{` and `}` in plain Markdown *text* nodes so Svelte's compiler
+ * doesn't treat them as template expressions.
+ *
+ * Only TEXT nodes are touched. Raw HTML nodes (including Svelte component
+ * elements like `<Hero items={data} />`) are intentionally left unmodified so
+ * that Svelte prop-binding expressions `{…}` remain valid after compilation.
+ *
+ * Code nodes (inline code and fenced code blocks) are untouched — mdsvex
+ * wraps those in `{@html …}` itself.
  */
 import { visit } from 'unist-util-visit';
 
@@ -17,23 +23,10 @@ function escapeText(str) {
 
 export function remarkEscapeSvelte() {
 	return (tree) => {
-		// Escape { } inside markdown text nodes
+		// Only escape { } inside plain Markdown text nodes.
+		// HTML nodes are passed through unchanged so that Svelte component
+		// attributes like actions={[…]} compile correctly.
 		visit(tree, 'text', (node) => {
-			node.value = escapeText(node.value);
-		});
-
-		// Escape { } inside raw HTML nodes that are NOT <script> or <style>
-		// (mdsvex injects <script> blocks which must stay unescaped)
-		visit(tree, 'html', (node) => {
-			const v = node.value.trimStart();
-			if (
-				v.startsWith('<script') ||
-				v.startsWith('</script') ||
-				v.startsWith('<style') ||
-				v.startsWith('</style')
-			) {
-				return;
-			}
 			node.value = escapeText(node.value);
 		});
 	};

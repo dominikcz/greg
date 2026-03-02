@@ -140,11 +140,11 @@
     --fgColor-danger: #ff4500;
     --fgColor-done: #d4956a;
     --bgColor-default: var(--greg-background);
-    --bgColor-muted: #141414;
+    --bgColor-muted: #242424;
     --bgColor-neutral-muted: var(--greg-code-background);
     --bgColor-attention-muted: rgba(218, 165, 32, 0.15);
-    --borderColor-default: #2e2a26;
-    --borderColor-muted: #2e2a2699;
+    --borderColor-default: #4a4540;
+    --borderColor-muted: #3a3530aa;
     --borderColor-neutral-muted: #2e2a2699;
     --borderColor-accent-emphasis: #ff6f61;
     --borderColor-success-emphasis: #a8c97f;
@@ -219,6 +219,43 @@
 
     th {
         text-align: left;
+    }
+
+    /* ── Tables ───────────────────────────────────────────────────────── */
+    table {
+        border-spacing: 0;
+        border-collapse: collapse;
+        display: block;
+        width: max-content;
+        max-width: 100%;
+        overflow-x: auto;
+        margin: 1rem 0;
+        font-size: 0.9em;
+    }
+
+    table th,
+    table td {
+        padding: 6px 14px;
+        border: 1px solid var(--greg-border-color);
+    }
+
+    table thead th {
+        font-weight: 600;
+        background-color: var(--greg-menu-background);
+        color: var(--greg-color);
+    }
+
+    table tbody tr {
+        background-color: var(--greg-main-background);
+        transition: background-color 0.1s;
+    }
+
+    table tbody tr:nth-child(even) {
+        background-color: color-mix(in srgb, var(--greg-menu-background) 60%, var(--greg-main-background));
+    }
+
+    table tbody tr:hover {
+        background-color: var(--greg-accent-light);
     }
 }
 
@@ -559,4 +596,32 @@ a {
         margin-top: 0;
         margin-bottom: 0;
     }
+}
+
+/* ── Code Block Titles ─────────────────────────────── */
+.markdown-body .code-block-with-title {
+    display: grid;
+    gap: 0;
+    margin: 1rem 0;
+
+    >pre {
+        margin: 0;
+        border: 1px solid var(--greg-border-color);
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+    }
+}
+
+.markdown-body .code-block-title {
+    display: flex;
+    align-items: center;
+    padding: 0.45rem 0.8rem;
+    background: color-mix(in srgb, var(--greg-menu-background) 85%, transparent);
+    border: 1px solid var(--greg-border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    color: var(--greg-menu-color);
+    font-weight: 500;
+    font-size: 0.875rem;
+    font-family: var(--fontMono, ui-monospace, monospace);
 }
