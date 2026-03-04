@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 .vscode
 docs-vitepress
+docs/fake-docs
