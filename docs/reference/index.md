@@ -1,3 +1,8 @@
+---
+title: Reference
+order: 2
+---
+
 # Reference
 
 API and component reference for Greg.

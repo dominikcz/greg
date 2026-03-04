@@ -1,3 +1,8 @@
+---
+title: Asset Handling
+order: 5
+---
+
 # Asset Handling
 
 Greg uses Vite for asset processing, so all standard Vite rules apply.

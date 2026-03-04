@@ -1,3 +1,8 @@
+---
+title: Outline
+order: 3
+---
+
 # Outline (On This Page)
 
 The **Outline** panel is shown in the right column of every doc page. It displays

@@ -1,3 +1,8 @@
+---
+title: Theme & Styling
+order: 5
+---
+
 # Theme & Styling
 
 Greg ships a carefully crafted two-tone design system — a clean purple-accent

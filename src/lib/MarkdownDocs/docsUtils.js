@@ -2,7 +2,34 @@ function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function prepareMenu(modules, base) {
+/**
+ * Sort items by optional `order` field first (lower = earlier), then
+ * alphabetically by label as a tie-breaker.
+ * Items without `order` sort after items that have one.
+ */
+function sortItems(items) {
+    items.sort((a, b) => {
+        const oa = a._order ?? Infinity;
+        const ob = b._order ?? Infinity;
+        if (oa !== ob) return oa - ob;
+        return a.label.localeCompare(b.label);
+    });
+    for (const item of items) {
+        if (item.children?.length) sortItems(item.children);
+    }
+}
+
+/**
+ * Build the navigation tree from the modules map.
+ *
+ * @param {Record<string,() => Promise<unknown>>} modules  - lazy glob map
+ * @param {string}  base          - root path prefix, e.g. '/docs'
+ * @param {Record<string, { title?: string; order?: number; [k: string]: unknown }>} [frontmatters]
+ *   - eager-loaded frontmatter keyed by the same file paths as `modules`.
+ *   - `title` overrides the label derived from the file/folder name.
+ *   - `order` controls the sort position within a level (lower = earlier).
+ */
+export function prepareMenu(modules, base, frontmatters = {}) {
     const paths = Object.keys(modules);
     const root = [];
 
@@ -14,6 +41,7 @@ export function prepareMenu(modules, base) {
     });
 
     for (const filePath of sorted) {
+        const fm = frontmatters[filePath] ?? {};
         // filePath like: /docs/folder1/test.md  (base = '/docs')
         const relativePath = filePath.startsWith(base) ? filePath.slice(base.length) : filePath;
         // parts: ['folder1', 'test.md'] or ['index.md'] or ['folder1', 'index.md']
@@ -36,24 +64,39 @@ export function prepareMenu(modules, base) {
 
                     let node = currentLevel.find(c => c.link === link);
                     if (!node) {
-                        node = { label: capitalize(rawLabel), link, children: [], type: 'md' };
+                        node = {
+                            label: fm.title ?? capitalize(rawLabel),
+                            link,
+                            children: [],
+                            type: 'md',
+                            _order: fm.order,
+                        };
                         currentLevel.push(node);
                     } else {
                         // Upgrade type if the node was pre-created as a folder
                         node.type = 'md';
+                        // Apply frontmatter overrides (index.md processed first, so this wins)
+                        if (fm.title != null) node.label = fm.title;
+                        if (fm.order != null) node._order = fm.order;
                     }
                 } else {
                     // Regular .md file — leaf node
                     const fileName = part.replace(/\.md$/, '');
                     const link = base + '/' + parts.slice(0, idx).concat(fileName).join('/');
                     if (!currentLevel.find(c => c.link === link)) {
-                        currentLevel.push({ label: capitalize(fileName), link, children: [], type: 'md' });
+                        currentLevel.push({
+                            label: fm.title ?? capitalize(fileName),
+                            link,
+                            children: [],
+                            type: 'md',
+                            _order: fm.order,
+                        });
                     }
                 }
             } else {
                 // Folder segment — find or create the node and descend
                 const folderLink = base + '/' + parts.slice(0, idx + 1).join('/');
-                let child = currentLevel.find(c => c.label === capitalize(part));
+                let child = currentLevel.find(c => c.link === folderLink);
                 if (!child) {
                     child = { label: capitalize(part), link: folderLink, children: [], type: 'folder' };
                     currentLevel.push(child);
@@ -63,7 +106,8 @@ export function prepareMenu(modules, base) {
         }
     }
 
-    return root.sort((a, b) => a.label.localeCompare(b.label));
+    sortItems(root);
+    return root;
 }
 
 export function flattenMenu(menu) {

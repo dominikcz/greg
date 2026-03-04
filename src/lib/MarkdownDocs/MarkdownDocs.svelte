@@ -13,6 +13,7 @@ import Outline from './Outline.svelte';
 import { useRouter } from './useRouter.svelte';
 import { useSplitter } from './useSplitter.svelte';
 import { handleCodeGroupClick, handleCodeGroupKeydown } from './codeGroup';
+import allFrontmatters from 'virtual:greg-frontmatter';
 
 type CarbonAdsOptions = {
 code: string;
@@ -52,7 +53,11 @@ const modules = Object.fromEntries(
 Object.entries(allModules).filter(([k]) => !k.split('/').pop()!.startsWith('__'))
 );
 
-let menu = $derived(prepareMenu(modules, rootPath));
+// Frontmatter map built at dev/build time by vitePluginFrontmatter.
+type FrontmatterEntry = { title?: string; order?: number; layout?: 'doc' | 'home' | 'page' };
+const frontmatters = allFrontmatters as Record<string, FrontmatterEntry>;
+
+let menu = $derived(prepareMenu(modules, rootPath, frontmatters));
 let flat = $derived(flattenMenu(menu));
 
 // -- Theme -------------------------------------------------------------------
@@ -83,6 +88,27 @@ const router = useRouter(modules, () => rootPath);
 
 const isMarkdown = $derived(router.isMarkdown(flat));
 const title      = $derived(router.title(flat));
+
+// -- Layout ------------------------------------------------------------------
+// Resolve the key of the active page in the frontmatter map so we can read
+// `layout` (and any other fields) without loading the full module.
+const activeKey = $derived.by(() => {
+    const rel = router.active.replace(rootPath, '').replace(/^\//, '');
+    const candidates: string[] = rel
+        ? [`${rootPath}/${rel}.md`, `${rootPath}/${rel}/index.md`]
+        : [`${rootPath}/index.md`, `${rootPath}index.md`];
+    return candidates.find(c => c in frontmatters) ?? null;
+});
+
+const activeFrontmatter = $derived(activeKey ? frontmatters[activeKey] : undefined);
+const activeLayout = $derived<'doc' | 'home' | 'page'>(
+    activeFrontmatter?.layout ?? 'doc'
+);
+
+/** Whether the left nav sidebar should be visible. */
+const showSidebar = $derived(activeLayout === 'doc');
+/** Whether the right outline / ads aside should be visible. */
+const showOutline  = $derived(activeLayout === 'doc');
 
 // -- Splitter ----------------------------------------------------------------
 const sp = useSplitter();
@@ -141,13 +167,21 @@ onOpenSearch={() => (searchOpen = true)}
 />
 
 <div class="catalog-body">
+{#if showSidebar}
 <aside bind:this={sp.aside}>
 <DocsNavigation menu={menu} {rootPath} active={router.active} navigate={router.navigate} />
 </aside>
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
 <div class="splitter" bind:this={sp.splitter} onmousedown={sp.onMouseDown}></div>
+{/if}
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<main bind:this={mainEl} class:markdown-body={isMarkdown} onclick={handleInternalLinks}>
+<main
+bind:this={mainEl}
+class:markdown-body={isMarkdown && activeLayout === 'doc'}
+class:layout-home={activeLayout === 'home'}
+class:layout-page={activeLayout === 'page'}
+onclick={handleInternalLinks}
+>
 {#if router.activeModule}
 {#await router.activeModule()}
 <div class="spinner-wrap">
@@ -162,8 +196,8 @@ onOpenSearch={() => (searchOpen = true)}
 {@render children?.()}
 {/if}
 </main>
-<aside class="greg-aside-outline" class:hidden={!outlineNorm && !carbonAds}>
-{#if outlineNorm}
+<aside class="greg-aside-outline" class:hidden={(!outlineNorm && !carbonAds) || !showOutline}>
+{#if outlineNorm && showOutline}
 <Outline
 container={mainEl}
 level={outlineNorm.level}
@@ -171,7 +205,7 @@ label={outlineNorm.label}
 active={router.active}
 />
 {/if}
-{#if carbonAds}
+{#if carbonAds && showOutline}
 <CarbonAds
 code={carbonAds.code}
 placement={carbonAds.placement}

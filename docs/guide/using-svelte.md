@@ -1,3 +1,8 @@
+---
+title: Using Svelte in Markdown
+order: 4
+---
+
 # Using Svelte in Markdown
 
 Greg processes every `.md` file through [mdsvex](https://mdsvex.pngwn.io/), a

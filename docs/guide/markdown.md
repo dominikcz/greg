@@ -1,3 +1,8 @@
+---
+title: Markdown Extensions
+order: 2
+---
+
 # Markdown Extensions
 
 Greg extends standard Markdown with a rich set of features, mostly compatible with

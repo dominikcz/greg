@@ -13,3 +13,6 @@ TODO:
 - [ ] wyszukiwanie
 - [ ] integracja z AI
 - [ ] konfiguracja
+- [x] obsługa frontmatter
+- [x] obsługa layout w markdown
+- [x] nazwy w menu z frontmatter

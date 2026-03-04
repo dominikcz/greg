@@ -1,3 +1,8 @@
+---
+title: Home Page
+order: 6
+---
+
 # Home Page — Hero & Features
 
 Greg does not use frontmatter-based layouts. Instead, the `<Hero>` and

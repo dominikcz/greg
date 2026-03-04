@@ -1,3 +1,8 @@
+---
+title: VitePress Incompatibilities
+order: 3
+---
+
 # VitePress Incompatibilities
 
 Greg is heavily inspired by [VitePress](https://vitepress.dev) and re-uses most of

@@ -1,3 +1,8 @@
+---
+title: Deploying
+order: 6
+---
+
 # Deploying
 
 Greg outputs a **single-page application (SPA)**. All URLs are handled

@@ -1,3 +1,8 @@
+---
+title: Search
+order: 4
+---
+
 # Search
 
 Greg includes a built-in full-text search powered by [Fuse.js](https://fusejs.io/).

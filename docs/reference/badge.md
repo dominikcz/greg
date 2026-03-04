@@ -1,3 +1,8 @@
+---
+title: Badge
+order: 2
+---
+
 # Badge
 
 The `Badge` component adds an inline status label to headings or any inline content.

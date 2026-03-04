@@ -1,3 +1,8 @@
+---
+title: Team Page
+order: 7
+---
+
 # Team Page
 
 Greg ships Svelte ports of the VitePress team-page components.

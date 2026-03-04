@@ -1,3 +1,8 @@
+---
+title: MarkdownDocs Component
+order: 1
+---
+
 # `<MarkdownDocs>` Component
 
 `MarkdownDocs` is the top-level component that wires together the entire

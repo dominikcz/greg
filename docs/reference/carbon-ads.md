@@ -1,3 +1,8 @@
+---
+title: Carbon Ads
+order: 8
+---
+
 # Carbon Ads
 
 Greg supports [Carbon Ads](https://www.carbonads.net/) natively. When configured,

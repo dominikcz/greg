@@ -1,3 +1,8 @@
+---
+title: Guide
+order: 1
+---
+
 # Guide
 
 Welcome to the Greg documentation guide. Choose a topic to get started.
