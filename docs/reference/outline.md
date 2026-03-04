@@ -9,7 +9,6 @@ The **Outline** panel is shown in the right column of every doc page. It display
 a scrollspy-aware list of headings for the current page and lets the reader jump
 to any section.
 
----
 
 ## Configuring the outline
 
@@ -46,7 +45,6 @@ Pass the `outline` prop to `<MarkdownDocs>`:
 | `'deep'` | Same as `[2, 6]` |
 | `{ level, label }` | Object form — `level` follows the rules above; `label` overrides "On this page" |
 
----
 
 ## Scrollspy behaviour
 
@@ -56,7 +54,6 @@ considered "active" when it reaches within 72 px of the top of the content pane.
 The outline is built by scanning the live DOM with a `MutationObserver`, so it
 correctly reflects the final rendered content including async-loaded pages.
 
----
 
 ## Inline `[[toc]]`
 
@@ -72,7 +69,6 @@ page with the `[[toc]]` placeholder:
 By default it includes h2 and h3. This is independent of the right-side Outline
 panel — both can be used together.
 
----
 
 ## CSS variables
 

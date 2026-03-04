@@ -8,7 +8,6 @@ order: 2
 Greg extends standard Markdown with a rich set of features, mostly compatible with
 [VitePress](https://vitepress.dev/guide/markdown) syntax.
 
----
 
 ## Header anchors
 
@@ -30,7 +29,6 @@ Override the auto-generated slug with a `{#custom-id}` suffix:
 
 This lets you link to `#custom-anchor` even if the heading text changes.
 
----
 
 ## Links
 
@@ -59,7 +57,6 @@ Clicking a same-page `#anchor` link scrolls smoothly without a history push.
 External links open via the browser's default navigation. No special markup is
 required.
 
----
 
 ## Tables
 
@@ -79,7 +76,6 @@ GitHub-flavoured Markdown tables are supported:
 | rootPath | string | `/docs` |
 | version  | string | `''`    |
 
----
 
 ## Table of contents — `[[toc]]`
 
@@ -97,7 +93,6 @@ By default h2 and h3 headings are included. The right-side **Outline** panel is
 a persistent alternative — see `outline` prop in the
 [`<MarkdownDocs>` reference](/docs/reference/markdowndocs).
 
----
 
 ## Custom containers
 
@@ -205,7 +200,6 @@ The `> [!TYPE]` blockquote syntax is also supported:
 > [!CAUTION]
 > Dangerous action.
 
----
 
 ## Code blocks
 
@@ -260,7 +254,6 @@ export const answer = 42;
 
 The title is displayed above the code block.
 
----
 
 ## Code groups
 
@@ -335,7 +328,6 @@ Explicit label override:
 
 :::
 
----
 
 ## Including external files
 
@@ -386,7 +378,6 @@ The `$docs` alias resolves to the `docs/` directory:
 <!--@include: $docs/__partials/note.md-->
 ```
 
----
 
 ## Math equations
 
@@ -425,7 +416,6 @@ $$
 \sum_{i=1}^{n} i = \frac{n(n+1)}{2}
 $$
 
----
 
 ## Inline attributes on links and images
 

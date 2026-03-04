@@ -16,7 +16,6 @@ Greg is intentionally inspired by [VitePress](https://vitepress.dev), reusing mo
 of its Markdown syntax and several UI components, but built entirely on Svelte 5
 instead of Vue.
 
----
 
 ## Prerequisites
 
@@ -26,7 +25,6 @@ instead of Vue.
 | Svelte      | 5.x     |
 | Vite        | 7.x     |
 
----
 
 ## Installation
 
@@ -38,7 +36,6 @@ cd my-docs
 npm install
 ```
 
----
 
 ## Project structure
 
@@ -64,7 +61,6 @@ npm install
 The `docs/` directory is the **content root**. Every `.md` file inside it (except
 files whose name starts with `__`) becomes a page accessible via its path.
 
----
 
 ## Development server
 
@@ -75,7 +71,6 @@ npm run dev
 The site is served at `http://localhost:5173` by default. Changes to `.md` files
 are hot-reloaded instantly.
 
----
 
 ## Production build
 
@@ -86,7 +81,6 @@ npm run build
 The output in `dist/` is a fully static SPA that can be served by any CDN or web
 server. See [Deploying](./deploying) for hosting-specific guides.
 
----
 
 ## Mounting the engine
 

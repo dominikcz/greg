@@ -19,7 +19,6 @@ Mount it in `src/App.svelte`:
 <MarkdownDocs rootPath="/docs" version="1.0.0" />
 ```
 
----
 
 ## Props
 
@@ -110,7 +109,6 @@ folder URL has no `index.md`). Useful for a custom landing splash or a
 </MarkdownDocs>
 ```
 
----
 
 ## Vite configuration
 
@@ -139,7 +137,6 @@ export default defineConfig({
 | `docsDir` | Folder name relative to the project root that contains `.md` files |
 | `rootPath` | URL prefix — must match the `rootPath` prop |
 
----
 
 ## svelte.config.js
 

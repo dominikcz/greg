@@ -7,7 +7,6 @@ order: 5
 
 Greg uses Vite for asset processing, so all standard Vite rules apply.
 
----
 
 ## Referencing images
 
@@ -37,7 +36,6 @@ public/
 
 They are **not** processed by Vite — no hashing, no transformation.
 
----
 
 ## Static assets with Vite processing
 
@@ -55,7 +53,6 @@ tree-shaking, etc.). Inside `.svelte` files use a standard `import`:
 In Markdown the recommended approach is to place permanent assets in `public/`
 and reference them with absolute paths.
 
----
 
 ## Inline attributes for sizing
 
@@ -68,7 +65,6 @@ syntax to add `width`, `height` or CSS classes directly in Markdown:
 ![icon](/icons/info.svg){class="inline-icon" width=24}
 ```
 
----
 
 ## The `<Image>` component
 

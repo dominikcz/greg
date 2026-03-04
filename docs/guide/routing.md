@@ -22,7 +22,6 @@ docs/reference/api.md         →  /docs/reference/api
 docs/guide/index.md  →  /docs/guide
 ```
 
----
 
 ## Partial files
 
@@ -34,7 +33,6 @@ included in other pages with the `<!--@include:-->` directive.
 docs/guide/__shared-warning.md  ←  not a page, only includable
 ```
 
----
 
 ## Sidebar navigation
 
@@ -61,7 +59,6 @@ docs/
     02-routing.md
 ```
 
----
 
 ## SPA navigation
 
@@ -86,7 +83,6 @@ Both `.md` and `.html` extensions in links are stripped automatically:
 External links (starting with `http://`, `https://`, `//`, etc.) open normally
 in the browser.
 
----
 
 ## `rootPath` prop
 
@@ -105,7 +101,6 @@ The Vite `vitePluginSearchIndex` plug-in must use the same `docsDir`:
 vitePluginSearchIndex({ docsDir: 'documentation', rootPath: '/documentation' })
 ```
 
----
 
 ## 404 behaviour
 

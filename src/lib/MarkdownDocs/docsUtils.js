@@ -22,7 +22,7 @@ function sortItems(items) {
 /**
  * Build the navigation tree from the modules map.
  *
- * @param {Record<string,() => Promise<unknown>>} modules  - lazy glob map
+ * @param {Record<string, unknown>} modules  - known paths map (values ignored, only keys used)
  * @param {string}  base          - root path prefix, e.g. '/docs'
  * @param {Record<string, { title?: string; order?: number; [k: string]: unknown }>} [frontmatters]
  *   - eager-loaded frontmatter keyed by the same file paths as `modules`.

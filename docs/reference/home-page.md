@@ -9,7 +9,6 @@ Greg does not use frontmatter-based layouts. Instead, the `<Hero>` and
 `<Features>` components are used directly inside Markdown pages to compose a
 landing / home page.
 
----
 
 ## Hero
 
@@ -68,7 +67,6 @@ For advanced customisation, `Hero` exposes several Svelte snippet slots:
 | `heroImage` | Replaces the default image |
 | `heroActionsAfter` | After the action buttons |
 
----
 
 ## Features
 
@@ -124,7 +122,6 @@ The grid automatically adapts based on the number of features:
 | Multiple of 3 | 3-column |
 | Other | 4-column with wrapping |
 
----
 
 ## Full home page example
 

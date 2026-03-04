@@ -8,7 +8,6 @@ order: 4
 Greg includes a built-in full-text search powered by [Fuse.js](https://fusejs.io/).
 No external service or API key is required.
 
----
 
 ## How it works
 
@@ -19,7 +18,6 @@ emits a `/search-index.json` file into the Vite output.
 At **run time**, the search modal fetches that JSON once, initialises a Fuse.js
 instance and performs fuzzy matching entirely in the browser.
 
----
 
 ## Opening search
 
@@ -29,7 +27,6 @@ instance and performs fuzzy matching entirely in the browser.
 | `Ctrl + K` | Opens modal |
 | `Cmd + K` (macOS) | Opens modal |
 
----
 
 ## Keyboard navigation inside the modal
 
@@ -39,7 +36,6 @@ instance and performs fuzzy matching entirely in the browser.
 | `Enter` | Navigate to selected result |
 | `Esc` | Close modal |
 
----
 
 ## Enabling search
 
@@ -60,7 +56,6 @@ export default defineConfig({
 });
 ```
 
----
 
 ## Search ranking
 
@@ -76,14 +71,12 @@ A fuzzy threshold of `0.4` is used — tighter than the default, so only genuine
 matches surface. `ignoreLocation: true` means the match can appear anywhere in
 the text, not just at the start.
 
----
 
 ## Excluding pages from the index
 
 Files whose names start with `__` (double underscore) are automatically excluded
 from both routing and the search index.
 
----
 
 ## Limitations
 

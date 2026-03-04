@@ -2,10 +2,10 @@
  * vitePluginFrontmatter
  *
  * Scans all markdown files under `docsDir` at build/dev time, extracts their
- * YAML frontmatter and exposes the result as a virtual module:
+ * YAML frontmatter using js-yaml and exposes the result as a virtual module:
  *
  *   import frontmatters from 'virtual:greg-frontmatter';
- *   // → Record<string, { title?: string; order?: number; layout?: string; ... }>
+ *   // → Record<string, { title?, order?, layout?, hero?, features?, ... }>
  *   // keys are Vite-style absolute paths, e.g. '/docs/guide/index.md'
  *
  * HMR: when a .md file changes its virtual module is invalidated so the dev
@@ -14,47 +14,20 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { glob } from 'node:fs/promises';
+import yaml from 'js-yaml';
 
 const VIRTUAL_ID = 'virtual:greg-frontmatter';
 const RESOLVED_ID = '\0' + VIRTUAL_ID;
 
-// ---------------------------------------------------------------------------
-// Minimal YAML scalar parser – handles the subset used in VitePress frontmatter
-// ---------------------------------------------------------------------------
-function parseYamlScalar(raw) {
-    const s = raw.trim();
-    if (!s) return undefined;
-    // quoted strings
-    if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-        return s.slice(1, -1);
-    }
-    // booleans
-    if (s === 'true') return true;
-    if (s === 'false') return false;
-    // numbers
-    const n = Number(s);
-    if (!Number.isNaN(n) && s !== '') return n;
-    return s;
-}
-
-/**
- * Parse the YAML frontmatter block (`--- ... ---`) of a markdown file.
- * Returns a plain object with scalar key/value pairs.
- */
+/** Extract the YAML block between the first pair of `---` lines. */
 function parseFrontmatter(content) {
     const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!m) return {};
-    const block = m[1];
-    const result = {};
-    for (const line of block.split(/\r?\n/)) {
-        const colon = line.indexOf(':');
-        if (colon === -1 || line.trimStart().startsWith('#')) continue;
-        const key = line.slice(0, colon).trim();
-        const value = parseYamlScalar(line.slice(colon + 1));
-        if (key) result[key] = value;
+    try {
+        return yaml.load(m[1]) ?? {};
+    } catch {
+        return {};
     }
-    return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -68,7 +41,6 @@ export function vitePluginFrontmatter({ docsDir = 'docs' } = {}) {
         const absDocsDir = path.resolve(root, docsDir);
         const entries = {};
 
-        // Walk the directory synchronously (fast, happens only on cold start / hmr)
         function walk(dir) {
             let items;
             try { items = fs.readdirSync(dir, { withFileTypes: true }); }

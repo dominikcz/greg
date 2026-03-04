@@ -1,6 +1,4 @@
 import { mdsvex, escapeSvelte } from 'mdsvex'
-import { fileURLToPath } from 'node:url';
-import { resolve, dirname } from 'node:path';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import { createHighlighter } from 'shiki';
@@ -75,20 +73,8 @@ const highlighter = await createHighlighter({
 	],
 });
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const layoutsDir = resolve(__dirname, 'src/lib/MarkdownDocs/layouts');
-
 /** @type {import('mdsvex').MdsvexOptions} */
 const mdsvexOptions = {
-	layout: {
-		/** Default layout (no `layout` in frontmatter, or `layout: doc`). */
-		_:    resolve(layoutsDir, 'LayoutDoc.svelte'),
-		doc:  resolve(layoutsDir, 'LayoutDoc.svelte'),
-		/** Full-width home page (sidebar + outline hidden by MarkdownDocs). */
-		home: resolve(layoutsDir, 'LayoutHome.svelte'),
-		/** Full-width custom page (sidebar + outline hidden by MarkdownDocs). */
-		page: resolve(layoutsDir, 'LayoutPage.svelte'),
-	},
 	highlight: {
 		highlighter: (code, lang = shikiDefaultLang, metastring = '') => {
 			const { lang: rawLang, title } = parseFenceInfo(lang, metastring);
@@ -124,7 +110,7 @@ const mdsvexOptions = {
 }
 /** @type {import("@sveltejs/vite-plugin-svelte").SvelteConfig} */
 export default {
-	extensions: ['.svelte', '.svx', '.md'],
-	preprocess: mdsvex({ extensions: ['.svx', '.md'], ...mdsvexOptions }),
+	extensions: ['.svelte', '.svx'],
+	preprocess: mdsvex({ extensions: ['.svx'], ...mdsvexOptions }),
 };
 

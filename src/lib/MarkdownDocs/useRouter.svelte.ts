@@ -6,21 +6,28 @@ type FlatItem = { label: string; link: string; type: string };
 /**
  * SPA router rune for MarkdownDocs.
  * Manages the active URL, module resolution and popstate handling.
+ *
+ * `knownPaths` is a set of known markdown file paths (e.g. from the frontmatter
+ * virtual module). Values are ignored – only keys are used for existence checks.
  */
+function normalizePath(raw: string): string {
+	return decodeURI(raw).replace(/\/$/, '') || '/';
+}
+
 export function useRouter(
-	modules: Record<string, () => Promise<unknown>>,
+	knownPaths: Record<string, unknown>,
 	getRootPath: () => string,
 ) {
-	let active = $state(decodeURI(window.location.pathname));
+	let active = $state(normalizePath(window.location.pathname));
 
 	function navigate(path: string) {
-		if (decodeURI(window.location.pathname) === path) return;
+		if (normalizePath(window.location.pathname) === path) return;
 		history.pushState(null, '', path);
 		active = path;
 	}
 
 	function handlePopState() {
-		active = decodeURI(window.location.pathname);
+		active = normalizePath(window.location.pathname);
 	}
 
 	$effect(() => {
@@ -28,21 +35,23 @@ export function useRouter(
 		return () => window.removeEventListener('popstate', handlePopState);
 	});
 
-	const activeModule = $derived.by(() => {
+	/** Resolved .md file path for the active route, or null if unknown. */
+	const activeMarkdownPath = $derived.by(() => {
 		const rootPath = getRootPath();
 		const rel = active.replace(rootPath, '').replace(/^\//, '');
 		const candidates = rel
 			? [`${rootPath}/${rel}.md`, `${rootPath}/${rel}/index.md`]
 			: [`${rootPath}/index.md`, `${rootPath}index.md`];
 		for (const c of candidates) {
-			if (modules[c]) return modules[c];
+			if (c in knownPaths) return c;
 		}
 		return null;
 	});
 
 	return {
 		get active() { return active; },
-		get activeModule() { return activeModule; },
+		/** Resolved .md path suitable for fetch('/docs/guide/page.md'). */
+		get activeMarkdownPath() { return activeMarkdownPath; },
 		navigate,
 		/** Navigate and after content loads scroll to anchor. */
 		navigateWithAnchor(path: string, anchor?: string) {

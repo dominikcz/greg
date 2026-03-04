@@ -9,7 +9,6 @@ Greg ships Svelte ports of the VitePress team-page components.
 There are two ways to display team members: embedded in a doc page, or as a
 dedicated full-page layout.
 
----
 
 ## Show team members inside a page
 
@@ -46,7 +45,6 @@ interface Props {
 `small` is better for inline use inside regular doc pages; `medium` suits a
 dedicated team page.
 
----
 
 ## Create a full team page
 
@@ -96,7 +94,6 @@ const contributors = [ /* … */ ];
 </TeamPage>
 ```
 
----
 
 ## Component reference
 
@@ -144,7 +141,6 @@ snippets.
 
 A section within a `<TeamPage>`. Accepts `title`, `lead` and `members` snippets.
 
----
 
 ## Social icons
 

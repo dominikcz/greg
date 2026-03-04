@@ -25,7 +25,6 @@ Renders as:
 ### Title <Badge type="warning" text="beta" />
 ### Title <Badge type="danger" text="deprecated" />
 
----
 
 ## Custom children
 
@@ -37,7 +36,6 @@ Pass content as children instead of using the `text` prop:
 
 ### Title <Badge type="info">custom content</Badge>
 
----
 
 ## Props
 
@@ -54,7 +52,6 @@ interface Props {
 }
 ```
 
----
 
 ## CSS variables
 

@@ -8,7 +8,6 @@ order: 8
 Greg supports [Carbon Ads](https://www.carbonads.net/) natively. When configured,
 an ad unit is displayed at the bottom of the right-side Outline panel.
 
----
 
 ## Configuration
 
@@ -27,7 +26,6 @@ Pass the `carbonAds` prop to `<MarkdownDocs>`:
 | `code` | `string` | Your Carbon Ads `serve` code |
 | `placement` | `string` | Your Carbon Ads placement name |
 
----
 
 ## Behaviour
 
@@ -37,7 +35,6 @@ Pass the `carbonAds` prop to `<MarkdownDocs>`:
 - If `carbonAds` is not provided (the default), no script is injected and the
   Outline panel right edge is not shown.
 
----
 
 ## Styling
 

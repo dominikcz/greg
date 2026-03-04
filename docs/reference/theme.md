@@ -9,7 +9,6 @@ Greg ships a carefully crafted two-tone design system — a clean purple-accent
 **light** theme and a warm ember **dark** theme. Both are configured entirely via
 CSS custom properties.
 
----
 
 ## Dark / light mode
 
@@ -18,7 +17,6 @@ choice is persisted in `localStorage` under the key `greg-theme`.
 
 A light/dark toggle is always visible in the top-right header.
 
----
 
 ## CSS variables
 
@@ -76,7 +74,6 @@ All visual properties are controlled through CSS custom properties defined on
 | `--greg-toc-link-color` | Link colour |
 | `--greg-toc-link-hover` | Hover / active link colour |
 
----
 
 ## Customising the accent colour
 
@@ -89,7 +86,6 @@ All visual properties are controlled through CSS custom properties defined on
 }
 ```
 
----
 
 ## Resizable sidebar
 
@@ -97,7 +93,6 @@ The left navigation panel is **drag-to-resize**. A vertical splitter between the
 sidebar and content area accepts mouse drag events to set the sidebar width. The
 splitter snaps to the accent colour on hover.
 
----
 
 ## Code highlighting theme
 

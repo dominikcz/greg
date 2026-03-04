@@ -14,6 +14,8 @@ import { useRouter } from './useRouter.svelte';
 import { useSplitter } from './useSplitter.svelte';
 import { handleCodeGroupClick, handleCodeGroupKeydown } from './codeGroup';
 import allFrontmatters from 'virtual:greg-frontmatter';
+import MarkdownRenderer from './MarkdownRenderer.svelte';
+import LayoutHome from './layouts/LayoutHome.svelte';
 
 type CarbonAdsOptions = {
 code: string;
@@ -48,17 +50,16 @@ return { level: outline as OutlineLevel, label: 'On this page' };
 let mainEl = $state<HTMLElement | undefined>(undefined);
 
 // -- Modules -----------------------------------------------------------------
-const allModules = import.meta.glob('/docs/**/*.md');
-const modules = Object.fromEntries(
-Object.entries(allModules).filter(([k]) => !k.split('/').pop()!.startsWith('__'))
-);
-
 // Frontmatter parsed from raw YAML by vitePluginFrontmatter (virtual module).
 // Keyed by Vite-style absolute paths, e.g. '/docs/guide/index.md'.
-type FrontmatterEntry = { title?: string; order?: number; layout?: 'doc' | 'home' | 'page' };
+// Used as the known-paths set for routing (no glob/import needed).
+type FrontmatterEntry = {
+    title?: string; order?: number; layout?: 'doc' | 'home' | 'page';
+    hero?: Record<string, unknown>; features?: unknown[];
+};
 const frontmatters = allFrontmatters as Record<string, FrontmatterEntry>;
 
-let menu = $derived(prepareMenu(modules, rootPath, frontmatters));
+let menu = $derived(prepareMenu(frontmatters, rootPath, frontmatters));
 let flat = $derived(flattenMenu(menu));
 
 // -- Theme -------------------------------------------------------------------
@@ -85,10 +86,16 @@ return () => window.removeEventListener('keydown', handleGlobalKeydown);
 });
 
 // -- Router ------------------------------------------------------------------
-const router = useRouter(modules, () => rootPath);
+const router = useRouter(frontmatters, () => rootPath);
 
-const isMarkdown = $derived(router.isMarkdown(flat));
-const title      = $derived(router.title(flat));
+const title = $derived(router.title(flat));
+
+// -- Content fetch -----------------------------------------------------------
+async function fetchMarkdown(mdPath: string): Promise<string> {
+    const res = await fetch(mdPath);
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText} — ${mdPath}`);
+    return res.text();
+}
 
 // -- Layout ------------------------------------------------------------------
 // Resolve the key of the active page in the frontmatter map so we can read
@@ -178,19 +185,24 @@ onOpenSearch={() => (searchOpen = true)}
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <main
 bind:this={mainEl}
-class:markdown-body={isMarkdown && activeLayout === 'doc'}
 class:layout-home={activeLayout === 'home'}
 class:layout-page={activeLayout === 'page'}
 onclick={handleInternalLinks}
 >
-{#if router.activeModule}
-{#await router.activeModule()}
+{#if activeLayout === 'home'}
+<LayoutHome
+    hero={(activeFrontmatter as any)?.hero}
+    features={(activeFrontmatter as any)?.features}
+/>
+{:else if router.activeMarkdownPath}
+{#await fetchMarkdown(router.activeMarkdownPath)}
 <div class="spinner-wrap">
 <Spinner />
 </div>
-{:then mod}
-{@const MdComponent = (mod as any).default}
-<MdComponent />
+{:then markdown}
+<MarkdownRenderer {markdown} />
+{:catch}
+<p class="fetch-error">Could not load page.</p>
 {/await}
 {:else if title}
 <h1>{title}</h1>

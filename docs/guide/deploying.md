@@ -9,7 +9,6 @@ Greg outputs a **single-page application (SPA)**. All URLs are handled
 client-side, so the web server must serve `index.html` for every route that
 does not match a static file.
 
----
 
 ## Build
 
@@ -27,7 +26,6 @@ dist/
   <any public/ files>
 ```
 
----
 
 ## SPA fallback — server configuration
 
@@ -68,7 +66,6 @@ my-docs.example.com {
 }
 ```
 
----
 
 ## Netlify
 
@@ -87,7 +84,6 @@ Or use `netlify.toml`:
   status = 200
 ```
 
----
 
 ## Vercel
 
@@ -99,7 +95,6 @@ Add a `vercel.json` at the project root:
 }
 ```
 
----
 
 ## GitHub Pages
 
@@ -110,7 +105,6 @@ GitHub Pages does not natively support SPA fallback. The common workaround is:
 
 Alternatively, use [GitHub Actions + a custom workflow](https://vitejs.dev/guide/static-deploy#github-pages) with the approach above.
 
----
 
 ## Base path
 

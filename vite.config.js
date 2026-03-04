@@ -4,6 +4,7 @@ import { resolve } from 'path';
 import pkg from './package.json' with { type: 'json' };
 import { vitePluginSearchIndex } from './src/lib/MarkdownDocs/vitePluginSearchIndex.js';
 import { vitePluginFrontmatter } from './src/lib/MarkdownDocs/vitePluginFrontmatter.js';
+import { vitePluginCopyDocs } from './src/lib/MarkdownDocs/vitePluginCopyDocs.js';
 
 console.log('Version:', pkg.version);
 
@@ -18,6 +19,7 @@ export default defineConfig({
     svelte(),
     vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
     vitePluginFrontmatter({ docsDir: 'docs' }),
+    vitePluginCopyDocs({ docsDir: 'docs' }),
   ],
   define: {
     __NAME__: `"${pkg.name}"`,

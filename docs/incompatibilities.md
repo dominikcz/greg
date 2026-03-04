@@ -10,16 +10,13 @@ its Markdown syntax conventions. This page lists every place where the two
 diverge so you can migrate smoothly or avoid surprises when referencing VitePress
 documentation alongside Greg.
 
----
 
 ## Frontmatter layouts
 
 **VitePress** controls page layout with frontmatter:
 
 ```yaml
----
 layout: home   # home | doc | page
----
 ```
 
 **Greg** does **not** support frontmatter layouts. Content is always rendered
@@ -30,21 +27,18 @@ team page) use the `<TeamPage>` family of components.
 > See: [Home Page reference](/docs/reference/home-page),
 > [Team Page reference](/docs/reference/team-page)
 
----
 
 ## Frontmatter config (title, description, lang, …)
 
 **VitePress** reads many frontmatter keys that affect the rendered page:
 
 ```yaml
----
 title: My Page
 description: An introduction.
 lang: en-US
 outline: deep
 prev: false
 next: ./other-page
----
 ```
 
 **Greg** ignores all frontmatter keys (mdsvex parses them but Greg does not act
@@ -55,7 +49,6 @@ on them). Exceptions:
 - Custom frontmatter data can still be extracted manually inside Svelte code
   using mdsvex's `metadata` export, but Greg's engine has no built-in support.
 
----
 
 ## Config file (`.vitepress/config.js`)
 
@@ -70,7 +63,6 @@ title, nav, sidebar, social links, etc.
 | Vite plugins, aliases, search index options | `vite.config.js` |
 | Engine props (title, version, outline, Carbon Ads) | `src/App.svelte` |
 
----
 
 ## CLI
 
@@ -84,7 +76,6 @@ title, nav, sidebar, social links, etc.
 | Build | `npm run build` (→ `vite build`) |
 | Preview | `npm run preview` (→ `vite preview`) |
 
----
 
 ## Nav bar & sidebar config
 
@@ -104,7 +95,6 @@ structure inside `docs/`. There is currently no way to override labels,
 reorder items beyond alphabetical sorting (use numeric prefixes as a workaround),
 or mark items as external in the config.
 
----
 
 ## `useData()` / `withBase()` runtime API
 
@@ -114,7 +104,6 @@ or mark items as external in the config.
 **Greg** has no equivalent public runtime API for Markdown pages. The internal
 router state is not exposed to page components.
 
----
 
 ## Data loaders (`.data.js` / `.data.ts`)
 
@@ -128,7 +117,6 @@ export default { load() { return fetch('…').then(r => r.json()) } }
 **Greg** has **no equivalent**. To load data at build time, use a standard Vite
 virtual module or pre-generate JSON files and import them in `<script>` blocks.
 
----
 
 ## Emoji shortcodes (`:tada:`)
 
@@ -144,7 +132,6 @@ virtual module or pre-generate JSON files and import them in `<script>` blocks.
 🎉 💯
 ```
 
----
 
 ## Last Updated / Edit Link / Prev–Next links
 
@@ -154,7 +141,6 @@ links, and automatic previous/next pagination between pages.
 **Greg** does **not** support any of these features automatically. You can add
 them manually using `<script>` blocks in individual pages if needed.
 
----
 
 ## Internationalization (i18n)
 
@@ -163,7 +149,6 @@ language switcher in the nav.
 
 **Greg** has **no i18n support**.
 
----
 
 ## Sitemap generation
 
@@ -172,7 +157,6 @@ language switcher in the nav.
 **Greg** does **not** generate a sitemap. Use a post-build script (e.g.
 [`vite-plugin-sitemap`](https://github.com/…)) if needed.
 
----
 
 ## Static Site Generation (SSG) vs SPA
 
@@ -188,7 +172,6 @@ out of the box.
 - Search engine crawlers that do not execute JavaScript will not see page content.
 - `<meta>` tags are not per-page — they are static in `index.html`.
 
----
 
 ## MPA mode
 
@@ -196,7 +179,6 @@ out of the box.
 
 **Greg** is SPA-only; no MPA mode exists.
 
----
 
 ## Custom themes / layouts
 
@@ -206,7 +188,6 @@ out of the box.
 [CSS variables](/docs/reference/theme) and by editing the Svelte source files
 directly.
 
----
 
 ## Vue-specific syntax in Markdown
 
@@ -218,7 +199,6 @@ etc.) in `.md` files.
 
 > See: [Using Svelte in Markdown](/docs/guide/using-svelte)
 
----
 
 ## Summary table
 

@@ -9,7 +9,6 @@ Greg processes every `.md` file through [mdsvex](https://mdsvex.pngwn.io/), a
 Markdown preprocessor for Svelte. This means you can mix regular Markdown with
 Svelte components, reactive state and template logic anywhere in your pages.
 
----
 
 ## Auto-imported components
 
@@ -31,7 +30,6 @@ The following components are always in scope:
 `SocialLink`, `SocialLinks`, `TeamMember`, `TeamMembers`,
 `TeamPage`, `TeamPageTitle`, `TeamPageSection`
 
----
 
 ## Adding a `<script>` block
 
@@ -51,7 +49,6 @@ Current time: **{now}**
 > The `setup` attribute from Vue/VitePress syntax is stripped automatically if
 > present, so copy-pasting VitePress examples still works.
 
----
 
 ## Template syntax
 
@@ -68,7 +65,6 @@ Standard Svelte template syntax works inside Markdown:
 {/if}
 ```
 
----
 
 ## Escaping `{` and `}`
 
@@ -82,7 +78,6 @@ Pass an options object like `&#123; key: value &#125;`.
 Inside fenced code blocks and backtick inline code, `{` and `}` are escaped
 automatically by the `remarkEscapeSvelte` plugin — no action required.
 
----
 
 ## Limitations
 
