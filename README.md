@@ -17,8 +17,8 @@ TODO:
 0.7
 - [ ] konfiguracja w jednym dedykowanym pliku greg.config.js
 - [ ] dodatki do frontmatter:
-  - sterowanie outline
-  - badge dla strony (pokazywane równieżna nawigacji) - jak w Starlight
+  - sterowanie outline kompatybilne z VitePress
+  - badge dla strony (pokazywane równieżna nawigacji) - jak w Starlight (Astro)
 - [ ] dodać możliwość nadpisania sidebar w konfiguracji:
   - domyślnie 'auto'
   - na sztywno, ale z automatycznymi fragmentami jak w Starlight (Astro)
@@ -42,3 +42,4 @@ TODO:
 1.0 
 - [ ] tryb edycji
 - [ ] komentarze
+- porządki w kodzie, formatowanie itd. itp.
