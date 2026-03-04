@@ -53,7 +53,8 @@ const modules = Object.fromEntries(
 Object.entries(allModules).filter(([k]) => !k.split('/').pop()!.startsWith('__'))
 );
 
-// Frontmatter map built at dev/build time by vitePluginFrontmatter.
+// Frontmatter parsed from raw YAML by vitePluginFrontmatter (virtual module).
+// Keyed by Vite-style absolute paths, e.g. '/docs/guide/index.md'.
 type FrontmatterEntry = { title?: string; order?: number; layout?: 'doc' | 'home' | 'page' };
 const frontmatters = allFrontmatters as Record<string, FrontmatterEntry>;
 
