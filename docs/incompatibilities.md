@@ -19,10 +19,19 @@ documentation alongside Greg.
 layout: home   # home | doc | page
 ```
 
-**Greg** does **not** support frontmatter layouts. Content is always rendered
-as a Markdown page. To build a home page, place `<Hero>` and `<Features>`
-components directly in `docs/index.md`. To build a full-page layout (e.g. a
-team page) use the `<TeamPage>` family of components.
+**Greg** supports the same three `layout` values:
+
+| Value  | Sidebar | Outline | Content |
+| ------ | ------- | ------- | ------- |
+| `doc`  | ✅      | ✅      | Markdown (default) |
+| `home` | ❌      | ❌      | `<Hero>` + `<Features>` built from `hero` / `features` frontmatter keys |
+| `page` | ❌      | ❌      | Markdown, full-width |
+
+For the `home` layout, supply the `hero` and `features` keys in frontmatter
+(see [Home Page reference](/docs/reference/home-page)). You can also place
+`<Hero>` and `<Features>` components directly in Markdown for more control.
+For a team page use the `<TeamPage>` family of components inside any `doc` or
+`page` layout.
 
 > See: [Home Page reference](/docs/reference/home-page),
 > [Team Page reference](/docs/reference/team-page)
@@ -41,13 +50,22 @@ prev: false
 next: ./other-page
 ```
 
-**Greg** ignores all frontmatter keys (mdsvex parses them but Greg does not act
-on them). Exceptions:
+**Greg** reads the following frontmatter keys:
 
-- `outline` is **not** read per-page from frontmatter — set it globally on the
-  `<MarkdownDocs>` component.
+| Key        | Effect |
+| ---------- | ------ |
+| `title`    | Overrides the nav label and browser title derived from the file name |
+| `order`    | Sort position within the sidebar level (lower = earlier; defaults to alphabetical) |
+| `layout`   | Page layout — `doc` (default) \| `home` \| `page` |
+| `hero`     | Hero block data used by `layout: home` |
+| `features` | Feature-card list used by `layout: home` |
+
+Keys that are **not** yet acted on: `description`, `lang`, `outline` (per-page),
+`prev`, `next`.
+
+- `outline` is set **globally** via the `<MarkdownDocs outline={…}>` prop, not per-page.
 - Custom frontmatter data can still be extracted manually inside Svelte code
-  using mdsvex's `metadata` export, but Greg's engine has no built-in support.
+  using mdsvex's `metadata` export.
 
 
 ## Config file (`.vitepress/config.js`)
@@ -90,10 +108,20 @@ export default {
 }
 ```
 
-**Greg** generates **both** the nav and the sidebar automatically from the file
-structure inside `docs/`. There is currently no way to override labels,
-reorder items beyond alphabetical sorting (use numeric prefixes as a workaround),
-or mark items as external in the config.
+**Greg** has no top nav bar. The header contains only the site title, version
+badge, theme toggle, and search button. Navigation is handled exclusively by the
+**sidebar**, which is generated automatically from the `docs/` folder structure.
+
+Customisation available through frontmatter:
+
+| Goal | How |
+| ---- | --- |
+| Override the label of a page or folder | `title: Custom Label` in the page's frontmatter (or `index.md` for folders) |
+| Control sort order within a level | `order: 1` (lower = earlier; items without `order` sort alphabetically after ordered items) |
+
+To exclude a file or directory from routing and the sidebar, prefix its name
+with `__` (double underscore). There is currently no way to define external
+links in the sidebar or reorganise the tree beyond what frontmatter provides.
 
 
 ## `useData()` / `withBase()` runtime API
@@ -204,11 +232,11 @@ etc.) in `.md` files.
 
 | Feature | VitePress | Greg |
 | ------- | --------- | ---- |
-| `layout: home` frontmatter | ✅ | ❌ (use `<Hero>` + `<Features>`) |
-| `layout: page` frontmatter | ✅ | ❌ |
-| Per-page frontmatter config | ✅ | ❌ |
+| `layout: home` frontmatter | ✅ | ✅ |
+| `layout: page` frontmatter | ✅ | ✅ |
+| Per-page frontmatter config | ✅ | ✅ `title`, `order`, `layout`, `hero`, `features` |
 | `.vitepress/config.js` | ✅ | ❌ (split across files) |
-| Declarative nav / sidebar | ✅ | ❌ (auto-generated) |
+| Declarative nav / sidebar | ✅ | ❌ (auto-generated from folder structure) |
 | `useData()` runtime API | ✅ | ❌ |
 | Data loaders (`.data.js`) | ✅ | ❌ |
 | Emoji shortcodes | ✅ | ❌ |
@@ -232,6 +260,7 @@ etc.) in `.md` files.
 | `[[toc]]` inline TOC | ✅ | ✅ |
 | Inline attrs on links/images | ❌ | ✅ |
 | Built-in search | ✅ | ✅ |
+| Mermaid diagrams | ✅ | ✅ |
 | Dark / light mode | ✅ | ✅ |
 | Outline panel | ✅ | ✅ |
 | Carbon Ads | ✅ | ✅ |

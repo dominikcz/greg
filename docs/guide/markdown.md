@@ -369,14 +369,27 @@ Include another Markdown file inline:
 <!--@include: ./__shared-warning.md-->
 ```
 
+File `__shared-warning.md` looks like this:
+
+<<< /guide/__shared-warning.md
+
+Output:
+
+<!--@include: ./__shared-warning.md-->
+
+
 The included file is processed by the full Markdown pipeline. Partial files
 (name starts with `__`) are excluded from routing.
 
-The `$docs` alias resolves to the `docs/` directory:
+The `/` prefix resolves to the `docs/` directory root:
 
 ```md
-<!--@include: $docs/__partials/note.md-->
+<!--@include: /__partials/note.md-->
 ```
+
+Output:
+
+<!--@include: /__partials/note.md-->
 
 
 ## Math equations
@@ -433,8 +446,12 @@ the closing `)`:
 [Open in new tab](https://example.com){target="_blank" rel="noopener"}
 
 [styled link](./routing){class="my-link"}
-every Markdown page without any import statement — they are auto-injected by the
-`remarkGlobalComponents` plugin.
+
+
+## Svelte components
+
+Built-in components (`Badge`, `Button`, `Image`, `Link`) can be used directly in
+`.md` files without any import statement:
 
 ```md
 ### Stability <Badge type="tip" text="stable" />
@@ -452,16 +469,18 @@ The API is considered stable as of v1.0.
 
 <Badge type="warning">experimental</Badge>
 
-You can also write arbitrary Svelte markup:
+::: info .svx files
+In `.svx` files you can also write arbitrary Svelte markup with full reactivity
+(`$state`, event handlers, etc.). In runtime `.md` files only the registered
+built-in components are hydrated.
+:::
 
-```md
-<script>
-  let count = $state(0);
-</script>
+## Mermaid diagrams
 
-<button onclick={() => count++}>Clicked {count} times</button>
-```
+Greg supports all kinds of Mermaid diagrams.
 
-> **Note:** Svelte `{...}` interpolations inside code blocks and inline code are
-> escaped automatically by `remarkEscapeSvelte`, so you don't need to worry about
-> conflicts.
+<<< @/snippets/mermaid-sequence.md
+
+Output:
+
+<!--@include: @/snippets/mermaid-sequence.md-->

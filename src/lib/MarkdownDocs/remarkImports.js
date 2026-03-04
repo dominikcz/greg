@@ -76,26 +76,13 @@ function getCurrentDir(file, sourceRoot, docsDir) {
 }
 
 /**
- * Expand the `$docs` alias in a path string.
- * `$docs/foo` → `<docsDir>/foo`,  `$docs` alone → `<docsDir>`
- */
-function expandDocsAlias(specPath, docsDir) {
-	if (specPath === '$docs') return docsDir;
-	if (specPath.startsWith('$docs/')) return docsDir + specPath.slice(5);
-	return specPath;
-}
-
-/**
  * Resolve an import specifier to an absolute file path.
  *
- *   @/path  or  @path   →  <sourceRoot>/path
- *   $docs/path           →  <sourceRoot>/<docsDir>/path
- *   /path               →  <docsRoot>/path
+ *   `@/path` or `@path`  →  <sourceRoot>/path
+ *   /path               →  <docsRoot>/path  (leading / = relative to docsDir)
  *   ./path  ../path     →  <currentDir>/path
  */
 function resolveImportPath(specPath, currentDir, sourceRoot, docsDir) {
-	const expanded = expandDocsAlias(specPath, docsDir);
-	if (expanded !== specPath) return path.resolve(sourceRoot, expanded);
 	if (specPath === '@') return sourceRoot;
 	if (specPath.startsWith('@/')) return path.resolve(sourceRoot, specPath.slice(2));
 	if (specPath.startsWith('@')) return path.resolve(sourceRoot, specPath.slice(1));
@@ -391,12 +378,8 @@ function normalizeInternalLinkUrl(url) {
 	return (normalized || '.') + hashPart;
 }
 
-/** Expand `$docs` alias in link/image URLs (remark AST), and normalize internal link URLs. */
-function expandAliasInUrls(node, docsDir) {
-	if ((node.type === 'link' || node.type === 'image') && typeof node.url === 'string') {
-		const expanded = expandDocsAlias(node.url, docsDir);
-		if (expanded !== node.url) node.url = expanded;
-	}
+/** Normalize internal link URLs (remark AST). */
+function expandAliasInUrls(node) {
 	// Normalize internal link URLs to VitePress routing conventions (links only, not images).
 	// Skip normalization when the link has an explicit target attribute (e.g. {target="_self"}),
 	// which signals a non-VitePress page where the .html extension must be preserved.
@@ -415,8 +398,8 @@ async function transformChildren(children, currentDir, sourceRoot, docsDir, dept
 		const node = children[i];
 		const nodeDir = node?.data?.__includeDir || currentDir;
 
-		// Expand $docs alias in links and images
-		expandAliasInUrls(node, docsDir);
+		// Normalize internal link URLs
+		expandAliasInUrls(node);
 
 		if (node?.type === 'paragraph' && Array.isArray(node.children)) {
 			// Reconstruct the raw line by joining all inline node values.

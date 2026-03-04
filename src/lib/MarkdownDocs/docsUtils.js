@@ -47,6 +47,9 @@ export function prepareMenu(modules, base, frontmatters = {}) {
         // parts: ['folder1', 'test.md'] or ['index.md'] or ['folder1', 'index.md']
         const parts = relativePath.replace(/^\//, '').split('/').filter(Boolean);
 
+        // Skip hidden files/dirs (starting with __)
+        if (parts.some(p => p.replace(/\.md$/, '').startsWith('__'))) continue;
+
         let currentLevel = root;
 
         for (let idx = 0; idx < parts.length; idx++) {

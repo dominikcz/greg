@@ -49,6 +49,24 @@
     --greg-sponsor-bg: rgba(219, 109, 160, 0.08);
 
     --greg-code-inline-color: #e4004a;
+
+    /* ── Mermaid diagram CSS-variable tokens (light) ────────── */
+    --mmd-canvas:       #ffffff;
+    --mmd-node-bg:      #ffffff;
+    --mmd-text:         rgba(0, 0, 0, 0.87);
+    --mmd-text-sub:     rgba(0, 0, 0, 0.60);
+    --mmd-line:         #757575;
+    --mmd-border:       #e0e0e0;
+    --mmd-actor-line:   #bdbdbd;
+    --mmd-accent-1:     #6200ee;
+    --mmd-accent-2:     #03dac6;
+    --mmd-accent-3:     #b00020;
+    --mmd-accent-4:     #018786;
+    --mmd-accent-5:     #3700b3;
+    --mmd-accent-6:     #cf6679;
+    --mmd-shadow-sm:    drop-shadow(0 1px 3px rgba(0,0,0,.12)) drop-shadow(0 1px 2px rgba(0,0,0,.24));
+    --mmd-shadow-md:    drop-shadow(0 2px 4px rgba(0,0,0,.14)) drop-shadow(0 4px 5px rgba(0,0,0,.12));
+    --mmd-shadow-acc1:  drop-shadow(0 2px 4px rgba(98,0,238,.3))  drop-shadow(0 4px 8px rgba(98,0,238,.2));
 }
 
 :root {
@@ -114,6 +132,24 @@
     --greg-sponsor-bg: rgba(226, 130, 155, 0.10);
 
     --greg-code-inline-color: #daa520;
+
+    /* ── Mermaid diagram CSS-variable tokens (dark) ─────────── */
+    --mmd-canvas:       #1e1e2e;
+    --mmd-node-bg:      #2d2d44;
+    --mmd-text:         rgba(255, 255, 255, 0.87);
+    --mmd-text-sub:     rgba(255, 255, 255, 0.60);
+    --mmd-line:         #9090b8;
+    --mmd-border:       #3e3e5a;
+    --mmd-actor-line:   #5a5a7a;
+    --mmd-accent-1:     #bb86fc;
+    --mmd-accent-2:     #03dac6;
+    --mmd-accent-3:     #cf6679;
+    --mmd-accent-4:     #03dac6;
+    --mmd-accent-5:     #7c4dff;
+    --mmd-accent-6:     #ef9a9a;
+    --mmd-shadow-sm:    drop-shadow(0 2px 6px rgba(0,0,0,.40)) drop-shadow(0 1px 3px rgba(0,0,0,.50));
+    --mmd-shadow-md:    drop-shadow(0 3px 8px rgba(0,0,0,.45)) drop-shadow(0 5px 10px rgba(0,0,0,.35));
+    --mmd-shadow-acc1:  drop-shadow(0 2px 6px rgba(187,134,252,.35)) drop-shadow(0 4px 10px rgba(187,134,252,.2));
 }
 
 @media (prefers-color-scheme: dark) {
@@ -128,6 +164,12 @@
 
 .catalog[data-theme="light"] {
     @include greg-light-vars;
+}
+
+/* Mermaid SVG background follows the active palette token */
+.catalog .mermaid svg,
+.catalog [id^="mermaid-"] svg {
+    background: var(--bgColor-muted) !important;
 }
 
 @mixin greg-dark-markdown-vars {

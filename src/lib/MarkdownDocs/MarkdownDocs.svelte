@@ -33,9 +33,19 @@ mainTitle?: string;
 carbonAds?: CarbonAdsOptions;
 /** VitePress-compatible outline option. false = disabled, [2,3] = default. */
 outline?: OutlineOption;
+/**
+ * Key of the active Mermaid diagram theme.
+ * Built-in values: `'material'` (default).
+ */
+mermaidTheme?: string;
+/**
+ * Extra (or override) Mermaid theme configs keyed by theme name.
+ * Merged on top of the built-in themes inside MarkdownRenderer.
+ */
+mermaidThemes?: Record<string, Record<string, unknown>>;
 };
 
-let { children, rootPath = '/docs', version = '', mainTitle = 'Greg', carbonAds, outline = [2, 3] }: Props = $props();
+let { children, rootPath = '/docs', version = '', mainTitle = 'Greg', carbonAds, outline = [2, 3], mermaidTheme, mermaidThemes }: Props = $props();
 
 // -- Outline -----------------------------------------------------------------
 const outlineNorm = $derived.by(() => {
@@ -200,9 +210,9 @@ onclick={handleInternalLinks}
 <Spinner />
 </div>
 {:then markdown}
-<MarkdownRenderer {markdown} />
+    <MarkdownRenderer {markdown} baseUrl={router.activeMarkdownPath} docsPrefix={rootPath} {mermaidTheme} {mermaidThemes} colorTheme={theme} />
 {:catch}
-<p class="fetch-error">Could not load page.</p>
+    <p class="fetch-error">Could not load page.</p>
 {/await}
 {:else if title}
 <h1>{title}</h1>
