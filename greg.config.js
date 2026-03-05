@@ -35,8 +35,8 @@ export default {
      * auto-generated sub-sections (use `auto` to reference a sub-path):
      *
      *   sidebar: [
-     *     { text: 'Guide',     auto: '/docs/guide' },
-     *     { text: 'Reference', auto: '/docs/reference' },
+     *     { text: 'Guide',     auto: '/guide' },
+     *     { text: 'Reference', auto: '/reference' },
      *     { text: 'GitHub', link: 'https://github.com/…' },
      *   ],
      */

@@ -195,11 +195,17 @@ export function parseSidebarConfig(items, frontmatters, base) {
 
     function convert(item) {
         if (item.auto) {
-            // Auto-generate children from the given sub-path.
-            const autoMenu = prepareMenu(frontmatters, item.auto, frontmatters);
+            // `auto` is relative to `base` (rootPath), e.g. '/guide' → '/docs/guide'
+            const autoBase = base + item.auto;
+            // Only pass paths that belong to this sub-section so stray paths
+            // don't become extra folder segments inside prepareMenu.
+            const autoFrontmatters = Object.fromEntries(
+                Object.entries(frontmatters).filter(([k]) => k.startsWith(autoBase + '/') || k === autoBase)
+            );
+            const autoMenu = prepareMenu(autoFrontmatters, autoBase, autoFrontmatters);
             return {
                 label: item.text,
-                link: item.link ?? item.auto,
+                link: item.link ?? autoBase,
                 badge: normalizeBadge(item.badge),
                 children: autoMenu,
                 type: item.link ? 'md' : 'folder',

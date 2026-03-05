@@ -157,6 +157,8 @@ const activeKey = $derived.by(() => {
 });
 
 const activeFrontmatter = $derived(activeKey ? frontmatters[activeKey] : undefined);
+/** True when the URL is inside rootPath but no matching file exists. */
+const notFound = $derived(activeKey === null && router.active.startsWith(rootPath));
 const activeLayout = $derived<'doc' | 'home' | 'page'>(
     activeFrontmatter?.layout ?? 'doc'
 );
@@ -287,6 +289,14 @@ onclick={handleInternalLinks}
 {:catch}
     <p class="fetch-error">Could not load page.</p>
 {/await}
+{:else if notFound}
+<div class="not-found">
+    <p class="not-found-code">404</p>
+    <h1>Strona nie znaleziona</h1>
+    <p class="not-found-path"><code>{router.active}</code></p>
+    <!-- svelte-ignore a11y_invalid_attribute -->
+    <a href={rootPath} onclick={(e) => { e.preventDefault(); router.navigate(rootPath); }}>Wróć do dokumentacji</a>
+</div>
 {:else if title}
 <h1>{title}</h1>
 {@render children?.()}
@@ -416,5 +426,42 @@ filter: drop-shadow(-40px 40px 0 var(--greg-accent));
     font-size: 0.8rem;
     color: var(--greg-menu-section-color);
     margin-top: 1.5rem;
+}
+
+.not-found {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    text-align: center;
+    padding: 4rem 2rem;
+
+    .not-found-code {
+        font-size: 6rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--greg-accent);
+        margin: 0;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem;
+    }
+
+    .not-found-path {
+        color: var(--greg-menu-section-color);
+        font-size: 0.9rem;
+        margin: 0 0 1.5rem;
+    }
+
+    a {
+        color: var(--greg-accent);
+        font-weight: 500;
+        text-decoration: none;
+        &:hover { text-decoration: underline; }
+    }
 }
 </style>
