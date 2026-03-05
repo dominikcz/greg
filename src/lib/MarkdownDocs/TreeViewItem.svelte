@@ -60,7 +60,7 @@
 			<span class="chevron" class:expanded>
 				<ChevronRight />
 			</span>
-			{#if item.status}<span class={item.status}></span>{/if}{item.label}
+			{#if item.status}<span class={item.status}></span>{/if}{item.label}{#if item.badge}<span class="nav-badge {item.badge.type ?? 'tip'}">{item.badge.text}</span>{/if}
 		</a>
 		{#if expanded}
 			<ul>
@@ -75,7 +75,7 @@
 			class="no-arrow"
 			class:active={active == item.link}
 			onclick={handleClick}
-		>{#if item.status}<span class={item.status}></span>{/if}{item.label}</a>
+		>{#if item.status}<span class={item.status}></span>{/if}{item.label}{#if item.badge}<span class="nav-badge {item.badge.type ?? 'tip'}">{item.badge.text}</span>{/if}</a>
 	{/if}
 </li>
 
@@ -142,6 +142,40 @@
 			&:hover {
 				background-color: var(--greg-accent-light);
 			}
+		}
+	}
+
+	.nav-badge {
+		display: inline-block;
+		margin-left: 0.4rem;
+		padding: 0 7px;
+		border-radius: 10px;
+		font-size: 11px;
+		font-weight: 500;
+		line-height: 18px;
+		vertical-align: middle;
+		white-space: nowrap;
+		border: 1px solid transparent;
+
+		&.tip {
+			background-color: var(--greg-tip-bg);
+			border-color: var(--greg-tip-border);
+			color: var(--greg-tip-text);
+		}
+		&.info {
+			background-color: var(--greg-info-bg);
+			border-color: var(--greg-info-border);
+			color: var(--greg-info-text);
+		}
+		&.warning {
+			background-color: var(--greg-warning-bg);
+			border-color: var(--greg-warning-border);
+			color: var(--greg-warning-text);
+		}
+		&.danger {
+			background-color: var(--greg-danger-bg);
+			border-color: var(--greg-danger-border);
+			color: var(--greg-danger-text);
 		}
 	}
 </style>

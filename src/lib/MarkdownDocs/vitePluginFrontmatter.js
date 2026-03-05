@@ -54,7 +54,11 @@ export function vitePluginFrontmatter({ docsDir = 'docs' } = {}) {
                     const viteKey = '/' + rel; // e.g. /docs/guide/index.md
                     try {
                         const content = fs.readFileSync(full, 'utf8');
-                        entries[viteKey] = parseFrontmatter(content);
+                        const stat = fs.statSync(full);
+                        entries[viteKey] = {
+                            ...parseFrontmatter(content),
+                            _mtime: stat.mtime.toISOString(),
+                        };
                     } catch { /* skip unreadable files */ }
                 }
             }

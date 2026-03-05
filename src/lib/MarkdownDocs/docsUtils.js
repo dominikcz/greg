@@ -3,6 +3,17 @@ function capitalize(str) {
 }
 
 /**
+ * Normalise a raw frontmatter badge value to `{ text, type }` or `undefined`.
+ * Accepts a plain string (type defaults to 'tip') or an object.
+ */
+function normalizeBadge(raw) {
+    if (!raw) return undefined;
+    if (typeof raw === 'string') return { text: raw, type: 'tip' };
+    if (raw.text) return { text: raw.text, type: raw.type ?? 'tip' };
+    return undefined;
+}
+
+/**
  * Sort items by optional `order` field first (lower = earlier), then
  * alphabetically by label as a tie-breaker.
  * Items without `order` sort after items that have one.
@@ -73,6 +84,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
                             children: [],
                             type: 'md',
                             _order: fm.order,
+                            badge: normalizeBadge(fm.badge),
                         };
                         currentLevel.push(node);
                     } else {
@@ -81,6 +93,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
                         // Apply frontmatter overrides (index.md processed first, so this wins)
                         if (fm.title != null) node.label = fm.title;
                         if (fm.order != null) node._order = fm.order;
+                        if (fm.badge != null) node.badge = normalizeBadge(fm.badge);
                     }
                 } else {
                     // Regular .md file — leaf node
@@ -93,6 +106,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
                             children: [],
                             type: 'md',
                             _order: fm.order,
+                            badge: normalizeBadge(fm.badge),
                         });
                     }
                 }
@@ -117,13 +131,91 @@ export function flattenMenu(menu) {
     const result = [];
 
     function flattenItem(item) {
-        result.push({ label: item.label, link: item.link, type: item.type });
+        result.push({ label: item.label, link: item.link, type: item.type, badge: item.badge });
         for (const child of item.children ?? []) flattenItem(child);
     }
 
     for (const item of menu) flattenItem(item);
 
     return result;
+}
+
+/**
+ * Returns the `{ prev, next }` neighbours of `active` within the flattened
+ * navigation list (md pages only, in sidebar order).
+ *
+ * @param {string} active
+ * @param {Array<{ label: string; link: string; type?: string }>} flat
+ * @returns {{ prev: { label: string; link: string } | null, next: { label: string; link: string } | null }}
+ */
+export function getPrevNext(active, flat) {
+    const pages = flat.filter(x => x.type === 'md');
+    const idx = pages.findIndex(x => x.link === active);
+    if (idx === -1) return { prev: null, next: null };
+    return {
+        prev: idx > 0 ? { label: pages[idx - 1].label, link: pages[idx - 1].link } : null,
+        next: idx < pages.length - 1 ? { label: pages[idx + 1].label, link: pages[idx + 1].link } : null,
+    };
+}
+
+/**
+ * Returns the ancestor chain from the root of `menu` down to the node
+ * whose link matches `active`, inclusive.
+ *
+ * @param {string} active
+ * @param {Array<{ label: string; link: string; children?: Array<any> }>} menu
+ * @returns {Array<{ label: string; link: string }>}
+ */
+export function getBreadcrumbItems(active, menu) {
+    function findPath(items, target, path) {
+        for (const item of items) {
+            const next = [...path, { label: item.label, link: item.link }];
+            if (item.link === target) return next;
+            if (item.children?.length) {
+                const found = findPath(item.children, target, next);
+                if (found) return found;
+            }
+        }
+        return null;
+    }
+    return findPath(menu, active, []) ?? [];
+}
+
+/**
+ * Converts a declarative sidebar config array to a `TreeViewItem[]` tree.
+ * Items with an `auto` path have their children generated from `frontmatters`.
+ *
+ * @param {Array<{ text: string; link?: string; items?: Array<any>; auto?: string; badge?: any }>} items
+ * @param {Record<string, { title?: string; order?: number; [k: string]: unknown }>} frontmatters
+ * @param {string} base  - docs root prefix (e.g. '/docs')
+ * @returns {import('./treeViewTypes').TreeViewItem[] | null}
+ */
+export function parseSidebarConfig(items, frontmatters, base) {
+    if (!Array.isArray(items)) return null;
+
+    function convert(item) {
+        if (item.auto) {
+            // Auto-generate children from the given sub-path.
+            const autoMenu = prepareMenu(frontmatters, item.auto, frontmatters);
+            return {
+                label: item.text,
+                link: item.link ?? item.auto,
+                badge: normalizeBadge(item.badge),
+                children: autoMenu,
+                type: item.link ? 'md' : 'folder',
+            };
+        }
+        const children = Array.isArray(item.items) ? item.items.map(convert) : [];
+        return {
+            label: item.text,
+            link: item.link ?? '',
+            badge: normalizeBadge(item.badge),
+            children,
+            type: item.link ? 'md' : 'folder',
+        };
+    }
+
+    return items.map(convert);
 }
 
 export function getBreadcrumb(active, flat) {

@@ -14,19 +14,19 @@ TODO:
 - [x] obsługa layout w markdown
 - [x] nazwy w menu z frontmatter
 
-0.7
-- [ ] konfiguracja w jednym dedykowanym pliku greg.config.js
-- [ ] dodatki do frontmatter:
-  - sterowanie outline kompatybilne z VitePress
-  - badge dla strony (pokazywane równieżna nawigacji) - jak w Starlight (Astro)
-- [ ] dodać możliwość nadpisania sidebar w konfiguracji:
-  - domyślnie 'auto'
-  - na sztywno, ale z automatycznymi fragmentami jak w Starlight (Astro)
-- [ ] konfigurowalne parametry:
-  - pokazywanie breadcrumb w dokumencie
-  - pokazywanie back to top
-  - pokazywanie daty ostatniej modyfikacji strony
-- [ ] obsługa nawigacji z VitePress
+0.7 ✅
+- [x] konfiguracja w jednym dedykowanym pliku greg.config.js (`vitePluginGregConfig`)
+- [x] dodatki do frontmatter:
+  - [x] sterowanie outline kompatybilne z VitePress (per-page `outline:` frontmatter)
+  - [x] badge dla strony (`badge:` frontmatter, pokazywany w nawigacji)
+- [x] możliwość nadpisania sidebar w konfiguracji (`sidebar: 'auto' | SidebarItem[]`)
+  - domyślnie `'auto'` (istniejące zachowanie)
+  - na sztywno lub z automatycznymi fragmentami (`auto:` w pozycji sidebar)
+- [x] konfigurowalne parametry (prop lub greg.config.js):
+  - [x] pokazywanie breadcrumb w dokumencie (`breadcrumb: true`)
+  - [x] back to top (`backToTop: true`)
+  - [x] pokazywanie daty ostatniej modyfikacji strony (`lastModified: true`)
+- [x] nawigacja prev/next kompatybilna z VitePress (auto + frontmatter `prev:`/`next:`)
 
 0.8
 - [ ] wyszukiwanie lokalne i po stronie serwera

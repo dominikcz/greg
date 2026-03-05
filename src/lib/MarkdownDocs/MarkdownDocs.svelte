@@ -4,7 +4,7 @@ import DocsNavigation from './DocsNavigation.svelte';
 import DocsSiteHeader from './DocsSiteHeader.svelte';
 import SearchModal from './SearchModal.svelte';
 import Spinner from './../spinner/spinner.svelte';
-import { prepareMenu, flattenMenu } from './docsUtils';
+import { prepareMenu, flattenMenu, getPrevNext, getBreadcrumbItems, parseSidebarConfig } from './docsUtils';
 import 'github-markdown-css';
 import './../scss/markdownDocs.scss';
 import { setPortalsContext } from './../portal';
@@ -16,6 +16,10 @@ import { handleCodeGroupClick, handleCodeGroupKeydown } from './codeGroup';
 import allFrontmatters from 'virtual:greg-frontmatter';
 import MarkdownRenderer from './MarkdownRenderer.svelte';
 import LayoutHome from './layouts/LayoutHome.svelte';
+import BackToTop from './BackToTop.svelte';
+import Breadcrumb from './Breadcrumb.svelte';
+import PrevNext from './PrevNext.svelte';
+import gregConfig from 'virtual:greg-config';
 
 type CarbonAdsOptions = {
 code: string;
@@ -25,14 +29,17 @@ placement: string;
 type OutlineLevel = false | number | [number, number] | 'deep';
 type OutlineOption = OutlineLevel | { level?: OutlineLevel; label?: string };
 
+type BadgeSpec = string | { text: string; type?: string };
+type SidebarItem = { text: string; link?: string; items?: SidebarItem[]; auto?: string; badge?: BadgeSpec };
+
 type Props = {
-rootPath: string;
+rootPath?: string;
 children?: Snippet;
-version: string;
+version?: string;
 mainTitle?: string;
 carbonAds?: CarbonAdsOptions;
 /** VitePress-compatible outline option. false = disabled, [2,3] = default. */
-outline?: OutlineOption;
+outline?: OutlineOption | boolean;
 /**
  * Key of the active Mermaid diagram theme.
  * Built-in values: `'material'` (default).
@@ -43,19 +50,38 @@ mermaidTheme?: string;
  * Merged on top of the built-in themes inside MarkdownRenderer.
  */
 mermaidThemes?: Record<string, Record<string, unknown>>;
+/** Show breadcrumb navigation above content (doc layout only). */
+breadcrumb?: boolean;
+/** Show Back To Top button. */
+backToTop?: boolean;
+/** Show the file's last-modified date below content (doc layout only).
+ * `true`  – uses default format `{ dateStyle: 'medium' }` and browser locale.
+ * Object  – `{ text?, locale?, formatOptions? }` for full control.
+ */
+lastModified?: boolean | { text?: string; locale?: string; formatOptions?: Intl.DateTimeFormatOptions };
+/**
+ * Sidebar tree configuration.
+ * `'auto'` (default) — generated from the docs folder structure.
+ * Pass an array of `SidebarItem` objects to define the sidebar manually;
+ * items with an `auto` path have their children auto-generated.
+ */
+sidebar?: 'auto' | SidebarItem[];
 };
 
-let { children, rootPath = '/docs', version = '', mainTitle = 'Greg', carbonAds, outline = [2, 3], mermaidTheme, mermaidThemes }: Props = $props();
+let { children, rootPath = (gregConfig as any).rootPath ?? '/docs', version = (gregConfig as any).version ?? '', mainTitle = (gregConfig as any).mainTitle ?? 'Greg', carbonAds = (gregConfig as any).carbonAds, outline = (gregConfig as any).outline ?? [2, 3] as [number, number], mermaidTheme = (gregConfig as any).mermaidTheme, mermaidThemes, breadcrumb = (gregConfig as any).breadcrumb ?? false, backToTop = (gregConfig as any).backToTop ?? false, lastModified = (gregConfig as any).lastModified ?? false, sidebar = (gregConfig as any).sidebar ?? 'auto' }: Props = $props();
 
 // -- Outline -----------------------------------------------------------------
-const outlineNorm = $derived.by(() => {
-if (outline === false) return null;
-if (typeof outline === 'object' && !Array.isArray(outline) && ('level' in outline || 'label' in outline)) {
-const o = outline as { level?: OutlineLevel; label?: string };
-return { level: o.level ?? [2, 3] as [number, number], label: o.label ?? 'On this page' };
+function normalizeOutline(o: OutlineOption | boolean | undefined | null): { level: OutlineLevel; label: string } | null {
+    if (o === false || o === null || o === undefined) return null;
+    if (o === true) return { level: [2, 3] as [number, number], label: 'On this page' };
+    if (typeof o === 'object' && !Array.isArray(o) && ('level' in o || 'label' in o)) {
+        const oo = o as { level?: OutlineLevel; label?: string };
+        return { level: oo.level ?? [2, 3] as [number, number], label: oo.label ?? 'On this page' };
+    }
+    return { level: o as OutlineLevel, label: 'On this page' };
 }
-return { level: outline as OutlineLevel, label: 'On this page' };
-});
+
+const globalOutlineNorm = $derived(normalizeOutline(outline));
 
 let mainEl = $state<HTMLElement | undefined>(undefined);
 
@@ -64,12 +90,24 @@ let mainEl = $state<HTMLElement | undefined>(undefined);
 // Keyed by Vite-style absolute paths, e.g. '/docs/guide/index.md'.
 // Used as the known-paths set for routing (no glob/import needed).
 type FrontmatterEntry = {
-    title?: string; order?: number; layout?: 'doc' | 'home' | 'page';
-    hero?: Record<string, unknown>; features?: unknown[];
+    title?: string;
+    order?: number;
+    layout?: 'doc' | 'home' | 'page';
+    hero?: Record<string, unknown>;
+    features?: unknown[];
+    outline?: OutlineOption | boolean;
+    badge?: BadgeSpec;
+    prev?: false | { text: string; link: string };
+    next?: false | { text: string; link: string };
+    _mtime?: string;
 };
 const frontmatters = allFrontmatters as Record<string, FrontmatterEntry>;
 
-let menu = $derived(prepareMenu(frontmatters, rootPath, frontmatters));
+let menu = $derived(
+    Array.isArray(sidebar)
+        ? (parseSidebarConfig(sidebar, frontmatters, rootPath) ?? prepareMenu(frontmatters, rootPath, frontmatters))
+        : prepareMenu(frontmatters, rootPath, frontmatters)
+);
 let flat = $derived(flattenMenu(menu));
 
 // -- Theme -------------------------------------------------------------------
@@ -122,6 +160,29 @@ const activeFrontmatter = $derived(activeKey ? frontmatters[activeKey] : undefin
 const activeLayout = $derived<'doc' | 'home' | 'page'>(
     activeFrontmatter?.layout ?? 'doc'
 );
+
+/** Page-level outline: reads `outline` from active page frontmatter, falls back to global setting. */
+const outlineNorm = $derived(
+    activeFrontmatter?.outline !== undefined
+        ? normalizeOutline(activeFrontmatter.outline as OutlineOption | boolean)
+        : globalOutlineNorm,
+);
+
+/** Auto prev/next from sidebar order; overridable per-page via frontmatter. */
+const prevNextAuto = $derived(getPrevNext(router.active, flat));
+const prevNext = $derived({
+    prev: activeFrontmatter?.prev === false ? null
+        : (activeFrontmatter?.prev && typeof activeFrontmatter.prev === 'object'
+            ? { label: activeFrontmatter.prev.text, link: activeFrontmatter.prev.link }
+            : prevNextAuto.prev),
+    next: activeFrontmatter?.next === false ? null
+        : (activeFrontmatter?.next && typeof activeFrontmatter.next === 'object'
+            ? { label: activeFrontmatter.next.text, link: activeFrontmatter.next.link }
+            : prevNextAuto.next),
+});
+
+/** Breadcrumb path from root to active page. */
+const breadcrumbItems = $derived(getBreadcrumbItems(router.active, menu));
 
 /** Whether the left nav sidebar should be visible. */
 const showSidebar = $derived(activeLayout === 'doc');
@@ -210,7 +271,19 @@ onclick={handleInternalLinks}
 <Spinner />
 </div>
 {:then markdown}
+    {#if breadcrumb}
+        <Breadcrumb items={breadcrumbItems} navigate={router.navigate} {rootPath} />
+    {/if}
     <MarkdownRenderer {markdown} baseUrl={router.activeMarkdownPath} docsPrefix={rootPath} {mermaidTheme} {mermaidThemes} colorTheme={theme} />
+    {#if lastModified && activeFrontmatter?._mtime}
+        {@const lmLabel  = (typeof lastModified === 'object' ? lastModified.text : null) ?? 'Last updated:'}
+        {@const lmFmt    = (typeof lastModified === 'object' ? lastModified.formatOptions : null) ?? { dateStyle: 'medium' as const }}
+        {@const lmLocale = (typeof lastModified === 'object' ? lastModified.locale : null) ?? navigator.language}
+        <p class="doc-last-modified">{lmLabel} {new Intl.DateTimeFormat(lmLocale, lmFmt).format(new Date(activeFrontmatter._mtime))}</p>
+    {/if}
+    {#if activeLayout === 'doc'}
+        <PrevNext prev={prevNext.prev} next={prevNext.next} navigate={router.navigate} />
+    {/if}
 {:catch}
     <p class="fetch-error">Could not load page.</p>
 {/await}
@@ -242,6 +315,9 @@ bind:open={searchOpen}
 onClose={() => (searchOpen = false)}
 onNavigate={router.navigateWithAnchor}
 />
+{#if backToTop}
+<BackToTop target={mainEl} />
+{/if}
 </div>
 
 <style lang="scss">
@@ -334,5 +410,11 @@ filter: drop-shadow(40px 40px 0 var(--greg-accent));
 :global(.loader::after) {
 filter: drop-shadow(-40px 40px 0 var(--greg-accent));
 }
+}
+
+.doc-last-modified {
+    font-size: 0.8rem;
+    color: var(--greg-menu-section-color);
+    margin-top: 1.5rem;
 }
 </style>

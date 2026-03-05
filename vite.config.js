@@ -5,6 +5,7 @@ import pkg from './package.json' with { type: 'json' };
 import { vitePluginSearchIndex } from './src/lib/MarkdownDocs/vitePluginSearchIndex.js';
 import { vitePluginFrontmatter } from './src/lib/MarkdownDocs/vitePluginFrontmatter.js';
 import { vitePluginCopyDocs } from './src/lib/MarkdownDocs/vitePluginCopyDocs.js';
+import { vitePluginGregConfig } from './src/lib/MarkdownDocs/vitePluginGregConfig.js';
 
 console.log('Version:', pkg.version);
 
@@ -17,6 +18,7 @@ export default defineConfig({
   },
   plugins: [
     svelte(),
+    vitePluginGregConfig(),
     vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
     vitePluginFrontmatter({ docsDir: 'docs' }),
     vitePluginCopyDocs({ docsDir: 'docs' }),
