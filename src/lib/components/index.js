@@ -21,3 +21,4 @@ export { default as TeamMembers }    from './TeamMembers.svelte';
 export { default as TeamPage }       from './TeamPage.svelte';
 export { default as TeamPageTitle }  from './TeamPageTitle.svelte';
 export { default as TeamPageSection} from './TeamPageSection.svelte';
+export { default as Steps }          from './Steps.svelte';

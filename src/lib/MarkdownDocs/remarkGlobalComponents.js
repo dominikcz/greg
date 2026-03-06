@@ -14,7 +14,7 @@
 const COMPONENTS_IMPORT =
   `import { Badge, Button, Image, Link, Feature, Features, Hero, ` +
   `SocialLink, SocialLinks, TeamMember, TeamMembers, ` +
-  `TeamPage, TeamPageTitle, TeamPageSection } from '$components/index.js';`;
+  `TeamPage, TeamPageTitle, TeamPageSection, Steps } from '$components/index.js';`;
 
 const SCRIPT_OPEN_RE = /^<script(\b[^>]*)>/i;
 const SCRIPT_SETUP_ATTR_RE = /\bsetup\b/i;
