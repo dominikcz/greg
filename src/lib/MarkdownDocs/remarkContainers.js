@@ -164,82 +164,113 @@ export function remarkContainers(userOptions = {}) {
 			children.splice(i, 1, containerBlockNode(parsed.mappedType, parsed.title, parsed.innerNodes));
 		}
 
-		// Pass 1 — single-paragraph ::: containers (no blank lines inside)
-		for (let i = 0; i < children.length; i++) {
-			const node = children[i];
-			if (node.type !== 'paragraph') continue;
-
-			const firstChild = node.children?.[0];
-			if (firstChild?.type !== 'text') continue;
-
-			const firstLine = firstChild.value.split('\n')[0].trim();
-			const openMatch = firstLine.match(OPEN_LINE_RE);
-			if (!openMatch) continue;
-
-			const lastChild = node.children[node.children.length - 1];
-			if (lastChild?.type !== 'text') continue;
-
-			const lastLine = lastChild.value.split('\n').at(-1).trim();
-			if (!CLOSE_LINE_RE.test(lastLine)) continue;
-
-			const type = openMatch[1].toLowerCase();
-			if (!knownTypes.includes(type)) continue;
-
-			// Strip the opening and closing ::: lines; collect the inline nodes in between.
-			const innerChildren = [];
-			for (let ci = 0; ci < node.children.length; ci++) {
-				const c = node.children[ci];
-				const isFirst = ci === 0;
-				const isLast = ci === node.children.length - 1;
-
-				if (isFirst && isLast) {
-					const afterOpen = c.value.slice(c.value.indexOf('\n') + 1);
-					const content = afterOpen.slice(0, afterOpen.lastIndexOf('\n'));
-					if (content.trim()) innerChildren.push({ ...c, value: content });
-				} else if (isFirst) {
-					const afterOpen = c.value.slice(c.value.indexOf('\n') + 1);
-					if (afterOpen) innerChildren.push({ ...c, value: afterOpen });
-				} else if (isLast) {
-					const beforeClose = c.value.slice(0, c.value.lastIndexOf('\n'));
-					if (beforeClose) innerChildren.push({ ...c, value: beforeClose });
-				} else {
-					innerChildren.push(c);
-				}
-			}
-
-			const innerNodes = innerChildren.length
-				? [{ type: 'paragraph', children: innerChildren }]
-				: [];
-
-			children.splice(i, 1, containerBlockNode(type, openMatch[2] ?? '', innerNodes));
-		}
-
-		// Pass 2 — multi-node ::: containers (blank lines or block elements inside)
-		const spans = [];
-		const stack = [];
-		for (let i = 0; i < children.length; i++) {
-			const node = children[i];
-			if (node.type !== 'paragraph') continue;
-			const text = nodeToText(node).trim();
-			if (text.includes('\n')) continue; // already handled in Pass 1
-
-			const openMatch = text.match(OPEN_LINE_RE);
-			if (openMatch) {
-				stack.push({ openIdx: i, type: openMatch[1], title: openMatch[2] ?? '' });
-				continue;
-			}
-			if (CLOSE_LINE_RE.test(text) && stack.length > 0) {
-				const frame = stack.pop();
-				if (stack.length === 0) spans.push({ ...frame, closeIdx: i });
-			}
-		}
-		for (const { openIdx, closeIdx, type, title: rawTitle } of spans.reverse()) {
-			const lcType = type.toLowerCase();
-			if (!knownTypes.includes(lcType)) continue;
-			const innerNodes = children.slice(openIdx + 1, closeIdx);
-			children.splice(openIdx, closeIdx - openIdx + 1, containerBlockNode(lcType, rawTitle, innerNodes));
-		}
+		// Apply ::: container syntax recursively (root + list items + blockquotes)
+		applyContainerSyntaxRecursive(tree);
 	};
+}
+
+/**
+ * Walk the mdast bottom-up and apply Pass 1 + Pass 2 container syntax to
+ * every block-level children array — including those nested inside list items
+ * and blockquotes.
+ */
+function applyContainerSyntaxRecursive(node) {
+	if (!node.children) return;
+
+	// Recurse into nested block containers first (bottom-up).
+	// Important: list items live under a `list` node, so recurse through any
+	// node that has children instead of whitelisting only a few node types.
+	for (const child of node.children) {
+		if (Array.isArray(child.children)) {
+			applyContainerSyntaxRecursive(child);
+		}
+	}
+
+	// Then process this level's children array
+	applyContainerPasses(node.children);
+}
+
+/**
+ * Apply Pass 1 (single-paragraph :::) and Pass 2 (multi-node :::) to a
+ * specific `children` array in-place.  Extracted from the original inline
+ * implementation so it can be reused recursively.
+ */
+function applyContainerPasses(children) {
+	// Pass 1 — single-paragraph ::: containers (no blank lines inside)
+	for (let i = 0; i < children.length; i++) {
+		const node = children[i];
+		if (node.type !== 'paragraph') continue;
+
+		const firstChild = node.children?.[0];
+		if (firstChild?.type !== 'text') continue;
+
+		const firstLine = firstChild.value.split('\n')[0].trim();
+		const openMatch = firstLine.match(OPEN_LINE_RE);
+		if (!openMatch) continue;
+
+		const lastChild = node.children[node.children.length - 1];
+		if (lastChild?.type !== 'text') continue;
+
+		const lastLine = lastChild.value.split('\n').at(-1).trim();
+		if (!CLOSE_LINE_RE.test(lastLine)) continue;
+
+		const type = openMatch[1].toLowerCase();
+		if (!knownTypes.includes(type)) continue;
+
+		// Strip the opening and closing ::: lines; collect the inline nodes in between.
+		const innerChildren = [];
+		for (let ci = 0; ci < node.children.length; ci++) {
+			const c = node.children[ci];
+			const isFirst = ci === 0;
+			const isLast = ci === node.children.length - 1;
+
+			if (isFirst && isLast) {
+				const afterOpen = c.value.slice(c.value.indexOf('\n') + 1);
+				const content = afterOpen.slice(0, afterOpen.lastIndexOf('\n'));
+				if (content.trim()) innerChildren.push({ ...c, value: content });
+			} else if (isFirst) {
+				const afterOpen = c.value.slice(c.value.indexOf('\n') + 1);
+				if (afterOpen) innerChildren.push({ ...c, value: afterOpen });
+			} else if (isLast) {
+				const beforeClose = c.value.slice(0, c.value.lastIndexOf('\n'));
+				if (beforeClose) innerChildren.push({ ...c, value: beforeClose });
+			} else {
+				innerChildren.push(c);
+			}
+		}
+
+		const innerNodes = innerChildren.length
+			? [{ type: 'paragraph', children: innerChildren }]
+			: [];
+
+		children.splice(i, 1, containerBlockNode(type, openMatch[2] ?? '', innerNodes));
+	}
+
+	// Pass 2 — multi-node ::: containers (blank lines or block elements inside)
+	const spans = [];
+	const stack = [];
+	for (let i = 0; i < children.length; i++) {
+		const node = children[i];
+		if (node.type !== 'paragraph') continue;
+		const text = nodeToText(node).trim();
+		if (text.includes('\n')) continue; // already handled in Pass 1
+
+		const openMatch = text.match(OPEN_LINE_RE);
+		if (openMatch) {
+			stack.push({ openIdx: i, type: openMatch[1], title: openMatch[2] ?? '' });
+			continue;
+		}
+		if (CLOSE_LINE_RE.test(text) && stack.length > 0) {
+			const frame = stack.pop();
+			if (stack.length === 0) spans.push({ ...frame, closeIdx: i });
+		}
+	}
+	for (const { openIdx, closeIdx, type, title: rawTitle } of spans.reverse()) {
+		const lcType = type.toLowerCase();
+		if (!knownTypes.includes(lcType)) continue;
+		const innerNodes = children.slice(openIdx + 1, closeIdx);
+		children.splice(openIdx, closeIdx - openIdx + 1, containerBlockNode(lcType, rawTitle, innerNodes));
+	}
 }
 
 // ─── Rehype plugin ────────────────────────────────────────────────────────────

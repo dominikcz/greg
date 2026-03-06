@@ -176,6 +176,35 @@ function rehypeMermaid() {
     };
 }
 
+// ── Rehype plugin: normalize <Steps> wrapper in runtime HTML ───────────────
+// In browser rendering, unknown component tags are serialized as lowercase
+// HTML tags (e.g. <Steps> -> <steps>). Convert them to a regular block wrapper
+// with a stable class so CSS can style them exactly like Starlight steps.
+function rehypeStepsWrapper() {
+    return (tree: any) => {
+        visit(tree, 'element', (node: any) => {
+            if (node.tagName !== 'steps') return;
+            node.tagName = 'div';
+            const existing = Array.isArray(node.properties?.className)
+                ? node.properties.className
+                : [];
+            node.properties = {
+                ...(node.properties ?? {}),
+                className: existing.includes('greg-steps') ? existing : [...existing, 'greg-steps'],
+            };
+        });
+
+        // With allowDangerousHtml and without rehype-raw, custom HTML tags may
+        // remain as `raw` nodes. Normalize those too so styling still applies.
+        visit(tree, 'raw', (node: any) => {
+            if (typeof node.value !== 'string') return;
+            node.value = node.value
+                .replace(/<\s*steps\b[^>]*>/gi, '<div class="greg-steps">')
+                .replace(/<\s*\/\s*steps\s*>/gi, '</div>');
+        });
+    };
+}
+
 // ── Rehype plugin: highlight.js code blocks ──────────────────────────────────
 
 function rehypeHighlightJS() {
@@ -228,6 +257,7 @@ function buildProcessor(currentBaseUrl: string, currentDocsPrefix: string) {
         .use(remarkRehype, { allowDangerousHtml: true })
         .use(rehypeSlug)
         .use(rehypeAutolinkHeadings, { behavior: 'wrap' })
+        .use(rehypeStepsWrapper)
         .use(rehypeMermaid)
         .use(rehypeHighlightJS)
         .use(rehypeContainers)

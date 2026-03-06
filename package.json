@@ -1,8 +1,23 @@
 {
   "name": "greg",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.8.0",
   "type": "module",
+  "bin": {
+    "greg": "./bin/greg.js"
+  },
+  "exports": {
+    ".": "./src/lib/MarkdownDocs/MarkdownDocs.svelte",
+    "./components": "./src/lib/components/index.js",
+    "./plugins": "./src/lib/MarkdownDocs/index.plugins.js",
+    "./svelte.config": "./svelte.config.js"
+  },
+  "files": [
+    "bin",
+    "src/lib",
+    "svelte.config.js",
+    "greg.config.js"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build-timer.js vite build",

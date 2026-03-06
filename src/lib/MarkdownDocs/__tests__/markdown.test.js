@@ -282,6 +282,24 @@ describe('remarkContainers — content', () => {
 		expect(html).toContain('<code>code</code>');
 	});
 
+	it('renders ::: tip nested inside ordered list items (Steps-like content)', async () => {
+		const md = [
+			'1. **Install**',
+			'',
+			'   ::: tip Requires Node.js 18+',
+			'   Check version.',
+			'   :::',
+			'',
+			'2. **Done**',
+		].join('\n');
+
+		const html = await processMarkdown(md);
+		expect(html).toContain('<ol>');
+		expect(html).toContain('class="custom-block tip"');
+		expect(html).toContain('Requires Node.js 18+');
+		expect(html).toContain('Check version.');
+	});
+
 	it('renders code block inside details', async () => {
 		const html = await processMarkdown(`::: details Click me {open}\n\`\`\`js\nconsole.log('hi')\n\`\`\`\n:::`);
 		expect(html).toContain('<details');
