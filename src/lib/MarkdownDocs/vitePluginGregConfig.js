@@ -28,16 +28,33 @@ import { pathToFileURL } from 'node:url';
 const VIRTUAL_ID = 'virtual:greg-config';
 const RESOLVED_ID = '\0' + VIRTUAL_ID;
 
+/** Prefer greg.config.ts over greg.config.js when both exist. */
+function findConfigPath(root) {
+    const ts = path.join(root, 'greg.config.ts');
+    const js = path.join(root, 'greg.config.js');
+    return fs.existsSync(ts) ? ts : js;
+}
+
+/** Load a TypeScript config file via esbuild (always available as a Vite dep). */
+async function loadTsConfig(configPath) {
+    const { transform } = await import('esbuild');
+    const source = fs.readFileSync(configPath, 'utf-8');
+    const { code } = await transform(source, { format: 'esm', loader: 'ts', target: 'node18' });
+    const dataUrl = 'data:text/javascript,' + encodeURIComponent(code);
+    const mod = await import(dataUrl);
+    return mod.default ?? {};
+}
+
 export function vitePluginGregConfig() {
     let root = process.cwd();
-    let configPath = path.join(root, 'greg.config.js');
+    let configPath = findConfigPath(root);
 
     return {
         name: 'greg:config',
 
         configResolved(config) {
             root = config.root;
-            configPath = path.join(root, 'greg.config.js');
+            configPath = findConfigPath(root);
         },
 
         resolveId(id) {
@@ -48,13 +65,18 @@ export function vitePluginGregConfig() {
             if (id !== RESOLVED_ID) return;
             if (!fs.existsSync(configPath)) return `export default {};`;
             try {
-                // Append timestamp to bust Node's ESM module cache on each HMR reload.
-                const fileUrl = pathToFileURL(configPath).href + '?t=' + Date.now();
-                const mod = await import(fileUrl);
-                const config = mod.default ?? {};
+                let config;
+                if (configPath.endsWith('.ts')) {
+                    config = await loadTsConfig(configPath);
+                } else {
+                    // Append timestamp to bust Node's ESM module cache on each HMR reload.
+                    const fileUrl = pathToFileURL(configPath).href + '?t=' + Date.now();
+                    const mod = await import(fileUrl);
+                    config = mod.default ?? {};
+                }
                 return `export default ${JSON.stringify(config)};`;
             } catch (e) {
-                console.warn('[greg] Failed to load greg.config.js:', e.message);
+                console.warn('[greg] Failed to load config:', e.message);
                 return `export default {};`;
             }
         },

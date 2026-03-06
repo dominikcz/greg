@@ -3,6 +3,7 @@
  * greg CLI
  *
  * Usage:
+ *   greg init                    Initialise a new documentation project
  *   greg dev                    Start the Vite development server
  *   greg build                  Build for production
  *   greg preview                Preview the production build
@@ -28,6 +29,7 @@ function help() {
   Usage: greg <command> [options]
 
   Commands:
+    init           Initialise a new documentation project (interactive)
     dev            Start the Vite development server
     build          Build the project for production
     preview        Preview the production build
@@ -62,6 +64,12 @@ function run(cmd, extraArgs = []) {
 }
 
 switch (command) {
+    case 'init': {
+        const initScript = resolve(__dirname, 'init.js');
+        const child = fork(initScript, args, { stdio: 'inherit' });
+        child.on('exit', code => process.exit(code ?? 0));
+        break;
+    }
     case 'dev':
         run('vite', args);
         break;

@@ -1,13 +1,18 @@
 {
-  "name": "greg",
-  "private": true,
+  "name": "@dominikcz/greg",
   "version": "0.8.1",
   "type": "module",
+  "types": "./types/index.d.ts",
   "bin": {
     "greg": "./bin/greg.js"
   },
   "exports": {
-    ".": "./src/lib/MarkdownDocs/MarkdownDocs.svelte",
+    ".": {
+      "types": "./types/index.d.ts",
+      "svelte": "./src/lib/MarkdownDocs/MarkdownDocs.svelte",
+      "default": "./src/lib/MarkdownDocs/MarkdownDocs.svelte"
+    },
+    "./types": "./types/index.d.ts",
     "./components": "./src/lib/components/index.js",
     "./plugins": "./src/lib/MarkdownDocs/index.plugins.js",
     "./svelte.config": "./svelte.config.js"
@@ -15,8 +20,15 @@
   "files": [
     "bin",
     "src/lib",
+    "types",
     "svelte.config.js",
-    "greg.config.js"
+    "docs/guide",
+    "docs/reference",
+    "docs/markdown",
+    "docs/__partials",
+    "docs/index.md",
+    "docs/incompatibilities.md",
+    "fakeDocsGenerator"
   ],
   "scripts": {
     "dev": "vite",

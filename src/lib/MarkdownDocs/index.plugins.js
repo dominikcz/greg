@@ -8,7 +8,7 @@
  *     vitePluginSearchIndex,
  *     vitePluginFrontmatter,
  *     vitePluginCopyDocs,
- *   } from 'greg/plugins';
+ *   } from '@dominikcz/greg/plugins';
  */
 export { vitePluginGregConfig }   from './vitePluginGregConfig.js';
 export { vitePluginSearchIndex }  from './vitePluginSearchIndex.js';

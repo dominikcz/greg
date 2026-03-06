@@ -57,6 +57,11 @@ function hydrateComponents(root: HTMLElement) {
     mountedInstances = [];
     for (const [tagName, Component] of Object.entries(COMPONENT_REGISTRY)) {
         for (const el of Array.from(root.querySelectorAll(tagName)) as HTMLElement[]) {
+            // Keep code-group tabs as native <button> elements. If we hydrate
+            // them into the generic Button component they look like CTA buttons
+            // instead of tabs and lose rcg-tab styling.
+            if (tagName === 'button' && el.closest('.rehype-code-group')) continue;
+
             const props: Record<string, string> = {};
             for (const attr of Array.from(el.attributes)) {
                 props[attr.name] = attr.value;
