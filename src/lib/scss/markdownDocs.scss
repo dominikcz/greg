@@ -305,7 +305,7 @@
 .markdown-body .greg-steps,
 .markdown-body steps {
     --_size: 1.75rem;
-    --_margin: 0.375rem;
+    --_margin: var(--greg-steps-guide-gap, 0.5rem);
     --_guide: var(--greg-steps-guide-color, color-mix(in srgb, var(--greg-accent) 42%, var(--greg-border-color)));
     margin: 1.75rem 0;
 }
