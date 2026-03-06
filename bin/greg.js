@@ -34,6 +34,10 @@ function help() {
     search-server  Start the standalone search API server (production)
                    Options: --index <path>  --port <number>  --host <addr>
                             --url   <path>  (endpoint path, default /api/search)
+                            --cors-origin <value>  (default *)
+                            --cors-methods <value> (default "GET, OPTIONS")
+                            --cors-headers <value> (default "Content-Type")
+                            --cors-max-age <value> (default 86400)
 
   Options:
     --version   Show version number
@@ -62,7 +66,7 @@ switch (command) {
         run('vite', args);
         break;
     case 'build':
-        run('vite build', args);
+        run('npm run build:static', args);
         break;
     case 'preview':
         run('vite preview', args);

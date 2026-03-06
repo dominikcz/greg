@@ -90,6 +90,10 @@ export default {
      */
     search: {
         provider: 'server',
-        serverUrl: 'http://127.0.0.1:5173/api/search',
+        // Use '/api/search' when your reverse proxy forwards this path
+        // to greg search-server (recommended for production).
+        // Use full URL only when the search server is on a different origin:
+        // serverUrl: 'http://127.0.0.1:3100/api/search',
+        serverUrl: '/api/search',
     },
 };

@@ -14,6 +14,11 @@
  *   --port   NUMBER        HTTP port                  (GREG_SEARCH_PORT,  default: 3100)
  *   --host   HOSTNAME      Bind address               (GREG_SEARCH_HOST,  default: localhost)
  *   --url    PATH          Search endpoint URL path   (GREG_SEARCH_URL,   default: /api/search)
+ *   --cors-origin VALUE    Access-Control-Allow-Origin (GREG_SEARCH_CORS_ORIGIN, default: *)
+ *                          Use 'request' to mirror request Origin header.
+ *   --cors-methods VALUE   Access-Control-Allow-Methods (GREG_SEARCH_CORS_METHODS, default: GET, OPTIONS)
+ *   --cors-headers VALUE   Access-Control-Allow-Headers (GREG_SEARCH_CORS_HEADERS, default: Content-Type)
+ *   --cors-max-age VALUE   Access-Control-Max-Age       (GREG_SEARCH_CORS_MAX_AGE, default: 86400)
  *
  * Example — run after `greg build`:
  *   greg search-server --index dist/search-index.json --port 3100
@@ -27,6 +32,16 @@ import { readFileSync }  from 'node:fs';
 import { resolve }       from 'node:path';
 import { buildFuseResult } from './searchIndexBuilder.js';
 import Fuse from 'fuse.js';
+
+const startupT0 = process.hrtime.bigint();
+
+function msSince(t0) {
+	return Number(process.hrtime.bigint() - t0) / 1e6;
+}
+
+function fmtMs(ms) {
+	return `${ms.toFixed(1)}ms`;
+}
 
 // ── CLI argument parser ───────────────────────────────────────────────────────
 function parseArgs(argv) {
@@ -48,18 +63,37 @@ const port  = parseInt(args.port  ?? process.env.GREG_SEARCH_PORT  ?? '3100', 10
 const host  = String(args.host    ?? process.env.GREG_SEARCH_HOST  ?? 'localhost');
 const url   = String(args.url     ?? process.env.GREG_SEARCH_URL   ?? '/api/search');
 const index = resolve(String(args.index ?? process.env.GREG_SEARCH_INDEX ?? 'dist/search-index.json'));
+const corsOrigin  = String(args['cors-origin']  ?? process.env.GREG_SEARCH_CORS_ORIGIN  ?? '*');
+const corsMethods = String(args['cors-methods'] ?? process.env.GREG_SEARCH_CORS_METHODS ?? 'GET, OPTIONS');
+const corsHeaders = String(args['cors-headers'] ?? process.env.GREG_SEARCH_CORS_HEADERS ?? 'Content-Type');
+const corsMaxAge  = String(args['cors-max-age'] ?? process.env.GREG_SEARCH_CORS_MAX_AGE ?? '86400');
+
+function getCorsHeaders(req) {
+	const reflectedOrigin = req.headers.origin ? String(req.headers.origin) : '*';
+	const allowOrigin = corsOrigin === 'request' ? reflectedOrigin : corsOrigin;
+	return {
+		'Access-Control-Allow-Origin': allowOrigin,
+		'Access-Control-Allow-Methods': corsMethods,
+		'Access-Control-Allow-Headers': corsHeaders,
+		'Access-Control-Max-Age': corsMaxAge,
+		...(corsOrigin === 'request' ? { 'Vary': 'Origin' } : {}),
+	};
+}
 
 // ── Load index ────────────────────────────────────────────────────────────────
 console.log(`[greg-search] Loading index: ${index}`);
 
 let data;
+const loadParseT0 = process.hrtime.bigint();
 try {
 	data = JSON.parse(readFileSync(index, 'utf-8'));
 } catch (/** @type {any} */ e) {
 	console.error(`[greg-search] Failed to load index: ${e.message}`);
 	process.exit(1);
 }
+const loadParseMs = msSince(loadParseT0);
 
+const fuseBuildT0 = process.hrtime.bigint();
 const fuse = new Fuse(data, {
 	includeScore: true,
 	includeMatches: true,
@@ -72,6 +106,9 @@ const fuse = new Fuse(data, {
 		{ name: 'sections.content', weight: 1 },
 	],
 });
+const fuseBuildMs = msSince(fuseBuildT0);
+
+const sectionCount = data.reduce((sum, doc) => sum + (doc.sections?.length ?? 0), 0);
 
 console.log(`[greg-search] Indexed ${data.length} document(s).`);
 
@@ -84,16 +121,16 @@ const server = createServer((req, res) => {
 	// CORS preflight
 	if (req.method === 'OPTIONS') {
 		res.writeHead(204, {
-			'Access-Control-Allow-Origin':  '*',
-			'Access-Control-Allow-Methods': 'GET, OPTIONS',
-			'Access-Control-Allow-Headers': 'Content-Type',
+			...getCorsHeaders(req),
 		});
 		res.end();
 		return;
 	}
 
 	if (pathname !== url || req.method !== 'GET') {
-		res.writeHead(404);
+		res.writeHead(404, {
+			...getCorsHeaders(req),
+		});
 		res.end();
 		return;
 	}
@@ -108,12 +145,22 @@ const server = createServer((req, res) => {
 	res.writeHead(200, {
 		'Content-Type':                'application/json; charset=utf-8',
 		'Cache-Control':               'no-cache',
-		'Access-Control-Allow-Origin': '*',
 		'Content-Length':              Buffer.byteLength(body),
+		...getCorsHeaders(req),
 	});
 	res.end(body);
 });
 
 server.listen(port, host, () => {
 	console.log(`[greg-search] Listening on http://${host}:${port}${url}`);
+	const startupMs = msSince(startupT0);
+	console.log(
+		`[greg-search] Startup summary: load+parse=${fmtMs(loadParseMs)}, ` +
+		`fuse-index=${fmtMs(fuseBuildMs)}, total=${fmtMs(startupMs)}, ` +
+		`docs=${data.length}, sections=${sectionCount}`,
+	);
+	console.log(
+		`[greg-search] CORS: origin=${corsOrigin}, methods="${corsMethods}", ` +
+		`headers="${corsHeaders}", max-age=${corsMaxAge}`,
+	);
 });
