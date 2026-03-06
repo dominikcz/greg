@@ -1,6 +1,9 @@
 <script lang="ts">
     import { onMount, tick } from 'svelte';
     import Fuse from 'fuse.js';
+    import gregConfig from 'virtual:greg-config';
+
+    // ── Types ──────────────────────────────────────────────────────────────────
 
     type SearchSection = {
         heading: string;
@@ -24,42 +27,71 @@
         score: number;
     };
 
+    /**
+     * Custom search provider function.
+     * `(query, limit?) => Promise<SearchResult[]>`
+     * When provided, takes priority over greg.config.js › search.provider.
+     */
+    export type SearchProviderFn = (query: string, limit?: number) => Promise<SearchResult[]>;
+
     type Props = {
         open: boolean;
         onClose: () => void;
         onNavigate: (path: string, anchor?: string) => void;
+        searchProvider?: SearchProviderFn;
     };
 
-    let { open = $bindable(false), onClose, onNavigate }: Props = $props();
+    let { open = $bindable(false), onClose, onNavigate, searchProvider }: Props = $props();
 
-    let query = $state('');
-    let results = $state<SearchResult[]>([]);
+    // ── Config ─────────────────────────────────────────────────────────────────
+
+    const cfgSearch  = (gregConfig as any)?.search ?? {};
+    /** Effective mode. Reactive so the prop can change at runtime. */
+    const mode = $derived<'local' | 'server' | 'custom' | 'none'>(
+        searchProvider ? 'custom' : (cfgSearch.provider ?? 'server')
+    );
+    const serverUrl: string = cfgSearch.serverUrl ?? '/api/search';
+
+    // ── State ──────────────────────────────────────────────────────────────────
+
+    let query         = $state('');
+    let results       = $state<SearchResult[]>([]);
     let selectedIndex = $state(0);
-    let inputEl = $state<HTMLInputElement | undefined>(undefined);
-    let listEl = $state<HTMLUListElement | undefined>(undefined);
+    let inputEl       = $state<HTMLInputElement | undefined>(undefined);
+    let listEl        = $state<HTMLUListElement | undefined>(undefined);
+
+    /** True while a server / custom request is in flight. */
+    let isSearching   = $state(false);
+    /** For local mode: true once the full JSON index has been downloaded. */
+    let indexReady    = $state(false);
+    let indexError    = $state(false);
+
     let fuse: Fuse<SearchEntry> | null = null;
-    let indexLoaded = $state(false);
-    let indexError = $state(false);
+
+    // ── Local mode: pre-load index into browser ─────────────────────────────
 
     onMount(async () => {
+        if (mode !== 'local') {
+            indexReady = true; // server / custom: ready immediately
+            return;
+        }
         try {
             const res = await fetch('/search-index.json');
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data: SearchEntry[] = await res.json();
-
             fuse = new Fuse(data, {
                 includeScore: true,
                 includeMatches: true,
-                threshold: 0.4,         // 0 = perfect, 1 = match anything
-                ignoreLocation: true,   // match anywhere in the string
+                threshold: 0.4,
+                ignoreLocation: true,
                 minMatchCharLength: 2,
                 keys: [
-                    { name: 'title', weight: 3 },
+                    { name: 'title',            weight: 3 },
                     { name: 'sections.heading', weight: 2 },
                     { name: 'sections.content', weight: 1 },
                 ],
             });
-            indexLoaded = true;
+            indexReady = true;
         } catch (e) {
             console.error('[Search] Failed to load index:', e);
             indexError = true;
@@ -85,24 +117,55 @@
         });
     });
 
-    // Debounced search
+    // ── Debounced search ───────────────────────────────────────────────────────
+
     let searchTimer: ReturnType<typeof setTimeout>;
+    let abortCtrl: AbortController | null = null;
+
     function handleInput() {
         clearTimeout(searchTimer);
-        searchTimer = setTimeout(runSearch, 150);
+        if (!query.trim()) { results = []; return; }
+        searchTimer = setTimeout(runSearch, 200);
     }
 
-    function runSearch() {
-        if (!fuse || !query.trim()) {
-            results = [];
+    async function runSearch() {
+        const q = query.trim();
+        if (!q) { results = []; return; }
+
+        if (mode === 'local') {
+            if (!fuse) return;
+            results = fuse.search(q, { limit: 10 }).map(buildLocalResult);
+            selectedIndex = 0;
             return;
         }
-        const raw = fuse.search(query.trim(), { limit: 10 });
-        results = raw.map(buildResult);
-        selectedIndex = 0;
+
+        // server / custom — cancel previous in-flight request
+        abortCtrl?.abort();
+        abortCtrl   = new AbortController();
+        isSearching = true;
+        try {
+            let raw: SearchResult[];
+            if (mode === 'custom' && searchProvider) {
+                raw = await searchProvider(q, 10);
+            } else {
+                const url = `${serverUrl}?q=${encodeURIComponent(q)}&limit=10`;
+                const res = await fetch(url, { signal: abortCtrl.signal });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                raw = data.results ?? [];
+            }
+            results       = raw;
+            selectedIndex = 0;
+        } catch (e: any) {
+            if (e?.name === 'AbortError') return; // superseded by newer query — ignore
+            console.error('[Search]', e);
+            results = [];
+        } finally {
+            isSearching = false;
+        }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
+    // ── Local mode helpers: Fuse.js result → SearchResult ─────────────────────
 
     function escapeHtml(str: string): string {
         return str
@@ -169,10 +232,7 @@
         return html;
     }
 
-    /**
-     * Turn a raw Fuse.js result into a display-ready SearchResult.
-     */
-    function buildResult(fuseResult: any): SearchResult {
+    function buildLocalResult(fuseResult: any): SearchResult {
         const { item, matches = [], score = 1 } = fuseResult;
 
         // Sort matches by total matched span length (longest = most relevant)
@@ -182,9 +242,9 @@
                 a.indices.reduce((s: number, [x, y]: number[]) => s + (y - x), 0),
         );
 
-        const titleMatch      = sorted.find((m) => m.key === 'title');
-        const sectionContent  = sorted.find((m) => m.key === 'sections.content');
-        const sectionHeading  = sorted.find((m) => m.key === 'sections.heading');
+        const titleMatch     = sorted.find((m) => m.key === 'title');
+        const sectionContent = sorted.find((m) => m.key === 'sections.content');
+        const sectionHeading = sorted.find((m) => m.key === 'sections.heading');
 
         let excerptHtml   = '';
         let sectionTitle  = '';
@@ -212,7 +272,7 @@
         return { id: item.id, title: item.title, titleHtml, sectionTitle, sectionAnchor, excerptHtml, score };
     }
 
-    // ── Event handlers ─────────────────────────────────────────────────────
+    // ── Keyboard navigation ────────────────────────────────────────────────────
 
     function handleKeydown(e: KeyboardEvent) {
         switch (e.key) {
@@ -275,10 +335,15 @@
             </div>
 
             <!-- Body -->
-            {#if !indexLoaded && !indexError}
+            {#if mode === 'local' && !indexReady && !indexError}
                 <div class="search-status">Loading index…</div>
-            {:else if indexError}
+            {:else if mode === 'local' && indexError}
                 <div class="search-status search-error">Failed to load search index.</div>
+            {:else if isSearching}
+                <div class="search-status">
+                    <span class="search-spinner" aria-hidden="true"></span>
+                    Searching…
+                </div>
             {:else if query.trim() && results.length === 0}
                 <div class="search-status">
                     No results for <strong>"{query}"</strong>
@@ -425,6 +490,10 @@
         text-align: center;
         color: var(--greg-menu-section-color);
         font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
 
         &.search-error {
             color: var(--greg-danger-text);
@@ -436,6 +505,20 @@
         strong {
             color: var(--greg-color);
         }
+    }
+
+    .search-spinner {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        border: 2px solid var(--greg-border-color);
+        border-top-color: var(--greg-accent);
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
     }
 
     /* ── Results list ──────────────────────────────────────────── */
@@ -512,6 +595,7 @@
         padding-left: 1.25rem; /* align under title */
         display: -webkit-box;
         -webkit-line-clamp: 2;
+        line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
 

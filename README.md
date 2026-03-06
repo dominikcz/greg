@@ -29,10 +29,10 @@ TODO:
 - [x] nawigacja prev/next kompatybilna z VitePress (auto + frontmatter `prev:`/`next:`)
 
 0.8
-- [ ] wyszukiwanie lokalne i po stronie serwera
-- [ ] pakiet
-- [ ] obsługa CLI `greg dev`, `greg build`
-- [ ] komponent steps jak w Starlight
+- [x] wyszukiwanie lokalne i po stronie serwera
+- [x] pakiet
+- [x] obsługa CLI `greg dev`, `greg build`
+- [x] komponent steps jak w Starlight
 
 0.9
 - [ ] integracja z AI

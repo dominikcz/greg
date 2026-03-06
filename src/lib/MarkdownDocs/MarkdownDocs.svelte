@@ -66,9 +66,17 @@ lastModified?: boolean | { text?: string; locale?: string; formatOptions?: Intl.
  * items with an `auto` path have their children auto-generated.
  */
 sidebar?: 'auto' | SidebarItem[];
+/**
+ * Custom search provider.
+ * `(query: string, limit?: number) => Promise<SearchResult[]>`
+ * Overrides greg.config.js › search.provider when set.
+ * The function must return objects matching the SearchResult shape:
+ * { id, title, titleHtml, sectionTitle, sectionAnchor, excerptHtml, score }
+ */
+searchProvider?: (query: string, limit?: number) => Promise<any[]>;
 };
 
-let { children, rootPath = (gregConfig as any).rootPath ?? '/docs', version = (gregConfig as any).version ?? '', mainTitle = (gregConfig as any).mainTitle ?? 'Greg', carbonAds = (gregConfig as any).carbonAds, outline = (gregConfig as any).outline ?? [2, 3] as [number, number], mermaidTheme = (gregConfig as any).mermaidTheme, mermaidThemes, breadcrumb = (gregConfig as any).breadcrumb ?? false, backToTop = (gregConfig as any).backToTop ?? false, lastModified = (gregConfig as any).lastModified ?? false, sidebar = (gregConfig as any).sidebar ?? 'auto' }: Props = $props();
+let { children, rootPath = (gregConfig as any).rootPath ?? '/docs', version = (gregConfig as any).version ?? '', mainTitle = (gregConfig as any).mainTitle ?? 'Greg', carbonAds = (gregConfig as any).carbonAds, outline = (gregConfig as any).outline ?? [2, 3] as [number, number], mermaidTheme = (gregConfig as any).mermaidTheme, mermaidThemes, breadcrumb = (gregConfig as any).breadcrumb ?? false, backToTop = (gregConfig as any).backToTop ?? false, lastModified = (gregConfig as any).lastModified ?? false, sidebar = (gregConfig as any).sidebar ?? 'auto', searchProvider }: Props = $props();
 
 // -- Outline -----------------------------------------------------------------
 function normalizeOutline(o: OutlineOption | boolean | undefined | null): { level: OutlineLevel; label: string } | null {
@@ -120,9 +128,11 @@ let theme = $state<'light' | 'dark'>(
 $effect(() => { localStorage.setItem('greg-theme', theme); });
 
 // -- Search ------------------------------------------------------------------
+const searchEnabled = (gregConfig as any)?.search?.provider !== 'none';
 let searchOpen = $state(false);
 
 $effect(() => {
+    if (!searchEnabled) return;
 function handleGlobalKeydown(e: KeyboardEvent) {
 if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
 e.preventDefault();
@@ -324,6 +334,7 @@ active={router.active}
 bind:open={searchOpen}
 onClose={() => (searchOpen = false)}
 onNavigate={router.navigateWithAnchor}
+{searchProvider}
 />
 {#if backToTop}
 <BackToTop target={mainEl} />

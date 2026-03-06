@@ -6,6 +6,7 @@ import { vitePluginSearchIndex } from './src/lib/MarkdownDocs/vitePluginSearchIn
 import { vitePluginFrontmatter } from './src/lib/MarkdownDocs/vitePluginFrontmatter.js';
 import { vitePluginCopyDocs } from './src/lib/MarkdownDocs/vitePluginCopyDocs.js';
 import { vitePluginGregConfig } from './src/lib/MarkdownDocs/vitePluginGregConfig.js';
+import { vitePluginSearchServer } from './src/lib/MarkdownDocs/vitePluginSearchServer.js';
 
 console.log('Version:', pkg.version);
 
@@ -20,6 +21,7 @@ export default defineConfig({
     svelte(),
     vitePluginGregConfig(),
     vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
+    vitePluginSearchServer({ docsDir: 'docs', rootPath: '/docs' }),
     vitePluginFrontmatter({ docsDir: 'docs' }),
     vitePluginCopyDocs({ docsDir: 'docs' }),
   ],

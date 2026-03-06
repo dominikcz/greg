@@ -75,4 +75,21 @@ export default {
 
     // ── Carbon Ads ────────────────────────────────────────────────────────
     // carbonAds: { code: 'CWYD42JI', placement: 'vitepressdev' },
+
+    // ── Search ─────────────────────────────────────────────────────────────
+    /**
+     * Search mode:
+     * - 'server' (default): query /api/search (best for large docs)
+     * - 'local': download search-index.json and search in browser
+     * - 'none': disable built-in search UI
+     *
+     * serverUrl sets the endpoint used in 'server' mode.
+     * Dev/preview exposes '/api/search' automatically via vitePluginSearchServer.
+     * Production example:
+     *   greg search-server --index dist/search-index.json --port 3100
+     */
+    search: {
+        provider: 'server',
+        serverUrl: 'http://127.0.0.1:5173/api/search',
+    },
 };
