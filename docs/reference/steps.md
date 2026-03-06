@@ -154,17 +154,19 @@ interface Props {
 The component inherits Greg's accent and border colours automatically.
 Override them globally or per page with CSS:
 
-| Variable | Used for |
-| -------- | -------- |
-| `--greg-accent` | Number circle border and number colour |
-| `--greg-steps-guide-color` | Connector line between steps |
-| `--greg-border-color` | Fallback connector colour (when guide variable is not set) |
-| `--greg-color` | Step title text colour |
+| Variable | Used for | Default value |
+| -------- | -------- | ------------- |
+| `--greg-accent` | Number circle border and number colour | `#646cff` (or theme `--greg-accent` value) |
+| `--greg-steps-guide-color` | Connector line between steps | `color-mix(in srgb, var(--greg-accent, #646cff) 42%, var(--greg-border-color, #e5e5ea))` |
+| `--greg-steps-guide-gap` | Gap between each point and connector line | `0.375rem` |
+| `--greg-border-color` | Fallback connector colour (used by guide-color fallback) | `#e5e5ea` (or theme `--greg-border-color` value) |
+| `--greg-color` | Step title text colour | `inherit` (or theme `--greg-color` value) |
 
 ```css
 /* Example: teal accent for steps */
 .greg-steps {
   --greg-accent: #0d9488;
    --greg-steps-guide-color: #14b8a6;
+   --greg-steps-guide-gap: 0.375rem;
 }
 ```

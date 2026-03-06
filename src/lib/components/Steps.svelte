@@ -24,7 +24,7 @@
     /* ── design tokens ───────────────────────────────────────────────────── */
     .greg-steps {
         --_size:   1.75rem;  /* bullet circle diameter   */
-        --_margin: 0.375rem; /* gap above/below connector */
+        --_margin: var(--greg-steps-guide-gap, 0.5rem); /* gap above/below connector */
         --_bullet-bg: var(--greg-accent, #646cff);
         --_bullet-fg: #fff;
         --_guide: var(--greg-steps-guide-color, color-mix(in srgb, var(--greg-accent, #646cff) 42%, var(--greg-border-color, #e5e5ea)));
