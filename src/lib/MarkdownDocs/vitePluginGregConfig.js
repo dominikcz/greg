@@ -23,7 +23,11 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+/** Absolute path to greg's own components directory (inside the package). */
+const GREG_COMPONENTS_DIR = path.resolve(__dirname, '../components');
 
 const VIRTUAL_ID = 'virtual:greg-config';
 const RESOLVED_ID = '\0' + VIRTUAL_ID;
@@ -51,6 +55,16 @@ export function vitePluginGregConfig() {
 
     return {
         name: 'greg:config',
+
+        config() {
+            return {
+                resolve: {
+                    alias: {
+                        '$components': GREG_COMPONENTS_DIR,
+                    },
+                },
+            };
+        },
 
         configResolved(config) {
             root = config.root;

@@ -54,6 +54,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@clack/prompts": "^0.9.1",
     "@lucide/svelte": "^0.575.0",
     "fuse.js": "^7.1.0",
     "github-markdown-css": "^5.9.0",

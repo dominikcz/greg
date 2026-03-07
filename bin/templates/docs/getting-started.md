@@ -37,4 +37,4 @@ Greg supports:
 - **Custom containers** (`::: tip`, `::: warning`, `::: danger`)
 - **Code groups** and syntax highlighting via Shiki
 
-Visit the [Greg documentation](https://github.com/dominikczubak/greg) to learn more.
+Visit the [Greg documentation](https://github.com/dominikcz/greg) to learn more.

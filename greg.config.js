@@ -44,7 +44,7 @@ export default {
         { text: 'Proper docs guide', auto: '/guide' },
         { text: 'Reference', auto: '/reference' },
         { text: 'Fake', auto: '/fake-docs' },
-        { text: 'GitHub', link: 'https://github.com/' },
+        { text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
     ],
 
     // ── Doc page chrome ────────────────────────────────────────────────────
