@@ -7,6 +7,15 @@ export type OutlineOption = OutlineLevel | { level?: OutlineLevel; label?: strin
 
 export type BadgeSpec = string | { text: string; type?: 'info' | 'tip' | 'warning' | 'danger' | 'custom' };
 
+export type NavItem = {
+    text: string;
+    link?: string;
+    /** Opens the link in a new tab. */
+    target?: string;
+    /** Nested links rendered as a dropdown menu. */
+    items?: NavItem[];
+};
+
 export type SidebarItem = {
     text: string;
     link?: string;
@@ -47,6 +56,11 @@ export type GregConfig = {
      *   object – full control: { text?, locale?, formatOptions? }
      */
     lastModified?: boolean | { text?: string; locale?: string; formatOptions?: Intl.DateTimeFormatOptions };
+    /**
+     * Top navigation bar items (VitePress-compatible).
+     * Rendered between the site title and the search/theme controls.
+     */
+    nav?: NavItem[];
     /**
      * Sidebar configuration.
      *   'auto'      – generate sidebar from docs folder structure (default)

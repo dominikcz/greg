@@ -20,9 +20,22 @@ function normalizeBadge(raw) {
  */
 function sortItems(items) {
     items.sort((a, b) => {
-        const oa = a._order ?? Infinity;
-        const ob = b._order ?? Infinity;
-        if (oa !== ob) return oa - ob;
+        const aIsFolder = Boolean(a._isSection) || (Array.isArray(a.children) && a.children.length > 0);
+        const bIsFolder = Boolean(b._isSection) || (Array.isArray(b.children) && b.children.length > 0);
+
+        // Folders are always rendered before files.
+        if (aIsFolder !== bIsFolder) return aIsFolder ? -1 : 1;
+
+        const aHasOrder = Number.isFinite(a._order);
+        const bHasOrder = Number.isFinite(b._order);
+
+        // Ordered items come before unordered items inside the same bucket.
+        if (aHasOrder !== bHasOrder) return aHasOrder ? -1 : 1;
+
+        if (aHasOrder && bHasOrder && a._order !== b._order) {
+            return a._order - b._order;
+        }
+
         return a.label.localeCompare(b.label);
     });
     for (const item of items) {
@@ -62,6 +75,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
         if (parts.some(p => p.replace(/\.md$/, '').startsWith('__'))) continue;
 
         let currentLevel = root;
+        let lastFolderNode = null; // tracks the most recently entered folder node
 
         for (let idx = 0; idx < parts.length; idx++) {
             const part = parts[idx];
@@ -70,19 +84,22 @@ export function prepareMenu(modules, base, frontmatters = {}) {
             if (isLast) {
                 if (part === 'index.md') {
                     // index.md → represents the parent folder (or root if idx === 0)
+                    // We must NOT look in currentLevel (folder's own children) — we need
+                    // the folder node itself, which is lastFolderNode (or root for top-level).
                     const folderParts = parts.slice(0, idx);
                     const link = folderParts.length ? base + '/' + folderParts.join('/') : base;
                     const rawLabel = folderParts.length
                         ? folderParts[folderParts.length - 1]
                         : base.split('/').filter(Boolean).pop() ?? 'Home';
 
-                    let node = currentLevel.find(c => c.link === link);
+                    let node = lastFolderNode ?? root.find(c => c.link === link);
                     if (!node) {
                         node = {
                             label: fm.title ?? capitalize(rawLabel),
                             link,
                             children: [],
                             type: 'md',
+                            _isSection: true,
                             _order: fm.order,
                             badge: normalizeBadge(fm.badge),
                         };
@@ -90,6 +107,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
                     } else {
                         // Upgrade type if the node was pre-created as a folder
                         node.type = 'md';
+                        node._isSection = true;
                         // Apply frontmatter overrides (index.md processed first, so this wins)
                         if (fm.title != null) node.label = fm.title;
                         if (fm.order != null) node._order = fm.order;
@@ -115,9 +133,10 @@ export function prepareMenu(modules, base, frontmatters = {}) {
                 const folderLink = base + '/' + parts.slice(0, idx + 1).join('/');
                 let child = currentLevel.find(c => c.link === folderLink);
                 if (!child) {
-                    child = { label: capitalize(part), link: folderLink, children: [], type: 'folder' };
+                    child = { label: capitalize(part), link: folderLink, children: [], type: 'folder', _isSection: true };
                     currentLevel.push(child);
                 }
+                lastFolderNode = child;
                 currentLevel = child.children;
             }
         }
@@ -185,7 +204,7 @@ export function getBreadcrumbItems(active, menu) {
  * Converts a declarative sidebar config array to a `TreeViewItem[]` tree.
  * Items with an `auto` path have their children generated from `frontmatters`.
  *
- * @param {Array<{ text: string; link?: string; items?: Array<any>; auto?: string; badge?: any }>} items
+ * @param {Array<{ text?: string; link?: string; items?: Array<any>; auto?: string; badge?: any }>} items
  * @param {Record<string, { title?: string; order?: number; [k: string]: unknown }>} frontmatters
  * @param {string} base  - docs root prefix (e.g. '/docs')
  * @returns {import('./treeViewTypes').TreeViewItem[] | null}
@@ -203,12 +222,21 @@ export function parseSidebarConfig(items, frontmatters, base) {
                 Object.entries(frontmatters).filter(([k]) => k.startsWith(autoBase + '/') || k === autoBase)
             );
             const autoMenu = prepareMenu(autoFrontmatters, autoBase, autoFrontmatters);
+            const autoRoot = autoMenu.find(node => node.link === autoBase);
+            // prepareMenu(autoBase) returns pages under autoBase on the top level,
+            // while autoRoot (index page) is also a top-level node when present.
+            // For sidebar sections we need all descendants except the section root itself.
+            const children = autoMenu.filter(node => node.link !== autoBase);
+            const fallbackLabel = autoRoot?.label
+                ?? capitalize(item.auto.split('/').filter(Boolean).pop() ?? 'Section');
+
             return {
-                label: item.text,
+                // Label precedence: sidebar text -> frontmatter title -> folder name.
+                label: item.text ?? fallbackLabel,
                 link: item.link ?? autoBase,
                 badge: normalizeBadge(item.badge),
-                children: autoMenu,
-                type: item.link ? 'md' : 'folder',
+                children,
+                type: (item.link ? 'md' : (autoRoot?.type ?? 'folder')),
             };
         }
         const children = Array.isArray(item.items) ? item.items.map(convert) : [];

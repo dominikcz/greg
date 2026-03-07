@@ -108,11 +108,14 @@ export default {
 ## TODO
 
 ### 0.9
+
+- [ ] full shiki support
 - [ ] AI search integration
 - [ ] i18n support
 - [ ] multiple versions support
 
-### 1.0 
+### 1.0
+
 - [ ] edit mode
 - [ ] comments
 - [ ] code cleanup

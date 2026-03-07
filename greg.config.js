@@ -14,7 +14,7 @@ export default {
     // version: '1.0.0',
 
     /** Site title shown in the header. */
-    mainTitle: 'Greguś',
+    mainTitle: 'Greg',
 
     // ── Outline panel ─────────────────────────────────────────────────────
     /**
@@ -41,10 +41,57 @@ export default {
      *   ],
      */
     sidebar: [
-        { text: 'Proper docs guide', auto: '/guide' },
+        { text: 'Guide', auto: '/guide' },
         { text: 'Reference', auto: '/reference' },
-        { text: 'Fake', auto: '/fake-docs' },
         { text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
+        { text: 'Vitepress incompatibilities', link: '/incompatibilities' },
+    ],
+
+    // ── Top navigation ─────────────────────────────────────────────────────
+    /**
+     * VitePress-compatible top nav bar.
+     * Internal links are handled by the SPA router; external links open in a new tab.
+     *
+     *   nav: [
+     *     { text: 'Guide',     link: '/docs/guide' },
+     *     { text: 'Reference', link: '/docs/reference' },
+     *     {
+     *       text: 'More',
+     *       items: [
+     *         { text: 'Changelog', link: '/docs/changelog' },
+     *         // grouped section inside the dropdown:
+     *         {
+     *           text: 'Resources',
+     *           items: [
+     *             { text: 'GitHub', link: 'https://github.com/…' },
+     *             { text: 'npm',    link: 'https://npmjs.com/…'  },
+     *           ],
+     *         },
+     *       ],
+     *     },
+     *   ],
+     */
+    nav: [
+        { text: 'Guide', link: '/docs/guide' },
+        { text: 'Reference', link: '/docs/reference' },
+        {
+            text: 'More',
+            items: [
+                { text: 'VitePress incompatibilities', link: '/docs/incompatibilities' },
+                {
+                    text: 'Links',
+                    items: [
+                        { text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
+                        {
+                            text: 'Packages',
+                            items: [
+                                { text: 'npm', link: 'https://npmjs.com/package/@dominikcz/greg' },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
     ],
 
     // ── Doc page chrome ────────────────────────────────────────────────────

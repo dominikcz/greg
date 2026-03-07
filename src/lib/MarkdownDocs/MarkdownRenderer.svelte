@@ -261,7 +261,11 @@ function buildProcessor(currentBaseUrl: string, currentDocsPrefix: string) {
         .use(remarkCustomAnchors)
         .use(remarkRehype, { allowDangerousHtml: true })
         .use(rehypeSlug)
-        .use(rehypeAutolinkHeadings, { behavior: 'wrap' })
+        .use(rehypeAutolinkHeadings, {
+            behavior: 'prepend',
+            properties: { class: 'header-anchor', ariaHidden: 'true', tabIndex: -1 },
+            content: { type: 'text', value: '#' },
+        })
         .use(rehypeStepsWrapper)
         .use(rehypeMermaid)
         .use(rehypeHighlightJS)

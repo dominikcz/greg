@@ -66,6 +66,8 @@ lastModified?: boolean | { text?: string; locale?: string; formatOptions?: Intl.
  * items with an `auto` path have their children auto-generated.
  */
 sidebar?: 'auto' | SidebarItem[];
+/** Top navigation bar items. */
+		nav?: { text: string; link?: string; target?: string; items?: { text: string; link?: string; target?: string; items?: { text: string; link?: string; target?: string }[] }[] }[];
 /**
  * Custom search provider.
  * `(query: string, limit?: number) => Promise<SearchResult[]>`
@@ -76,7 +78,7 @@ sidebar?: 'auto' | SidebarItem[];
 searchProvider?: (query: string, limit?: number) => Promise<any[]>;
 };
 
-let { children, rootPath = (gregConfig as any).rootPath ?? '/docs', version = (gregConfig as any).version ?? '', mainTitle = (gregConfig as any).mainTitle ?? 'Greg', carbonAds = (gregConfig as any).carbonAds, outline = (gregConfig as any).outline ?? [2, 3] as [number, number], mermaidTheme = (gregConfig as any).mermaidTheme, mermaidThemes, breadcrumb = (gregConfig as any).breadcrumb ?? false, backToTop = (gregConfig as any).backToTop ?? false, lastModified = (gregConfig as any).lastModified ?? false, sidebar = (gregConfig as any).sidebar ?? 'auto', searchProvider }: Props = $props();
+let { children, rootPath = (gregConfig as any).rootPath ?? '/docs', version = (gregConfig as any).version ?? '', mainTitle = (gregConfig as any).mainTitle ?? 'Greg', carbonAds = (gregConfig as any).carbonAds, outline = (gregConfig as any).outline ?? [2, 3] as [number, number], mermaidTheme = (gregConfig as any).mermaidTheme, mermaidThemes, breadcrumb = (gregConfig as any).breadcrumb ?? false, backToTop = (gregConfig as any).backToTop ?? false, lastModified = (gregConfig as any).lastModified ?? false, sidebar = (gregConfig as any).sidebar ?? 'auto', nav = (gregConfig as any).nav ?? [], searchProvider }: Props = $props();
 
 // -- Outline -----------------------------------------------------------------
 function normalizeOutline(o: OutlineOption | boolean | undefined | null): { level: OutlineLevel; label: string } | null {
@@ -251,6 +253,7 @@ router.navigateWithAnchor(resolvedPath, hashPart || undefined);
 {rootPath}
 {mainTitle}
 {version}
+{nav}
 {theme}
 onThemeChange={(t) => (theme = t)}
 navigate={router.navigate}

@@ -1,4 +1,4 @@
-import { visit } from 'unist-util-visit';
+import { visit, SKIP } from 'unist-util-visit';
 
 /**
  * Default options — compatible with @mdit-vue/plugin-toc
@@ -81,10 +81,13 @@ export function rehypeTocPlaceholder(userOptions = {}) {
 	};
 }
 
-/** Collect all text content from a node, stripping tags */
+/** Collect all text content from a node, skipping header-anchor elements */
 function collectText(node) {
 	let text = '';
-	visit(node, 'text', (t) => { text += t.value; });
+	visit(node, (n) => {
+		if (n.type === 'element' && (n.properties?.class === 'header-anchor' || n.properties?.className?.includes?.('header-anchor'))) return SKIP;
+		if (n.type === 'text') text += n.value;
+	});
 	return text;
 }
 

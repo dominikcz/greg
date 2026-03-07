@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TreeView from "./TreeView.svelte";
 	import { ChevronRight } from '@lucide/svelte';
+    import { handleSectionClick } from './navigationUtils';
 
 	import type { TreeViewItem } from './treeViewTypes';
 
@@ -12,10 +13,8 @@
 	}
 	let { menu, active = '', rootPath = './', navigate }: DocsNavigationProps = $props();
 
-	// Top-level items with children become section headers; leaf items render directly
-	// Exclude the root index page (e.g. /docs) from the nav
-	let sections = $derived(menu.filter((item: any) => item.children && item.children.length > 0));
-	let topLeaves = $derived(menu.filter((item: any) => (!item.children || item.children.length === 0) && item.link !== rootPath));
+	// Items to render: root index page excluded; leaves and sections kept in their sorted order
+	let items = $derived(menu.filter((item: any) => item.link !== rootPath));
 
 	let collapsed = $state(new Set<string>());
 
@@ -28,35 +27,36 @@
 </script>
 
 <nav>
-	{#if topLeaves.length > 0}
-		<TreeView tree={topLeaves} {active} {navigate} />
-	{/if}
-	{#each sections as section}
-		{@const key = section.link ?? section.label}
+	{#each items as item}
+		{@const isSection = item.children && item.children.length > 0}
+		{@const key = item.link ?? item.label}
 		{@const isCollapsed = collapsed.has(key)}
-		<div class="nav-section">
-			<div
-				class="nav-section-title"
-				class:active={active === section.link}
-				class:collapsed={isCollapsed}
-				role="button"
-				tabindex="0"
-				onclick={() => toggleSection(key)}
-				onkeydown={(e) => e.key === 'Enter' && toggleSection(key)}
-				aria-expanded={!isCollapsed}
-			>
-				<a
-					href={section.link}
-					class="nav-section-label"
-					class:active={active === section.link}
-					onclick={(e) => { e.preventDefault(); navigate(section.link); }}
-				>{section.label}</a>
-				<span class="nav-section-chevron"><ChevronRight /></span>
+		{#if isSection}
+			<div class="nav-section">
+				<div
+					class="nav-section-title"
+					class:active={active === item.link}
+					class:collapsed={isCollapsed}
+					role="button"
+					tabindex="0"
+					onclick={() => handleSectionClick(item, key, toggleSection, navigate)}
+					onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSectionClick(item, key, toggleSection, navigate)}
+					aria-expanded={!isCollapsed}
+				>
+					<span class="nav-section-label" class:active={active === item.link}>
+						{item.label}{#if item.badge}<span class="nav-badge {item.badge?.type ?? 'tip'}">{item.badge?.text}</span>{/if}
+					</span>
+					<span class="nav-section-chevron"><ChevronRight /></span>
+				</div>
+				{#if !isCollapsed}
+					<TreeView tree={item.children} {active} {navigate} />
+				{/if}
 			</div>
-			{#if !isCollapsed}
-				<TreeView tree={section.children} {active} {navigate} />
-			{/if}
-		</div>
+		{:else}
+			<div class="nav-leaf">
+				<TreeView tree={[item]} {active} {navigate} />
+			</div>
+		{/if}
 	{/each}
 </nav>
 
@@ -72,6 +72,14 @@
 		display: flex;
 		flex-flow: column nowrap;
 		gap: 0.1rem;
+		margin-top: 0.75rem;
+
+		&:first-child {
+			margin-top: 0;
+		}
+	}
+
+	.nav-leaf {
 		margin-top: 0.75rem;
 
 		&:first-child {

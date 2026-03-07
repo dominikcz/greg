@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import path from 'node:path';
 import { process as processMarkdown } from './helpers.js';
 
@@ -35,11 +35,11 @@ describe('rehype-slug', () => {
 
 // ─── rehype-autolink-headings ──────────────────────────────────────────────────
 
-describe('rehype-autolink-headings (behavior: wrap)', () => {
-	it('wraps heading text in an <a> link', async () => {
+describe('rehype-autolink-headings (behavior: prepend)', () => {
+	it('prepends a # anchor before heading text', async () => {
 		const html = await processMarkdown('## My Section');
-		// behavior:'wrap' → <h2 id="..."><a href="#...">text</a></h2>
-		expect(html).toMatch(/<h2 id="my-section"><a href="#my-section">My Section<\/a><\/h2>/);
+		// behavior:'prepend' → <h2 id="..."><a class="header-anchor" ...>#</a>My Section</h2>
+		expect(html).toMatch(/<h2 id="my-section"><a class="header-anchor"[^>]*href="#my-section"[^>]*>#<\/a>My Section<\/h2>/);
 	});
 
 	it('link href matches heading id', async () => {
@@ -310,7 +310,8 @@ describe('remarkContainers — content', () => {
 // ─── docsUtils — __partial filter ─────────────────────────────────────────────
 
 describe('docsUtils — prepareMenu', async () => {
-	const { prepareMenu } = await import('../docsUtils.js');
+	const { prepareMenu, parseSidebarConfig } = await import('../docsUtils.js');
+	const { handleSectionClick } = await import('../navigationUtils.js');
 
 	it('excludes files starting with __', () => {
 		const modules = {
@@ -333,6 +334,114 @@ describe('docsUtils — prepareMenu', async () => {
 		const tree = prepareMenu(modules, '/docs');
 		const flatten = JSON.stringify(tree);
 		expect(flatten).toContain('guide');
+	});
+
+	it('keeps folders before files regardless of file order values', () => {
+		const modules = {
+			'/docs/index.md': {},
+			'/docs/alpha.md': {},
+			'/docs/guide/index.md': {},
+		};
+		const frontmatters = {
+			'/docs/alpha.md': { order: -100 },
+		};
+		const tree = prepareMenu(modules, '/docs', frontmatters).filter((x) => x.link !== '/docs');
+		expect(tree[0].link).toBe('/docs/guide');
+		expect(tree[1].link).toBe('/docs/alpha');
+	});
+
+	it('sorts folders by index order first, then alphabetically for unordered folders', () => {
+		const modules = {
+			'/docs/index.md': {},
+			'/docs/zeta/index.md': {},
+			'/docs/beta/index.md': {},
+			'/docs/alpha/index.md': {},
+			'/docs/page.md': {},
+		};
+		const frontmatters = {
+			'/docs/zeta/index.md': { order: 20 },
+			'/docs/beta/index.md': { order: 10 },
+		};
+		const tree = prepareMenu(modules, '/docs', frontmatters).filter((x) => x.link !== '/docs');
+		expect(tree.map((x) => x.link)).toEqual([
+			'/docs/beta',
+			'/docs/zeta',
+			'/docs/alpha',
+			'/docs/page',
+		]);
+	});
+
+	it('does not add folder index as a separate child item', () => {
+		const modules = {
+			'/docs/index.md': {},
+			'/docs/guide/index.md': {},
+			'/docs/guide/intro.md': {},
+		};
+		const tree = prepareMenu(modules, '/docs');
+		const guide = tree.find((x) => x.link === '/docs/guide');
+		expect(guide).toBeTruthy();
+		expect(guide.type).toBe('md');
+		expect(guide.children.some((x) => x.link === '/docs/guide')).toBe(false);
+		expect(guide.children.map((x) => x.link)).toEqual(['/docs/guide/intro']);
+	});
+
+	it('uses sidebar text first, then index frontmatter title, then folder name for auto labels', () => {
+		const frontmatters = {
+			'/docs/guide/index.md': { title: 'Guide Title' },
+			'/docs/guide/intro.md': {},
+			'/docs/api/index.md': {},
+			'/docs/api/ref.md': {},
+		};
+
+		const withSidebarText = parseSidebarConfig([
+			{ text: 'Guide From Sidebar', auto: '/guide' },
+		], frontmatters, '/docs');
+		expect(withSidebarText[0].label).toBe('Guide From Sidebar');
+
+		const withoutSidebarText = parseSidebarConfig([
+			{ auto: '/guide' },
+		], frontmatters, '/docs');
+		expect(withoutSidebarText[0].label).toBe('Guide Title');
+
+		const withoutSidebarAndTitle = parseSidebarConfig([
+			{ auto: '/api' },
+		], frontmatters, '/docs');
+		expect(withoutSidebarAndTitle[0].label).toBe('Api');
+	});
+
+	it('creates expandable sections for auto sidebar entries', () => {
+		const frontmatters = {
+			'/docs/guide/index.md': { title: 'Guide' },
+			'/docs/guide/getting-started.md': {},
+			'/docs/reference/index.md': { title: 'Reference' },
+			'/docs/reference/config.md': {},
+		};
+
+		const sidebar = parseSidebarConfig([
+			{ text: 'Guide', auto: '/guide' },
+			{ text: 'Reference', auto: '/reference' },
+		], frontmatters, '/docs');
+
+		expect(sidebar[0].children.length).toBeGreaterThan(0);
+		expect(sidebar[0].children.map((x) => x.link)).toContain('/docs/guide/getting-started');
+		expect(sidebar[1].children.length).toBeGreaterThan(0);
+		expect(sidebar[1].children.map((x) => x.link)).toContain('/docs/reference/config');
+	});
+
+	it('handleSectionClick toggles section and navigates only when index exists', () => {
+		const toggleSection = vi.fn();
+		const navigate = vi.fn();
+
+		handleSectionClick({ type: 'md', link: '/docs/guide' }, '/docs/guide', toggleSection, navigate);
+		expect(toggleSection).toHaveBeenCalledWith('/docs/guide');
+		expect(navigate).toHaveBeenCalledWith('/docs/guide');
+
+		toggleSection.mockClear();
+		navigate.mockClear();
+
+		handleSectionClick({ type: 'folder', link: '/docs/api' }, '/docs/api', toggleSection, navigate);
+		expect(toggleSection).toHaveBeenCalledWith('/docs/api');
+		expect(navigate).not.toHaveBeenCalled();
 	});
 });
 
