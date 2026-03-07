@@ -1,5 +1,5 @@
 <script>
-    import MarkdownDocs from '@dominikcz/greg'
+    import MarkdownDocs from "@dominikcz/greg";
 </script>
 
 <MarkdownDocs />

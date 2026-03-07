@@ -39,5 +39,4 @@
             border-radius: 0 50%;
         }
     }
-
 </style>

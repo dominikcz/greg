@@ -12,9 +12,9 @@ export function handleCodeGroupClick(event: MouseEvent) {
 	const group = tab.closest('.rehype-code-group');
 	if (!(group instanceof HTMLElement)) return;
 
-	const tabs   = Array.from(group.querySelectorAll('.rcg-tab'));
+	const tabs = Array.from(group.querySelectorAll('.rcg-tab'));
 	const blocks = Array.from(group.querySelectorAll('.rcg-block'));
-	const index  = tabs.indexOf(tab);
+	const index = tabs.indexOf(tab);
 	if (index < 0 || index >= blocks.length) return;
 
 	tabs.forEach((item) => {

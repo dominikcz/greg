@@ -16,11 +16,11 @@ import remarkParse from 'remark-parse';
 
 // ── Regex patterns (same as remarkImports) ────────────────────────────────────
 
-const SNIPPET_RE  = /^<<<\s+(.+)$/;
-const INCLUDE_RE  = /^<!--\s*@include:\s*([^\s]+)\s*-->$/;
-const TITLE_RE    = /\s+\[([^\]]+)\]\s*$/;
-const BRACES_RE   = /\{([^}]*)\}\s*$/;
-const REGION_RE   = /^(.*?)#([^#{]+)$/;
+const SNIPPET_RE = /^<<<\s+(.+)$/;
+const INCLUDE_RE = /^<!--\s*@include:\s*([^\s]+)\s*-->$/;
+const TITLE_RE = /\s+\[([^\]]+)\]\s*$/;
+const BRACES_RE = /\{([^}]*)\}\s*$/;
+const REGION_RE = /^(.*?)#([^#{]+)$/;
 const EXTERNAL_URL_RE = /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i;
 
 const extToLang = {
@@ -153,7 +153,7 @@ function selectLines(content, rangeText) {
     if (!range) return content;
     const lines = content.split(/\r?\n/);
     const start = range.start ?? 1;
-    const end   = range.end   ?? lines.length;
+    const end = range.end ?? lines.length;
     return lines.slice(Math.max(1, start) - 1, Math.max(start, Math.min(end, lines.length))).join('\n');
 }
 
@@ -162,11 +162,11 @@ function selectRegion(content, regionName) {
     const lines = content.split(/\r?\n/);
     const re = escapeRegExp(regionName);
     const startRe = new RegExp(`#region\\s+${re}\\s*$`, 'i');
-    const endRe   = new RegExp(`#endregion\\s+${re}\\s*$`, 'i');
+    const endRe = new RegExp(`#endregion\\s+${re}\\s*$`, 'i');
     let start = -1, end = -1;
     for (let i = 0; i < lines.length; i++) {
         if (start === -1 && startRe.test(lines[i])) { start = i; continue; }
-        if (start !== -1 && endRe.test(lines[i]))   { end = i;   break; }
+        if (start !== -1 && endRe.test(lines[i])) { end = i; break; }
     }
     if (start === -1 || end === -1 || end <= start) return content;
     return lines.slice(start + 1, end).join('\n');
@@ -203,7 +203,7 @@ function selectMarkdownSectionByAnchor(content, anchor) {
 }
 
 function parseSnippetSpec(raw) {
-    const withTitle  = parseTitle(raw);
+    const withTitle = parseTitle(raw);
     const withBraces = parseBraces(withTitle.text);
     const withRegion = parseRegion(withBraces.text);
     let rangePart = '', langOverride = '', metaTail = '';
@@ -219,7 +219,7 @@ function parseSnippetSpec(raw) {
 function buildCodeMeta(title, metaTail) {
     const parts = [];
     if (metaTail) parts.push(metaTail);
-    if (title)    parts.push(`[${title}]`);
+    if (title) parts.push(`[${title}]`);
     return parts.join(' ').trim() || null;
 }
 
@@ -242,7 +242,7 @@ async function buildSnippetNode(rawSpec, currentDirUrl, docsPrefix) {
         return { type: 'code', lang: 'text', meta: '', value: `[remarkImports] File not found: ${url}` };
     }
     if (parsed.regionOrAnchor) content = selectRegion(content, parsed.regionOrAnchor);
-    if (parsed.rangePart)      content = selectLines(content, parsed.rangePart);
+    if (parsed.rangePart) content = selectLines(content, parsed.rangePart);
     const lang = inferLang(url, parsed.langOverride);
     return { type: 'code', lang: lang || null, meta: buildCodeMeta(parsed.title, parsed.metaTail), value: content };
 }
@@ -321,8 +321,8 @@ async function transformChildren(children, currentDirUrl, docsPrefix, depth) {
  *   docsPrefix - the docs root prefix, e.g. '/docs' (default: '/docs')
  */
 export function remarkImportsBrowser(options = {}) {
-    const docsPrefix  = (options.docsPrefix ?? '/docs').replace(/\/+$/, '');
-    const baseUrl     = options.baseUrl ?? docsPrefix + '/index.md';
+    const docsPrefix = (options.docsPrefix ?? '/docs').replace(/\/+$/, '');
+    const baseUrl = options.baseUrl ?? docsPrefix + '/index.md';
     const currentDirUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
 
     return async (tree) => {

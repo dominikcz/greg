@@ -1,10 +1,22 @@
 <script lang="ts">
-    import type { Snippet } from 'svelte';
-    import Hero from '$components/Hero.svelte';
-    import Features from '$components/Features.svelte';
+    import type { Snippet } from "svelte";
+    import Hero from "$components/Hero.svelte";
+    import Features from "$components/Features.svelte";
 
-    type HeroAction = { theme?: 'brand' | 'alt'; text: string; link: string; target?: string; rel?: string };
-    type FeatureItem = { icon?: string; title: string; details?: string; link?: string; linkText?: string };
+    type HeroAction = {
+        theme?: "brand" | "alt";
+        text: string;
+        link: string;
+        target?: string;
+        rel?: string;
+    };
+    type FeatureItem = {
+        icon?: string;
+        title: string;
+        details?: string;
+        link?: string;
+        linkText?: string;
+    };
 
     type Props = {
         hero?: {

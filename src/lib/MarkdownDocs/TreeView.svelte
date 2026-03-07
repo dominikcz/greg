@@ -1,6 +1,6 @@
 <script lang="ts">
-	import TreeViewItem from './TreeViewItem.svelte';
-	import type { TreeViewItem as TreeViewItemType } from './treeViewTypes';
+	import TreeViewItem from "./TreeViewItem.svelte";
+	import type { TreeViewItem as TreeViewItemType } from "./treeViewTypes";
 
 	interface TreeViewProps {
 		tree: TreeViewItemType[];
@@ -8,11 +8,16 @@
 		class?: string;
 		navigate: (path: string) => void;
 	}
-	let { tree, active = '', class: className = '', navigate }: TreeViewProps = $props();
+	let {
+		tree,
+		active = "",
+		class: className = "",
+		navigate,
+	}: TreeViewProps = $props();
 </script>
 
 <ul class="tree-view {className}">
-	{#each tree as item(item.link || item.label)}
+	{#each tree as item (item.link || item.label)}
 		<TreeViewItem {item} depth={0} {active} {navigate} />
 	{/each}
 </ul>

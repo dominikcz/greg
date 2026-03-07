@@ -10,8 +10,8 @@
  *     vitePluginCopyDocs,
  *   } from '@dominikcz/greg/plugins';
  */
-export { vitePluginGregConfig }   from './vitePluginGregConfig.js';
-export { vitePluginSearchIndex }  from './vitePluginSearchIndex.js';
+export { vitePluginGregConfig } from './vitePluginGregConfig.js';
+export { vitePluginSearchIndex } from './vitePluginSearchIndex.js';
 export { vitePluginSearchServer } from './vitePluginSearchServer.js';
-export { vitePluginFrontmatter }  from './vitePluginFrontmatter.js';
-export { vitePluginCopyDocs }     from './vitePluginCopyDocs.js';
+export { vitePluginFrontmatter } from './vitePluginFrontmatter.js';
+export { vitePluginCopyDocs } from './vitePluginCopyDocs.js';

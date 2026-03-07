@@ -20,7 +20,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json');
 
-const [,, command, ...args] = process.argv;
+const [, , command, ...args] = process.argv;
 
 function help() {
     console.log(`

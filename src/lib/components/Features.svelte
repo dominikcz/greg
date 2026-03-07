@@ -1,9 +1,15 @@
 <script lang="ts">
-    import Feature from './Feature.svelte';
+    import Feature from "./Feature.svelte";
 
     type FeatureIcon =
         | string
-        | { src: string; alt?: string; width?: number | string; height?: number | string; wrap?: boolean }
+        | {
+              src: string;
+              alt?: string;
+              width?: number | string;
+              height?: number | string;
+              wrap?: boolean;
+          }
         | { dark: string; light: string; alt?: string };
 
     type FeatureItem = {
@@ -24,12 +30,12 @@
 
     let grid = $derived.by(() => {
         const n = features?.length ?? 0;
-        if (!n) return '';
-        if (n === 2) return 'grid-2';
-        if (n === 3) return 'grid-3';
-        if (n % 3 === 0) return 'grid-6';
-        if (n > 3) return 'grid-4';
-        return '';
+        if (!n) return "";
+        if (n === 2) return "grid-2";
+        if (n === 3) return "grid-3";
+        if (n % 3 === 0) return "grid-6";
+        if (n > 3) return "grid-4";
+        return "";
     });
 </script>
 

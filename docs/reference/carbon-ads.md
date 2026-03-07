@@ -21,9 +21,9 @@ Pass the `carbonAds` prop to `<MarkdownDocs>`:
 />
 ```
 
-| Option | Type | Description |
-| ------ | ---- | ----------- |
-| `code` | `string` | Your Carbon Ads `serve` code |
+| Option      | Type     | Description                    |
+| ----------- | -------- | ------------------------------ |
+| `code`      | `string` | Your Carbon Ads `serve` code   |
 | `placement` | `string` | Your Carbon Ads placement name |
 
 

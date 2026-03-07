@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount } from "svelte";
 
     type SocialLinkIcon = string | { svg: string };
 
@@ -19,24 +19,25 @@
         const span = el?.children[0];
         if (
             span instanceof HTMLElement &&
-            span.className.startsWith('social-icon-') &&
-            (getComputedStyle(span).maskImage || (getComputedStyle(span) as any).webkitMaskImage) === 'none'
+            span.className.startsWith("social-icon-") &&
+            (getComputedStyle(span).maskImage ||
+                (getComputedStyle(span) as any).webkitMaskImage) === "none"
         ) {
-            const name = span.className.replace('social-icon-', '');
+            const name = span.className.replace("social-icon-", "");
             span.style.setProperty(
-                '--icon',
+                "--icon",
                 `url('https://api.iconify.design/simple-icons/${name}.svg')`,
             );
         }
     });
 
     let svgHtml = $derived.by(() => {
-        if (typeof icon === 'object') return icon.svg;
+        if (typeof icon === "object") return icon.svg;
         return `<span class="social-icon-${icon}"></span>`;
     });
 
-    let label = $derived(ariaLabel ?? (typeof icon === 'string' ? icon : ''));
-    let relAttr = $derived(me ? 'me noopener' : 'noopener');
+    let label = $derived(ariaLabel ?? (typeof icon === "string" ? icon : ""));
+    let relAttr = $derived(me ? "me noopener" : "noopener");
 </script>
 
 <!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -46,8 +47,8 @@
     href={link}
     aria-label={label}
     target="_blank"
-    rel={relAttr}
->{@html svgHtml}</a>
+    rel={relAttr}>{@html svgHtml}</a
+>
 
 <style>
     .SocialLink {

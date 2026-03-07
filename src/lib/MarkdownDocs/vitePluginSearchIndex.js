@@ -25,7 +25,7 @@ export function vitePluginSearchIndex({ docsDir = 'docs', rootPath = '/docs' } =
 		configureServer(server) {
 			// Invalidate cache when any markdown file changes
 			server.watcher.on('change', f => { if (f.endsWith('.md')) invalidateSearchIndexCache(); });
-			server.watcher.on('add',    f => { if (f.endsWith('.md')) invalidateSearchIndexCache(); });
+			server.watcher.on('add', f => { if (f.endsWith('.md')) invalidateSearchIndexCache(); });
 			server.watcher.on('unlink', f => { if (f.endsWith('.md')) invalidateSearchIndexCache(); });
 
 			server.middlewares.use(async (req, res, next) => {

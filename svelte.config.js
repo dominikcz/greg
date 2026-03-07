@@ -89,7 +89,7 @@ const mdsvexOptions = {
 			const loadedLangs = highlighter.getLoadedLanguages();
 			const safeLang = loadedLangs.includes(mappedLang) ? mappedLang
 				: loadedLangs.includes(rawLang) ? rawLang
-				: shikiDefaultLang;
+					: shikiDefaultLang;
 			let shikiHtml = highlighter.codeToHtml(directives.cleanedCode, {
 				lang: safeLang,
 				themes: shikiThemes,

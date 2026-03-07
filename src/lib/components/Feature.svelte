@@ -1,10 +1,16 @@
 <script lang="ts">
-    import Image from './Image.svelte';
-    import Link from './Link.svelte';
+    import Image from "./Image.svelte";
+    import Link from "./Link.svelte";
 
     type FeatureIcon =
         | string
-        | { src: string; alt?: string; width?: number | string; height?: number | string; wrap?: boolean }
+        | {
+              src: string;
+              alt?: string;
+              width?: number | string;
+              height?: number | string;
+              wrap?: boolean;
+          }
         | { dark: string; light: string; alt?: string; wrap?: boolean };
 
     type Props = {
@@ -21,33 +27,56 @@
 
     function isImageIcon(
         i: FeatureIcon,
-    ): i is { src: string; alt?: string; width?: number | string; height?: number | string; wrap?: boolean } {
-        return typeof i === 'object' && ('src' in i || 'dark' in i);
+    ): i is {
+        src: string;
+        alt?: string;
+        width?: number | string;
+        height?: number | string;
+        wrap?: boolean;
+    } {
+        return typeof i === "object" && ("src" in i || "dark" in i);
     }
 
     function shouldWrap(i: FeatureIcon): boolean {
-        if (typeof i === 'object' && 'wrap' in i) return !!(i as any).wrap;
+        if (typeof i === "object" && "wrap" in i) return !!(i as any).wrap;
         return false;
     }
 
     // Resolved per render — avoid TS cast inside templates
-    let iconImg      = $derived(isImageIcon(icon!) ? (icon as any) : null);
-    let iconAlt      = $derived(iconImg?.alt ?? '');
-    let iconWidth    = $derived(iconImg?.width  ?? 48);
-    let iconHeight   = $derived(iconImg?.height ?? 48);
-    let iconWrapped  = $derived(iconImg && shouldWrap(icon!));
+    let iconImg = $derived(isImageIcon(icon!) ? (icon as any) : null);
+    let iconAlt = $derived(iconImg?.alt ?? "");
+    let iconWidth = $derived(iconImg?.width ?? 48);
+    let iconHeight = $derived(iconImg?.height ?? 48);
+    let iconWrapped = $derived(iconImg && shouldWrap(icon!));
 </script>
 
-<Link class="Feature" href={link} {rel} {target} noIcon tag={link ? 'a' : 'div'}>
+<Link
+    class="Feature"
+    href={link}
+    {rel}
+    {target}
+    noIcon
+    tag={link ? "a" : "div"}
+>
     <article class="box">
         {#if icon}
             {#if iconWrapped}
                 <div class="icon">
-                    <Image image={iconImg} alt={iconAlt} height={iconHeight} width={iconWidth} />
+                    <Image
+                        image={iconImg}
+                        alt={iconAlt}
+                        height={iconHeight}
+                        width={iconWidth}
+                    />
                 </div>
             {:else if iconImg}
-                <Image image={iconImg} alt={iconAlt} height={iconHeight} width={iconWidth} />
-            {:else if typeof icon === 'string'}
+                <Image
+                    image={iconImg}
+                    alt={iconAlt}
+                    height={iconHeight}
+                    width={iconWidth}
+                />
+            {:else if typeof icon === "string"}
                 <!-- eslint-disable-next-line svelte/no-at-html-tags -->
                 <div class="icon">{@html icon}</div>
             {/if}
@@ -72,8 +101,15 @@
             <div class="link-text">
                 <p class="link-text-value">
                     {linkText}
-                    <svg class="link-text-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M19.9,12.4c0.1-0.2,0.1-0.5,0-0.8c-0.1-0.1-0.1-0.2-0.2-0.3l-7-7c-0.4-0.4-1-0.4-1.4,0s-0.4,1,0,1.4l5.3,5.3H5c-0.6,0-1,0.4-1,1s0.4,1,1,1h11.6l-5.3,5.3c-0.4,0.4-0.4,1,0,1.4c0.2,0.2,0.5,0.3,0.7,0.3s0.5-0.1,0.7-0.3l7-7C19.8,12.6,19.9,12.5,19.9,12.4z"/>
+                    <svg
+                        class="link-text-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                    >
+                        <path
+                            d="M19.9,12.4c0.1-0.2,0.1-0.5,0-0.8c-0.1-0.1-0.1-0.2-0.2-0.3l-7-7c-0.4-0.4-1-0.4-1.4,0s-0.4,1,0,1.4l5.3,5.3H5c-0.6,0-1,0.4-1,1s0.4,1,1,1h11.6l-5.3,5.3c-0.4,0.4-0.4,1,0,1.4c0.2,0.2,0.5,0.3,0.7,0.3s0.5-0.1,0.7-0.3l7-7C19.8,12.6,19.9,12.5,19.9,12.4z"
+                        />
                     </svg>
                 </p>
             </div>
@@ -88,7 +124,9 @@
         border-radius: 12px;
         height: 100%;
         background-color: var(--greg-menu-background);
-        transition: border-color 0.25s, background-color 0.25s;
+        transition:
+            border-color 0.25s,
+            background-color 0.25s;
         text-decoration: none;
         color: inherit;
     }

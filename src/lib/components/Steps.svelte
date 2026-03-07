@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { Snippet } from 'svelte';
+    import type { Snippet } from "svelte";
     let { children }: { children?: Snippet } = $props();
 </script>
 
@@ -23,11 +23,21 @@
 <style>
     /* ── design tokens ───────────────────────────────────────────────────── */
     .greg-steps {
-        --_size:   1.75rem;  /* bullet circle diameter   */
-        --_margin: var(--greg-steps-guide-gap, 0.5rem); /* gap above/below connector */
+        --_size: 1.75rem; /* bullet circle diameter   */
+        --_margin: var(
+            --greg-steps-guide-gap,
+            0.5rem
+        ); /* gap above/below connector */
         --_bullet-bg: var(--greg-accent, #646cff);
         --_bullet-fg: #fff;
-        --_guide: var(--greg-steps-guide-color, color-mix(in srgb, var(--greg-accent, #646cff) 42%, var(--greg-border-color, #e5e5ea)));
+        --_guide: var(
+            --greg-steps-guide-color,
+            color-mix(
+                in srgb,
+                var(--greg-accent, #646cff) 42%,
+                var(--greg-border-color, #e5e5ea)
+            )
+        );
         margin-block: 1.75rem;
     }
 
@@ -52,7 +62,7 @@
     }
 
     .greg-steps :global(ol > li::marker) {
-        content: '';
+        content: "";
     }
 
     .greg-steps :global(ol > li + li) {
@@ -65,7 +75,7 @@
         position: absolute;
         top: 0;
         inset-inline-start: 0;
-        width:  var(--_size);
+        width: var(--_size);
         height: var(--_size);
         /* line-height centres the number without flexbox (pseudo-element safe) */
         line-height: var(--_size);
@@ -76,14 +86,15 @@
         color: var(--_bullet-fg);
         background-color: var(--_bullet-bg);
         border-radius: 99rem;
-        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--_bullet-bg) 82%, black);
+        box-shadow: inset 0 0 0 1px
+            color-mix(in srgb, var(--_bullet-bg) 82%, black);
     }
 
     /* ── vertical connector line (::after) ──────────────────────────────── */
     .greg-steps :global(ol > li::after) {
-        content: '';
+        content: "";
         position: absolute;
-        top:    calc(var(--_size) + var(--_margin));
+        top: calc(var(--_size) + var(--_margin));
         /* compensate li padding-bottom:1px so top and bottom gaps are equal */
         bottom: max(0px, calc(var(--_margin) - 1px));
         inset-inline-start: calc((var(--_size) - 2px) / 2);
@@ -102,7 +113,9 @@
      * uses with `lh` units, falling back to an approximation).
      */
     .greg-steps :global(ol > li > :first-child) {
-        --lh: calc(1em * 1.75); /* approximation: font-size × body line-height */
+        --lh: calc(
+            1em * 1.75
+        ); /* approximation: font-size × body line-height */
         --shift-y: calc(0.5 * (var(--_size) - var(--lh)));
         margin-top: 0;
         transform: translateY(var(--shift-y));

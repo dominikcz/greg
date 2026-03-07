@@ -59,13 +59,13 @@ interface Props {
 
 For advanced customisation, `Hero` exposes several Svelte snippet slots:
 
-| Snippet | Position |
-| ------- | -------- |
-| `heroBefore` | Before the name/text block |
-| `heroInfo` | Replaces the entire name + tagline |
-| `heroInfoAfter` | After tagline, before action buttons |
-| `heroImage` | Replaces the default image |
-| `heroActionsAfter` | After the action buttons |
+| Snippet            | Position                             |
+| ------------------ | ------------------------------------ |
+| `heroBefore`       | Before the name/text block           |
+| `heroInfo`         | Replaces the entire name + tagline   |
+| `heroInfoAfter`    | After tagline, before action buttons |
+| `heroImage`        | Replaces the default image           |
+| `heroActionsAfter` | After the action buttons             |
 
 
 ## Features
@@ -114,13 +114,13 @@ interface Feature {
 
 The grid automatically adapts based on the number of features:
 
-| Count | Layout |
-| ----- | ------ |
-| 2 | 2-column |
-| 3 | 3-column |
-| 4 or 5 | 2 + 3 mixed |
-| Multiple of 3 | 3-column |
-| Other | 4-column with wrapping |
+| Count         | Layout                 |
+| ------------- | ---------------------- |
+| 2             | 2-column               |
+| 3             | 3-column               |
+| 4 or 5        | 2 + 3 mixed            |
+| Multiple of 3 | 3-column               |
+| Other         | 4-column with wrapping |
 
 
 ## Full home page example

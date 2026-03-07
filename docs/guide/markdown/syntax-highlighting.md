@@ -22,14 +22,14 @@ Supported languages include `javascript`, `typescript`, `bash`, `json`, `html`,
 Greg supports VitePress-style code highlighting directives in both build-time
 Shiki output and runtime rendering.
 
-| Feature | VitePress | Greg |
-| ------- | --------- | ---- |
-| Language fence (` ```ts `) | ✅ | ✅ |
-| Title in meta (` ```ts [file.ts] `) | ✅ | ✅ |
-| Code groups (`::: code-group`) | ✅ | ✅ |
-| Highlight lines (` ```ts{2,4} `) | ✅ | ✅ |
-| Focused lines (`// [!code focus]`) | ✅ | ✅ |
-| Diff markers (`// [!code ++]`, `--`) | ✅ | ✅ |
+| Feature                              | VitePress | Greg |
+| ------------------------------------ | --------- | ---- |
+| Language fence (` ```ts `)           | ✅         | ✅    |
+| Title in meta (` ```ts [file.ts] `)  | ✅         | ✅    |
+| Code groups (`::: code-group`)       | ✅         | ✅    |
+| Highlight lines (` ```ts{2,4} `)     | ✅         | ✅    |
+| Focused lines (`// [!code focus]`)   | ✅         | ✅    |
+| Diff markers (`// [!code ++]`, `--`) | ✅         | ✅    |
 
 Language + title (supported):
 

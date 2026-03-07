@@ -1,7 +1,7 @@
 <script lang="ts">
-    import type { Snippet } from 'svelte';
-    import Button from './Button.svelte';
-    import Image from './Image.svelte';
+    import type { Snippet } from "svelte";
+    import Button from "./Button.svelte";
+    import Image from "./Image.svelte";
 
     type ThemeImage =
         | string
@@ -9,7 +9,7 @@
         | { dark: string; light: string; alt?: string };
 
     type HeroAction = {
-        theme?: 'brand' | 'alt';
+        theme?: "brand" | "alt";
         text: string;
         link: string;
         target?: string;
@@ -87,7 +87,7 @@
                             <Button
                                 tag="a"
                                 size="medium"
-                                theme={action.theme ?? 'brand'}
+                                theme={action.theme ?? "brand"}
                                 text={action.text}
                                 href={action.link}
                                 target={action.target}
@@ -348,7 +348,11 @@
         border-radius: 50%;
         width: 192px;
         height: 192px;
-        background: radial-gradient(circle, var(--greg-accent-light), transparent 70%);
+        background: radial-gradient(
+            circle,
+            var(--greg-accent-light),
+            transparent 70%
+        );
         filter: blur(48px);
         transform: translate(-50%, -50%);
     }

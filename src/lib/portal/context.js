@@ -8,5 +8,5 @@ export function getPortalsContext() {
 }
 
 export function setPortalsContext(ctx = new SvelteMap()) {
-	setContext(key, ctx)
+  setContext(key, ctx)
 }

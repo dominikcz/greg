@@ -28,8 +28,8 @@
  */
 
 import { createServer } from 'node:http';
-import { readFileSync }  from 'node:fs';
-import { resolve }       from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { buildFuseResult } from './searchIndexBuilder.js';
 import Fuse from 'fuse.js';
 
@@ -58,15 +58,15 @@ function parseArgs(argv) {
 	return args;
 }
 
-const args  = parseArgs(process.argv.slice(2));
-const port  = parseInt(args.port  ?? process.env.GREG_SEARCH_PORT  ?? '3100', 10);
-const host  = String(args.host    ?? process.env.GREG_SEARCH_HOST  ?? 'localhost');
-const url   = String(args.url     ?? process.env.GREG_SEARCH_URL   ?? '/api/search');
+const args = parseArgs(process.argv.slice(2));
+const port = parseInt(args.port ?? process.env.GREG_SEARCH_PORT ?? '3100', 10);
+const host = String(args.host ?? process.env.GREG_SEARCH_HOST ?? 'localhost');
+const url = String(args.url ?? process.env.GREG_SEARCH_URL ?? '/api/search');
 const index = resolve(String(args.index ?? process.env.GREG_SEARCH_INDEX ?? 'dist/search-index.json'));
-const corsOrigin  = String(args['cors-origin']  ?? process.env.GREG_SEARCH_CORS_ORIGIN  ?? '*');
+const corsOrigin = String(args['cors-origin'] ?? process.env.GREG_SEARCH_CORS_ORIGIN ?? '*');
 const corsMethods = String(args['cors-methods'] ?? process.env.GREG_SEARCH_CORS_METHODS ?? 'GET, OPTIONS');
 const corsHeaders = String(args['cors-headers'] ?? process.env.GREG_SEARCH_CORS_HEADERS ?? 'Content-Type');
-const corsMaxAge  = String(args['cors-max-age'] ?? process.env.GREG_SEARCH_CORS_MAX_AGE ?? '86400');
+const corsMaxAge = String(args['cors-max-age'] ?? process.env.GREG_SEARCH_CORS_MAX_AGE ?? '86400');
 
 function getCorsHeaders(req) {
 	const reflectedOrigin = req.headers.origin ? String(req.headers.origin) : '*';
@@ -101,7 +101,7 @@ const fuse = new Fuse(data, {
 	ignoreLocation: true,
 	minMatchCharLength: 2,
 	keys: [
-		{ name: 'title',            weight: 3 },
+		{ name: 'title', weight: 3 },
 		{ name: 'sections.heading', weight: 2 },
 		{ name: 'sections.content', weight: 1 },
 	],
@@ -114,8 +114,8 @@ console.log(`[greg-search] Indexed ${data.length} document(s).`);
 
 // ── HTTP server ───────────────────────────────────────────────────────────────
 const server = createServer((req, res) => {
-	const rawUrl   = req.url ?? '';
-	const qIdx     = rawUrl.indexOf('?');
+	const rawUrl = req.url ?? '';
+	const qIdx = rawUrl.indexOf('?');
 	const pathname = qIdx >= 0 ? rawUrl.slice(0, qIdx) : rawUrl;
 
 	// CORS preflight
@@ -135,17 +135,17 @@ const server = createServer((req, res) => {
 		return;
 	}
 
-	const params  = new URLSearchParams(qIdx >= 0 ? rawUrl.slice(qIdx + 1) : '');
-	const q       = (params.get('q') ?? '').trim();
-	const limit   = Math.min(Math.max(parseInt(params.get('limit') ?? '10', 10) || 10, 1), 50);
+	const params = new URLSearchParams(qIdx >= 0 ? rawUrl.slice(qIdx + 1) : '');
+	const q = (params.get('q') ?? '').trim();
+	const limit = Math.min(Math.max(parseInt(params.get('limit') ?? '10', 10) || 10, 1), 50);
 
 	const results = q ? fuse.search(q, { limit }).map(buildFuseResult) : [];
-	const body    = JSON.stringify({ query: q, results });
+	const body = JSON.stringify({ query: q, results });
 
 	res.writeHead(200, {
-		'Content-Type':                'application/json; charset=utf-8',
-		'Cache-Control':               'no-cache',
-		'Content-Length':              Buffer.byteLength(body),
+		'Content-Type': 'application/json; charset=utf-8',
+		'Cache-Control': 'no-cache',
+		'Content-Length': Buffer.byteLength(body),
 		...getCorsHeaders(req),
 	});
 	res.end(body);

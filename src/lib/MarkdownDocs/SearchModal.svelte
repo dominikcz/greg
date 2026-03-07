@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onMount, tick } from 'svelte';
-    import Fuse from 'fuse.js';
-    import gregConfig from 'virtual:greg-config';
+    import { onMount, tick } from "svelte";
+    import Fuse from "fuse.js";
+    import gregConfig from "virtual:greg-config";
 
     // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -32,7 +32,10 @@
      * `(query, limit?) => Promise<SearchResult[]>`
      * When provided, takes priority over greg.config.js › search.provider.
      */
-    export type SearchProviderFn = (query: string, limit?: number) => Promise<SearchResult[]>;
+    export type SearchProviderFn = (
+        query: string,
+        limit?: number,
+    ) => Promise<SearchResult[]>;
 
     type Props = {
         open: boolean;
@@ -41,42 +44,47 @@
         searchProvider?: SearchProviderFn;
     };
 
-    let { open = $bindable(false), onClose, onNavigate, searchProvider }: Props = $props();
+    let {
+        open = $bindable(false),
+        onClose,
+        onNavigate,
+        searchProvider,
+    }: Props = $props();
 
     // ── Config ─────────────────────────────────────────────────────────────────
 
-    const cfgSearch  = (gregConfig as any)?.search ?? {};
+    const cfgSearch = (gregConfig as any)?.search ?? {};
     /** Effective mode. Reactive so the prop can change at runtime. */
-    const mode = $derived<'local' | 'server' | 'custom' | 'none'>(
-        searchProvider ? 'custom' : (cfgSearch.provider ?? 'server')
+    const mode = $derived<"local" | "server" | "custom" | "none">(
+        searchProvider ? "custom" : (cfgSearch.provider ?? "server"),
     );
-    const serverUrl: string = cfgSearch.serverUrl ?? '/api/search';
+    const serverUrl: string = cfgSearch.serverUrl ?? "/api/search";
 
     // ── State ──────────────────────────────────────────────────────────────────
 
-    let query         = $state('');
-    let results       = $state<SearchResult[]>([]);
+    let query = $state("");
+    let results = $state<SearchResult[]>([]);
     let selectedIndex = $state(0);
-    let inputEl       = $state<HTMLInputElement | undefined>(undefined);
-    let listEl        = $state<HTMLUListElement | undefined>(undefined);
+    let inputEl = $state<HTMLInputElement | undefined>(undefined);
+    let listEl = $state<HTMLUListElement | undefined>(undefined);
 
     /** True while a server / custom request is in flight. */
-    let isSearching   = $state(false);
+    let isSearching = $state(false);
     /** For local mode: true once the full JSON index has been downloaded. */
-    let indexReady    = $state(false);
-    let indexError    = $state(false);
+    let indexReady = $state(false);
+    let indexError = $state(false);
 
     let fuse: Fuse<SearchEntry> | null = null;
 
     // ── Local mode: pre-load index into browser ─────────────────────────────
 
     onMount(async () => {
-        if (mode !== 'local') {
+        if (mode !== "local") {
             indexReady = true; // server / custom: ready immediately
             return;
         }
         try {
-            const res = await fetch('/search-index.json');
+            const res = await fetch("/search-index.json");
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data: SearchEntry[] = await res.json();
             fuse = new Fuse(data, {
@@ -86,14 +94,14 @@
                 ignoreLocation: true,
                 minMatchCharLength: 2,
                 keys: [
-                    { name: 'title',            weight: 3 },
-                    { name: 'sections.heading', weight: 2 },
-                    { name: 'sections.content', weight: 1 },
+                    { name: "title", weight: 3 },
+                    { name: "sections.heading", weight: 2 },
+                    { name: "sections.content", weight: 1 },
                 ],
             });
             indexReady = true;
         } catch (e) {
-            console.error('[Search] Failed to load index:', e);
+            console.error("[Search] Failed to load index:", e);
             indexError = true;
         }
     });
@@ -104,7 +112,7 @@
             tick().then(() => inputEl?.focus());
             selectedIndex = 0;
         } else {
-            query = '';
+            query = "";
             results = [];
         }
     });
@@ -112,8 +120,10 @@
     // Scroll selected item into view
     $effect(() => {
         tick().then(() => {
-            const item = listEl?.children[selectedIndex] as HTMLElement | undefined;
-            item?.scrollIntoView({ block: 'nearest' });
+            const item = listEl?.children[selectedIndex] as
+                | HTMLElement
+                | undefined;
+            item?.scrollIntoView({ block: "nearest" });
         });
     });
 
@@ -124,15 +134,21 @@
 
     function handleInput() {
         clearTimeout(searchTimer);
-        if (!query.trim()) { results = []; return; }
+        if (!query.trim()) {
+            results = [];
+            return;
+        }
         searchTimer = setTimeout(runSearch, 200);
     }
 
     async function runSearch() {
         const q = query.trim();
-        if (!q) { results = []; return; }
+        if (!q) {
+            results = [];
+            return;
+        }
 
-        if (mode === 'local') {
+        if (mode === "local") {
             if (!fuse) return;
             results = fuse.search(q, { limit: 10 }).map(buildLocalResult);
             selectedIndex = 0;
@@ -141,11 +157,11 @@
 
         // server / custom — cancel previous in-flight request
         abortCtrl?.abort();
-        abortCtrl   = new AbortController();
+        abortCtrl = new AbortController();
         isSearching = true;
         try {
             let raw: SearchResult[];
-            if (mode === 'custom' && searchProvider) {
+            if (mode === "custom" && searchProvider) {
                 raw = await searchProvider(q, 10);
             } else {
                 const url = `${serverUrl}?q=${encodeURIComponent(q)}&limit=10`;
@@ -154,11 +170,11 @@
                 const data = await res.json();
                 raw = data.results ?? [];
             }
-            results       = raw;
+            results = raw;
             selectedIndex = 0;
         } catch (e: any) {
-            if (e?.name === 'AbortError') return; // superseded by newer query — ignore
-            console.error('[Search]', e);
+            if (e?.name === "AbortError") return; // superseded by newer query — ignore
+            console.error("[Search]", e);
             results = [];
         } finally {
             isSearching = false;
@@ -169,10 +185,10 @@
 
     function escapeHtml(str: string): string {
         return str
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
     }
 
     /**
@@ -180,7 +196,7 @@
      */
     function highlightText(text: string, indices: [number, number][]): string {
         if (!indices?.length) return escapeHtml(text);
-        let html = '';
+        let html = "";
         let last = 0;
         for (const [s, e] of indices) {
             if (s >= text.length) break;
@@ -201,10 +217,13 @@
         indices: [number, number][],
         contextLen = 150,
     ): string {
-        if (!text) return '';
+        if (!text) return "";
 
         if (!indices?.length) {
-            return escapeHtml(text.slice(0, contextLen)) + (text.length > contextLen ? '…' : '');
+            return (
+                escapeHtml(text.slice(0, contextLen)) +
+                (text.length > contextLen ? "…" : "")
+            );
         }
 
         const firstMatchStart = indices[0][0];
@@ -216,10 +235,16 @@
         const adjusted: [number, number][] = indices
             .map(([s, e]) => [s - from, e - from] as [number, number])
             .filter(([s, e]) => e >= 0 && s < sliced.length)
-            .map(([s, e]) => [Math.max(0, s), Math.min(sliced.length - 1, e)] as [number, number]);
+            .map(
+                ([s, e]) =>
+                    [Math.max(0, s), Math.min(sliced.length - 1, e)] as [
+                        number,
+                        number,
+                    ],
+            );
 
-        const prefix = from > 0 ? '…' : '';
-        const suffix = to < text.length ? '…' : '';
+        const prefix = from > 0 ? "…" : "";
+        const suffix = to < text.length ? "…" : "";
 
         let html = prefix;
         let last = 0;
@@ -238,56 +263,75 @@
         // Sort matches by total matched span length (longest = most relevant)
         const sorted: any[] = [...(matches ?? [])].sort(
             (a, b) =>
-                b.indices.reduce((s: number, [x, y]: number[]) => s + (y - x), 0) -
-                a.indices.reduce((s: number, [x, y]: number[]) => s + (y - x), 0),
+                b.indices.reduce(
+                    (s: number, [x, y]: number[]) => s + (y - x),
+                    0,
+                ) -
+                a.indices.reduce(
+                    (s: number, [x, y]: number[]) => s + (y - x),
+                    0,
+                ),
         );
 
-        const titleMatch     = sorted.find((m) => m.key === 'title');
-        const sectionContent = sorted.find((m) => m.key === 'sections.content');
-        const sectionHeading = sorted.find((m) => m.key === 'sections.heading');
+        const titleMatch = sorted.find((m) => m.key === "title");
+        const sectionContent = sorted.find((m) => m.key === "sections.content");
+        const sectionHeading = sorted.find((m) => m.key === "sections.heading");
 
-        let excerptHtml   = '';
-        let sectionTitle  = '';
-        let sectionAnchor = '';
+        let excerptHtml = "";
+        let sectionTitle = "";
+        let sectionAnchor = "";
 
         if (sectionContent) {
             const sec = item.sections[sectionContent.refIndex];
-            sectionTitle  = sec?.heading  ?? '';
-            sectionAnchor = sec?.anchor   ?? '';
-            excerptHtml   = getExcerptHtml(sectionContent.value, sectionContent.indices);
+            sectionTitle = sec?.heading ?? "";
+            sectionAnchor = sec?.anchor ?? "";
+            excerptHtml = getExcerptHtml(
+                sectionContent.value,
+                sectionContent.indices,
+            );
         } else if (sectionHeading) {
             const sec = item.sections[sectionHeading.refIndex];
-            sectionTitle  = sec?.heading  ?? '';
-            sectionAnchor = sec?.anchor   ?? '';
-            excerptHtml   = escapeHtml((sec?.content ?? '').slice(0, 150));
+            sectionTitle = sec?.heading ?? "";
+            sectionAnchor = sec?.anchor ?? "";
+            excerptHtml = escapeHtml((sec?.content ?? "").slice(0, 150));
         } else {
             // Fallback: beginning of first section
-            excerptHtml = escapeHtml((item.sections[0]?.content ?? '').slice(0, 150));
+            excerptHtml = escapeHtml(
+                (item.sections[0]?.content ?? "").slice(0, 150),
+            );
         }
 
         const titleHtml = titleMatch
             ? highlightText(item.title, titleMatch.indices)
             : escapeHtml(item.title);
 
-        return { id: item.id, title: item.title, titleHtml, sectionTitle, sectionAnchor, excerptHtml, score };
+        return {
+            id: item.id,
+            title: item.title,
+            titleHtml,
+            sectionTitle,
+            sectionAnchor,
+            excerptHtml,
+            score,
+        };
     }
 
     // ── Keyboard navigation ────────────────────────────────────────────────────
 
     function handleKeydown(e: KeyboardEvent) {
         switch (e.key) {
-            case 'Escape':
+            case "Escape":
                 onClose();
                 break;
-            case 'ArrowDown':
+            case "ArrowDown":
                 e.preventDefault();
                 selectedIndex = Math.min(selectedIndex + 1, results.length - 1);
                 break;
-            case 'ArrowUp':
+            case "ArrowUp":
                 e.preventDefault();
                 selectedIndex = Math.max(selectedIndex - 1, 0);
                 break;
-            case 'Enter':
+            case "Enter":
                 if (results.length > 0) goTo(results[selectedIndex]);
                 break;
         }
@@ -316,8 +360,20 @@
         <div class="search-modal">
             <!-- Input row -->
             <div class="search-field">
-                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <svg
+                    class="search-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <circle cx="11" cy="11" r="8" /><line
+                        x1="21"
+                        y1="21"
+                        x2="16.65"
+                        y2="16.65"
+                    />
                 </svg>
                 <input
                     bind:this={inputEl}
@@ -331,14 +387,21 @@
                     spellcheck="false"
                 />
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <kbd class="search-esc-hint" onclick={onClose} role="button" tabindex="-1">Esc</kbd>
+                <kbd
+                    class="search-esc-hint"
+                    onclick={onClose}
+                    role="button"
+                    tabindex="-1">Esc</kbd
+                >
             </div>
 
             <!-- Body -->
-            {#if mode === 'local' && !indexReady && !indexError}
+            {#if mode === "local" && !indexReady && !indexError}
                 <div class="search-status">Loading index…</div>
-            {:else if mode === 'local' && indexError}
-                <div class="search-status search-error">Failed to load search index.</div>
+            {:else if mode === "local" && indexError}
+                <div class="search-status search-error">
+                    Failed to load search index.
+                </div>
             {:else if isSearching}
                 <div class="search-status">
                     <span class="search-spinner" aria-hidden="true"></span>
@@ -349,7 +412,12 @@
                     No results for <strong>"{query}"</strong>
                 </div>
             {:else if results.length > 0}
-                <ul bind:this={listEl} class="search-results" role="listbox" aria-label="Search results">
+                <ul
+                    bind:this={listEl}
+                    class="search-results"
+                    role="listbox"
+                    aria-label="Search results"
+                >
                     {#each results as result, i}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <li
@@ -361,20 +429,42 @@
                             onmouseenter={() => (selectedIndex = i)}
                         >
                             <div class="result-header">
-                                <svg class="result-page-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                    <polyline points="14 2 14 8 20 8"/>
+                                <svg
+                                    class="result-page-icon"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                >
+                                    <path
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                    />
+                                    <polyline points="14 2 14 8 20 8" />
                                 </svg>
-                                <span class="result-title">{@html result.titleHtml}</span>
+                                <span class="result-title"
+                                    >{@html result.titleHtml}</span
+                                >
                                 {#if result.sectionTitle}
-                                    <svg class="result-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                                        <polyline points="9 18 15 12 9 6"/>
+                                    <svg
+                                        class="result-chevron"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2.5"
+                                    >
+                                        <polyline points="9 18 15 12 9 6" />
                                     </svg>
-                                    <span class="result-section">{result.sectionTitle}</span>
+                                    <span class="result-section"
+                                        >{result.sectionTitle}</span
+                                    >
                                 {/if}
                             </div>
                             {#if result.excerptHtml}
-                                <p class="result-excerpt">{@html result.excerptHtml}</p>
+                                <p class="result-excerpt">
+                                    {@html result.excerptHtml}
+                                </p>
                             {/if}
                         </li>
                     {/each}
@@ -408,8 +498,12 @@
     }
 
     @keyframes fade-in {
-        from { opacity: 0; }
-        to   { opacity: 1; }
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
     }
 
     .search-modal {
@@ -427,8 +521,14 @@
     }
 
     @keyframes slide-in {
-        from { transform: translateY(-12px); opacity: 0; }
-        to   { transform: translateY(0);    opacity: 1; }
+        from {
+            transform: translateY(-12px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
     }
 
     /* ── Input row ─────────────────────────────────────────────── */
@@ -518,7 +618,9 @@
     }
 
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     /* ── Results list ──────────────────────────────────────────── */

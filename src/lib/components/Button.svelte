@@ -1,10 +1,10 @@
 <script lang="ts">
-    import type { Snippet } from 'svelte';
+    import type { Snippet } from "svelte";
 
     type Props = {
         tag?: string;
-        size?: 'medium' | 'big';
-        theme?: 'brand' | 'alt' | 'sponsor';
+        size?: "medium" | "big";
+        theme?: "brand" | "alt" | "sponsor";
         text?: string;
         href?: string;
         target?: string;
@@ -15,8 +15,8 @@
 
     let {
         tag,
-        size = 'medium',
-        theme = 'brand',
+        size = "medium",
+        theme = "brand",
         text,
         href,
         target,
@@ -27,12 +27,14 @@
 
     const EXTERNAL_RE = /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i;
 
-    let resolvedTag = $derived(tag ?? (href ? 'a' : 'button'));
+    let resolvedTag = $derived(tag ?? (href ? "a" : "button"));
     let isExternal = $derived(!!href && EXTERNAL_RE.test(href));
-    let resolvedTarget = $derived(target ?? (isExternal ? '_blank' : undefined));
-    let resolvedRel = $derived(rel ?? (isExternal ? 'noreferrer' : undefined));
+    let resolvedTarget = $derived(
+        target ?? (isExternal ? "_blank" : undefined),
+    );
+    let resolvedRel = $derived(rel ?? (isExternal ? "noreferrer" : undefined));
     let resolvedRole = $derived(
-        resolvedTag === 'a' || resolvedTag === 'button' ? undefined : 'button'
+        resolvedTag === "a" || resolvedTag === "button" ? undefined : "button",
     );
 </script>
 
@@ -61,11 +63,17 @@
         white-space: nowrap;
         cursor: pointer;
         text-decoration: none;
-        transition: color 0.25s, border-color 0.25s, background-color 0.25s;
+        transition:
+            color 0.25s,
+            border-color 0.25s,
+            background-color 0.25s;
     }
 
     .Button:active {
-        transition: color 0.1s, border-color 0.1s, background-color 0.1s;
+        transition:
+            color 0.1s,
+            border-color 0.1s,
+            background-color 0.1s;
     }
 
     .Button.medium {

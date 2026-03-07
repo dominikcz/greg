@@ -37,12 +37,12 @@ Pass the `outline` prop to `<MarkdownDocs>`:
 
 ### Accepted values
 
-| Value | Effect |
-| ----- | ------ |
-| `false` | Outline panel is hidden |
-| `number` | Only that heading level (e.g. `2` → h2 only) |
-| `[min, max]` | Range of heading levels, e.g. `[2, 3]` |
-| `'deep'` | Same as `[2, 6]` |
+| Value              | Effect                                                                          |
+| ------------------ | ------------------------------------------------------------------------------- |
+| `false`            | Outline panel is hidden                                                         |
+| `number`           | Only that heading level (e.g. `2` → h2 only)                                    |
+| `[min, max]`       | Range of heading levels, e.g. `[2, 3]`                                          |
+| `'deep'`           | Same as `[2, 6]`                                                                |
 | `{ level, label }` | Object form — `level` follows the rules above; `label` overrides "On this page" |
 
 
@@ -72,9 +72,9 @@ panel — both can be used together.
 
 ## CSS variables
 
-| Variable | Default (light) | Description |
-| -------- | --------------- | ----------- |
-| `--greg-toc-background` | `transparent` | Panel background |
-| `--greg-toc-color` | `#3d3d3d` | Section label colour |
-| `--greg-toc-link-color` | `#4a4a6a` | Link colour |
-| `--greg-toc-link-hover` | `#646cff` | Link hover / active colour |
+| Variable                | Default (light) | Description                |
+| ----------------------- | --------------- | -------------------------- |
+| `--greg-toc-background` | `transparent`   | Panel background           |
+| `--greg-toc-color`      | `#3d3d3d`       | Section label colour       |
+| `--greg-toc-link-color` | `#4a4a6a`       | Link colour                |
+| `--greg-toc-link-hover` | `#646cff`       | Link hover / active colour |

@@ -5,7 +5,14 @@
      *   - { src: string; alt?: string }     → simple src + alt
      *   - { dark: Image; light: Image; alt?: string }  → theme-aware pair
      */
-    type SimpleImage = string | { src: string; alt?: string; width?: number | string; height?: number | string };
+    type SimpleImage =
+        | string
+        | {
+              src: string;
+              alt?: string;
+              width?: number | string;
+              height?: number | string;
+          };
     type ThemeImage = { dark: SimpleImage; light: SimpleImage; alt?: string };
     type GregImage = SimpleImage | ThemeImage;
 
@@ -17,28 +24,34 @@
         height?: number | string;
     };
 
-    let { image, alt, class: cls = '', width, height }: Props = $props();
+    let { image, alt, class: cls = "", width, height }: Props = $props();
 
     function isThemePair(img: GregImage): img is ThemeImage {
-        return typeof img === 'object' && 'dark' in img && 'light' in img;
+        return typeof img === "object" && "dark" in img && "light" in img;
     }
 
     function getSrc(img: SimpleImage): string {
-        return typeof img === 'string' ? img : img.src;
+        return typeof img === "string" ? img : img.src;
     }
 
     function getAlt(img: SimpleImage, fallbackAlt?: string): string {
-        if (typeof img === 'string') return fallbackAlt ?? '';
-        return img.alt ?? fallbackAlt ?? '';
+        if (typeof img === "string") return fallbackAlt ?? "";
+        return img.alt ?? fallbackAlt ?? "";
     }
 
-    function getWidth(img: SimpleImage, fallback?: number | string): number | string | undefined {
-        if (typeof img === 'object' && img.width) return img.width;
+    function getWidth(
+        img: SimpleImage,
+        fallback?: number | string,
+    ): number | string | undefined {
+        if (typeof img === "object" && img.width) return img.width;
         return fallback;
     }
 
-    function getHeight(img: SimpleImage, fallback?: number | string): number | string | undefined {
-        if (typeof img === 'object' && img.height) return img.height;
+    function getHeight(
+        img: SimpleImage,
+        fallback?: number | string,
+    ): number | string | undefined {
+        if (typeof img === "object" && img.height) return img.height;
         return fallback;
     }
 </script>

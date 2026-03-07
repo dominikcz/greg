@@ -1,9 +1,9 @@
 <script lang="ts">
 	import TreeView from "./TreeView.svelte";
-	import { ChevronRight } from '@lucide/svelte';
-    import { handleSectionClick } from './navigationUtils';
+	import { ChevronRight } from "@lucide/svelte";
+	import { handleSectionClick } from "./navigationUtils";
 
-	import type { TreeViewItem } from './treeViewTypes';
+	import type { TreeViewItem } from "./treeViewTypes";
 
 	interface DocsNavigationProps {
 		menu: TreeViewItem[];
@@ -11,7 +11,12 @@
 		rootPath?: string;
 		navigate: (path: string) => void;
 	}
-	let { menu, active = '', rootPath = './', navigate }: DocsNavigationProps = $props();
+	let {
+		menu,
+		active = "",
+		rootPath = "./",
+		navigate,
+	}: DocsNavigationProps = $props();
 
 	// Items to render: root index page excluded; leaves and sections kept in their sorted order
 	let items = $derived(menu.filter((item: any) => item.link !== rootPath));
@@ -39,12 +44,21 @@
 					class:collapsed={isCollapsed}
 					role="button"
 					tabindex="0"
-					onclick={() => handleSectionClick(item, key, toggleSection, navigate)}
-					onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSectionClick(item, key, toggleSection, navigate)}
+					onclick={() =>
+						handleSectionClick(item, key, toggleSection, navigate)}
+					onkeydown={(e) =>
+						(e.key === "Enter" || e.key === " ") &&
+						handleSectionClick(item, key, toggleSection, navigate)}
 					aria-expanded={!isCollapsed}
 				>
-					<span class="nav-section-label" class:active={active === item.link}>
-						{item.label}{#if item.badge}<span class="nav-badge {item.badge?.type ?? 'tip'}">{item.badge?.text}</span>{/if}
+					<span
+						class="nav-section-label"
+						class:active={active === item.link}
+					>
+						{item.label}{#if item.badge}<span
+								class="nav-badge {item.badge?.type ?? 'tip'}"
+								>{item.badge?.text}</span
+							>{/if}
 					</span>
 					<span class="nav-section-chevron"><ChevronRight /></span>
 				</div>
@@ -95,7 +109,9 @@
 
 		&:hover {
 			background-color: var(--greg-menu-hover-background);
-			.nav-section-label { color: var(--greg-color); }
+			.nav-section-label {
+				color: var(--greg-color);
+			}
 		}
 	}
 

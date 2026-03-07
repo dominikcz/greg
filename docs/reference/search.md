@@ -20,11 +20,11 @@ search: {
 }
 ```
 
-| Provider | How it works | Recommended for |
-| -------- | ------------ | --------------- |
+| Provider | How it works                                                            | Recommended for              |
+| -------- | ----------------------------------------------------------------------- | ---------------------------- |
 | `server` | Browser calls `GET /api/search?q=...` and receives ready-ranked results | Large doc sets, best default |
-| `local` | Browser downloads `/search-index.json` and runs Fuse.js locally | Small doc sets |
-| `none` | Search UI is disabled | Sites without search |
+| `local`  | Browser downloads `/search-index.json` and runs Fuse.js locally         | Small doc sets               |
+| `none`   | Search UI is disabled                                                   | Sites without search         |
 
 
 ## How indexing works
@@ -103,31 +103,31 @@ If you want Algolia, Meilisearch, Typesense, or your own backend:
 
 ## Opening search
 
-| Method | Action |
-| ------ | ------ |
+| Method                                     | Action      |
+| ------------------------------------------ | ----------- |
 | Click the **Search…** button in the header | Opens modal |
-| `Ctrl + K` | Opens modal |
-| `Cmd + K` (macOS) | Opens modal |
+| `Ctrl + K`                                 | Opens modal |
+| `Cmd + K` (macOS)                          | Opens modal |
 
 
 ## Keyboard navigation inside the modal
 
-| Key | Action |
-| --- | ------ |
+| Key       | Action                        |
+| --------- | ----------------------------- |
 | `↑` / `↓` | Select previous / next result |
-| `Enter` | Navigate to selected result |
-| `Esc` | Close modal |
+| `Enter`   | Navigate to selected result   |
+| `Esc`     | Close modal                   |
 
 
 ## Search ranking
 
 Results are scored by Fuse.js using weighted fields:
 
-| Field | Weight |
-| ----- | ------ |
-| Page title | 3× |
-| Section heading | 2× |
-| Section body text | 1× |
+| Field             | Weight |
+| ----------------- | ------ |
+| Page title        | 3×     |
+| Section heading   | 2×     |
+| Section body text | 1×     |
 
 A fuzzy threshold of `0.4` is used — tighter than the default, so only genuine
 matches surface. `ignoreLocation: true` means the match can appear anywhere in

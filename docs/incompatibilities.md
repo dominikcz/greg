@@ -89,24 +89,24 @@ Greg is optimized for very large documentation sets (thousands of files):
 
 ## Summary
 
-| Capability | VitePress | Greg |
-| ---------- | --------- | ---- |
-| Runtime composables (`useData`, `useRouter`, `withBase`) | ✅ | ❌ |
-| Data loaders (`*.data.js` / `*.data.ts`) | ✅ | ❌ |
-| Built-in i18n | ✅ | ❌ |
-| Built-in sitemap generation | ✅ | ❌ |
-| Built-in "Edit this page" links | ✅ | ❌ |
-| Versioned docs support | ✅ | ❌ |
-| Full theme extension API | ✅ | ❌ (customize via CSS vars/source edits) |
-| SSG output by default | ✅ | ❌ (SPA) |
-| MPA mode | ✅ (experimental) | ❌ |
-| Vue syntax/components in Markdown | ✅ | ❌ |
-| Svelte syntax/components in Markdown | ❌ | ✅ |
-| Zero-config docs tree sidebar from folders | ⚠️ (typically config-driven) | ✅ |
-| Mixed manual + auto sidebar sections (`auto`) | ⚠️ | ✅ |
-| Resizable sidebar splitter | ❌ | ✅ |
-| Sidebar badges from frontmatter (`badge`) | ❌ | ✅ |
-| Inline attribute syntax on links/images | ❌ | ✅ |
+| Capability                                               | VitePress                   | Greg                                    |
+| -------------------------------------------------------- | --------------------------- | --------------------------------------- |
+| Runtime composables (`useData`, `useRouter`, `withBase`) | ✅                           | ❌                                       |
+| Data loaders (`*.data.js` / `*.data.ts`)                 | ✅                           | ❌                                       |
+| Built-in i18n                                            | ✅                           | ❌                                       |
+| Built-in sitemap generation                              | ✅                           | ❌                                       |
+| Built-in "Edit this page" links                          | ✅                           | ❌                                       |
+| Versioned docs support                                   | ✅                           | ❌                                       |
+| Full theme extension API                                 | ✅                           | ❌ (customize via CSS vars/source edits) |
+| SSG output by default                                    | ✅                           | ❌ (SPA)                                 |
+| MPA mode                                                 | ✅ (experimental)            | ❌                                       |
+| Vue syntax/components in Markdown                        | ✅                           | ❌                                       |
+| Svelte syntax/components in Markdown                     | ❌                           | ✅                                       |
+| Zero-config docs tree sidebar from folders               | ⚠️ (typically config-driven) | ✅                                       |
+| Mixed manual + auto sidebar sections (`auto`)            | ⚠️                           | ✅                                       |
+| Resizable sidebar splitter                               | ❌                           | ✅                                       |
+| Sidebar badges from frontmatter (`badge`)                | ❌                           | ✅                                       |
+| Inline attribute syntax on links/images                  | ❌                           | ✅                                       |
 
 
 ## SPA vs SSG

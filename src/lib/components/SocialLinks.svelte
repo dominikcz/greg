@@ -1,5 +1,5 @@
 <script lang="ts">
-    import SocialLink from './SocialLink.svelte';
+    import SocialLink from "./SocialLink.svelte";
 
     type SocialLinkIcon = string | { svg: string };
 

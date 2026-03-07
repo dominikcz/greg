@@ -79,10 +79,10 @@ The `<Image>` component renders a `<picture>` element with separate `dark` and
 />
 ```
 
-| Prop | Type | Description |
-| ---- | ---- | ----------- |
-| `src` | `string` | Default (or light-theme) image URL |
-| `dark` | `string?` | Dark-theme image URL |
-| `alt` | `string?` | Alt text |
-| `width` | `number\|string?` | Element width |
-| `height` | `number\|string?` | Element height |
+| Prop     | Type              | Description                        |
+| -------- | ----------------- | ---------------------------------- |
+| `src`    | `string`          | Default (or light-theme) image URL |
+| `dark`   | `string?`         | Dark-theme image URL               |
+| `alt`    | `string?`         | Alt text                           |
+| `width`  | `number\|string?` | Element width                      |
+| `height` | `number\|string?` | Element height                     |

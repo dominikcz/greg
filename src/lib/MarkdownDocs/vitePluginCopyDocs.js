@@ -42,7 +42,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets']
         name: 'greg:copy-docs',
 
         configResolved(config) {
-            root   = config.root;
+            root = config.root;
             outDir = path.resolve(config.root, config.build.outDir);
         },
 
@@ -87,7 +87,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets']
             // Copy markdown docs
             const docsRoot = path.resolve(root, docsDir);
             for (const srcFile of walkMd(docsRoot)) {
-                const rel      = path.relative(root, srcFile);
+                const rel = path.relative(root, srcFile);
                 const destFile = path.join(outDir, rel);
                 fs.mkdirSync(path.dirname(destFile), { recursive: true });
                 fs.copyFileSync(srcFile, destFile);
@@ -98,7 +98,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets']
             for (const dir of staticDirs) {
                 const dirRoot = path.resolve(root, dir);
                 for (const srcFile of walkAll(dirRoot)) {
-                    const rel      = path.relative(root, srcFile);
+                    const rel = path.relative(root, srcFile);
                     const destFile = path.join(outDir, rel);
                     fs.mkdirSync(path.dirname(destFile), { recursive: true });
                     fs.copyFileSync(srcFile, destFile);

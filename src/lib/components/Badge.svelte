@@ -1,13 +1,13 @@
 <script lang="ts">
-    import type { Snippet } from 'svelte';
+    import type { Snippet } from "svelte";
 
     type Props = {
         text?: string;
-        type?: 'info' | 'tip' | 'warning' | 'danger';
+        type?: "info" | "tip" | "warning" | "danger";
         children?: Snippet;
     };
 
-    let { text, type = 'tip', children }: Props = $props();
+    let { text, type = "tip", children }: Props = $props();
 </script>
 
 <span class="badge {type}">
@@ -35,25 +35,25 @@
 
     .badge.info {
         border-color: var(--greg-info-border);
-        color:        var(--greg-info-text);
+        color: var(--greg-info-text);
         background-color: var(--greg-info-bg);
     }
 
     .badge.tip {
         border-color: var(--greg-tip-border);
-        color:        var(--greg-tip-text);
+        color: var(--greg-tip-text);
         background-color: var(--greg-tip-bg);
     }
 
     .badge.warning {
         border-color: var(--greg-warning-border);
-        color:        var(--greg-warning-text);
+        color: var(--greg-warning-text);
         background-color: var(--greg-warning-bg);
     }
 
     .badge.danger {
         border-color: var(--greg-danger-border);
-        color:        var(--greg-danger-text);
+        color: var(--greg-danger-text);
         background-color: var(--greg-danger-bg);
     }
 </style>

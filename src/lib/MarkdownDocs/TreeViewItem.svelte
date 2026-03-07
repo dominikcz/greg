@@ -60,7 +60,11 @@
 			<span class="chevron" class:expanded>
 				<ChevronRight />
 			</span>
-			{#if item.status}<span class={item.status}></span>{/if}{item.label}{#if item.badge}<span class="nav-badge {item.badge.type ?? 'tip'}">{item.badge.text}</span>{/if}
+			{#if item.status}<span class={item.status}
+				></span>{/if}{item.label}{#if item.badge}<span
+					class="nav-badge {item.badge.type ?? 'tip'}"
+					>{item.badge.text}</span
+				>{/if}
 		</a>
 		{#if expanded}
 			<ul>
@@ -75,7 +79,12 @@
 			class="no-arrow"
 			class:active={active == item.link}
 			onclick={handleClick}
-		>{#if item.status}<span class={item.status}></span>{/if}{item.label}{#if item.badge}<span class="nav-badge {item.badge.type ?? 'tip'}">{item.badge.text}</span>{/if}</a>
+			>{#if item.status}<span class={item.status}
+				></span>{/if}{item.label}{#if item.badge}<span
+					class="nav-badge {item.badge.type ?? 'tip'}"
+					>{item.badge.text}</span
+				>{/if}</a
+		>
 	{/if}
 </li>
 

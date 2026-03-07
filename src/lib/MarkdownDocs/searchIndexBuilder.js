@@ -254,7 +254,7 @@ export function buildFuseResult(fuseResult) {
 			a.indices.reduce((s, [x, y]) => s + (y - x), 0),
 	);
 
-	const titleMatch     = sorted.find(m => m.key === 'title');
+	const titleMatch = sorted.find(m => m.key === 'title');
 	const sectionContent = sorted.find(m => m.key === 'sections.content');
 	const sectionHeading = sorted.find(m => m.key === 'sections.heading');
 
@@ -262,14 +262,14 @@ export function buildFuseResult(fuseResult) {
 
 	if (sectionContent) {
 		const sec = item.sections[sectionContent.refIndex];
-		sectionTitle  = sec?.heading ?? '';
-		sectionAnchor = sec?.anchor  ?? '';
-		excerptHtml   = getExcerptHtml(sectionContent.value, sectionContent.indices);
+		sectionTitle = sec?.heading ?? '';
+		sectionAnchor = sec?.anchor ?? '';
+		excerptHtml = getExcerptHtml(sectionContent.value, sectionContent.indices);
 	} else if (sectionHeading) {
 		const sec = item.sections[sectionHeading.refIndex];
-		sectionTitle  = sec?.heading ?? '';
-		sectionAnchor = sec?.anchor  ?? '';
-		excerptHtml   = escapeHtml((sec?.content ?? '').slice(0, 150));
+		sectionTitle = sec?.heading ?? '';
+		sectionAnchor = sec?.anchor ?? '';
+		excerptHtml = escapeHtml((sec?.content ?? '').slice(0, 150));
 	} else {
 		excerptHtml = escapeHtml((item.sections[0]?.content ?? '').slice(0, 150));
 	}

@@ -74,13 +74,13 @@ export default {
 
 ## CLI
 
-| Command | Description |
-|---|---|
-| `greg init` | Interactive project scaffolding |
-| `greg dev` | Start Vite dev server |
-| `greg build` | Production build |
-| `greg preview` | Preview production build |
-| `greg search-server` | Standalone search API server |
+| Command              | Description                     |
+| -------------------- | ------------------------------- |
+| `greg init`          | Interactive project scaffolding |
+| `greg dev`           | Start Vite dev server           |
+| `greg build`         | Production build                |
+| `greg preview`       | Preview production build        |
+| `greg search-server` | Standalone search API server    |
 
 ## TypeScript
 

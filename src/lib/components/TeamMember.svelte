@@ -1,9 +1,13 @@
 <script lang="ts">
-    import Link from './Link.svelte';
-    import SocialLinks from './SocialLinks.svelte';
+    import Link from "./Link.svelte";
+    import SocialLinks from "./SocialLinks.svelte";
 
     type SocialLinkIcon = string | { svg: string };
-    type SocialLinkItem = { icon: SocialLinkIcon; link: string; ariaLabel?: string };
+    type SocialLinkItem = {
+        icon: SocialLinkIcon;
+        link: string;
+        ariaLabel?: string;
+    };
 
     type TeamMember = {
         avatar: string;
@@ -18,11 +22,11 @@
     };
 
     type Props = {
-        size?: 'small' | 'medium';
+        size?: "small" | "medium";
         member: TeamMember;
     };
 
-    let { size = 'medium', member }: Props = $props();
+    let { size = "medium", member }: Props = $props();
 </script>
 
 <article class="TeamMember {size}">
@@ -66,10 +70,17 @@
     {#if member.sponsor}
         <div class="sp">
             <Link class="sp-link link" href={member.sponsor} noIcon>
-                <svg class="sp-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12,22.2c-0.3,0-0.5-0.1-0.7-0.3l-8.8-8.8c-2.5-2.5-2.5-6.7,0-9.2c2.5-2.5,6.7-2.5,9.2,0L12,4.3l0.4-0.4c0,0,0,0,0,0C13.6,2.7,15.2,2,16.9,2c0,0,0,0,0,0c1.7,0,3.4,0.7,4.6,1.9l0,0c1.2,1.2,1.9,2.9,1.9,4.6c0,1.7-0.7,3.4-1.9,4.6l-8.8,8.8C12.5,22.1,12.3,22.2,12,22.2z"/>
+                <svg
+                    class="sp-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                >
+                    <path
+                        d="M12,22.2c-0.3,0-0.5-0.1-0.7-0.3l-8.8-8.8c-2.5-2.5-2.5-6.7,0-9.2c2.5-2.5,6.7-2.5,9.2,0L12,4.3l0.4-0.4c0,0,0,0,0,0C13.6,2.7,15.2,2,16.9,2c0,0,0,0,0,0c1.7,0,3.4,0.7,4.6,1.9l0,0c1.2,1.2,1.9,2.9,1.9,4.6c0,1.7-0.7,3.4-1.9,4.6l-8.8,8.8C12.5,22.1,12.3,22.2,12,22.2z"
+                    />
                 </svg>
-                {member.actionText ?? 'Sponsor'}
+                {member.actionText ?? "Sponsor"}
             </Link>
         </div>
     {/if}
@@ -238,7 +249,9 @@
         font-weight: 500;
         color: var(--greg-sponsor-color);
         background-color: var(--greg-menu-background);
-        transition: color 0.25s, background-color 0.25s;
+        transition:
+            color 0.25s,
+            background-color 0.25s;
         text-decoration: none;
     }
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount } from "svelte";
 
     type Props = {
         code: string;
@@ -16,8 +16,8 @@
     onMount(() => {
         if (!initialized) {
             initialized = true;
-            const s = document.createElement('script');
-            s.id = '_carbonads_js';
+            const s = document.createElement("script");
+            s.id = "_carbonads_js";
             s.src = `//cdn.carbonads.com/carbon.js?serve=${code}&placement=${placement}`;
             s.async = true;
             container.appendChild(s);
@@ -48,7 +48,10 @@
         line-height: 18px;
         font-size: 12px;
         font-weight: 500;
-        background-color: var(--greg-carbon-ads-bg-color, var(--greg-menu-background));
+        background-color: var(
+            --greg-carbon-ads-bg-color,
+            var(--greg-menu-background)
+        );
     }
 
     .CarbonAds :global(img) {
@@ -73,7 +76,10 @@
         padding-top: 6px;
         font-size: 11px;
         font-weight: 500;
-        color: var(--greg-carbon-ads-poweredby-color, var(--greg-menu-section-color));
+        color: var(
+            --greg-carbon-ads-poweredby-color,
+            var(--greg-menu-section-color)
+        );
         text-transform: uppercase;
         transition: color 0.25s;
     }

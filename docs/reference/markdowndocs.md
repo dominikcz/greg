@@ -65,13 +65,13 @@ Name of the project shown in the top-left header.
 
 Controls the right-side **Outline** (on-this-page) panel.
 
-| Value | Effect |
-| ----- | ------ |
-| `false` | Outline panel is hidden |
-| `2` | Only `h2` headings |
-| `[2, 3]` | `h2` and `h3` headings *(default)* |
-| `'deep'` | `h2` through `h6` |
-| `{ level: [2,4], label: 'Contents' }` | Custom range and panel label |
+| Value                                 | Effect                             |
+| ------------------------------------- | ---------------------------------- |
+| `false`                               | Outline panel is hidden            |
+| `2`                                   | Only `h2` headings                 |
+| `[2, 3]`                              | `h2` and `h3` headings *(default)* |
+| `'deep'`                              | `h2` through `h6`                  |
+| `{ level: [2,4], label: 'Contents' }` | Custom range and panel label       |
 
 ```svelte
 <MarkdownDocs rootPath="/docs" version="1.0.0" outline="deep" />
@@ -132,10 +132,10 @@ export default defineConfig({
 });
 ```
 
-| Option | Description |
-| ------ | ----------- |
-| `docsDir` | Folder name relative to the project root that contains `.md` files |
-| `rootPath` | URL prefix — must match the `rootPath` prop |
+| Option     | Description                                                        |
+| ---------- | ------------------------------------------------------------------ |
+| `docsDir`  | Folder name relative to the project root that contains `.md` files |
+| `rootPath` | URL prefix — must match the `rootPath` prop                        |
 
 
 ## svelte.config.js
