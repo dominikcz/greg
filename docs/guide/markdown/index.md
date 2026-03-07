@@ -13,6 +13,7 @@ Greg extends standard Markdown with a rich set of features, mostly compatible wi
 - [Header anchors](./header-anchors)
 - [Links and table of contents](./links-and-toc)
 - [Custom containers](./containers)
+- [Syntax highlighting](./syntax-highlighting)
 - [Code blocks and code groups](./code)
 - [Including external files](./includes)
 - [Math equations](./math)

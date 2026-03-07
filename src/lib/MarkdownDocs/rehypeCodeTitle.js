@@ -28,8 +28,54 @@ function normalizeClassNameList(value) {
 	return [];
 }
 
+function getTitleFromElement(node) {
+	if (!node || node.type !== 'element') return '';
+	const own = node.properties?.['data-code-title'] ?? node.properties?.dataCodeTitle;
+	if (typeof own === 'string' && own.trim()) return own.trim();
+
+	if (node.tagName === 'pre') {
+		for (const child of node.children ?? []) {
+			if (child?.type !== 'element' || child.tagName !== 'code') continue;
+			const nested = child.properties?.['data-code-title'] ?? child.properties?.dataCodeTitle;
+			if (typeof nested === 'string' && nested.trim()) return nested.trim();
+		}
+	}
+
+	return '';
+}
+
+function wrapWithTitle(title, node) {
+	const titleNode = {
+		type: 'element',
+		tagName: 'div',
+		properties: { className: ['code-block-title'] },
+		children: [{ type: 'text', value: title }],
+	};
+
+	return {
+		type: 'element',
+		tagName: 'div',
+		properties: { className: ['code-block-with-title'] },
+		children: [titleNode, node],
+	};
+}
+
 export default function rehypeCodeTitle() {
 	return (tree) => {
+		visit(tree, 'element', (node, index, parent) => {
+			if (!parent || typeof index !== 'number') return;
+			if (node.tagName !== 'pre') return;
+
+			// Skip blocks inside code-group tab panels
+			const parentClasses = normalizeClassNameList(parent.properties?.className);
+			if (parentClasses.includes('rcg-block')) return;
+
+			const title = getTitleFromElement(node);
+			if (!title) return;
+
+			parent.children[index] = wrapWithTitle(title, node);
+		});
+
 		visit(tree, 'raw', (node, index, parent) => {
 			if (!parent || typeof index !== 'number') return;
 
@@ -44,21 +90,7 @@ export default function rehypeCodeTitle() {
 			const title = titleMatch[1].trim();
 			if (!title) return;
 
-			const titleNode = {
-				type: 'element',
-				tagName: 'div',
-				properties: { className: ['code-block-title'] },
-				children: [{ type: 'text', value: title }],
-			};
-
-			const wrapper = {
-				type: 'element',
-				tagName: 'div',
-				properties: { className: ['code-block-with-title'] },
-				children: [titleNode, node],
-			};
-
-			parent.children[index] = wrapper;
+			parent.children[index] = wrapWithTitle(title, node);
 		});
 	};
 }

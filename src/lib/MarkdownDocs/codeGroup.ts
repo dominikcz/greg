@@ -1,6 +1,6 @@
 /**
  * Pure DOM event handlers for rehype-code-group tab switching.
- * No Svelte state — attach via onclick / onkeydown on the .catalog root.
+ * No Svelte state — attach via onclick / onkeydown on the .greg root.
  */
 export function handleCodeGroupClick(event: MouseEvent) {
 	const target = event.target;

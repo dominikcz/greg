@@ -41,6 +41,15 @@
 		return tags.join(', ');
 	});
 
+	function getOutlineHeadingText(heading: HTMLElement): string {
+		// Remove the prepended autolink marker ("#") from heading text used in outline.
+		const clone = heading.cloneNode(true) as HTMLElement;
+		for (const marker of Array.from(clone.querySelectorAll('a.header-anchor'))) {
+			marker.remove();
+		}
+		return clone.textContent?.trim() ?? '';
+	}
+
 	// Scan headings out of the container DOM
 	function doScan() {
 		if (!tagSelector || !container) { items = []; return; }
@@ -49,7 +58,7 @@
 			.filter(n => n.id)
 			.map(n => ({
 				id: n.id,
-				text: n.textContent?.trim() ?? '',
+				text: getOutlineHeadingText(n),
 				depth: parseInt(n.tagName[1], 10),
 			}));
 		updateActiveByScroll();

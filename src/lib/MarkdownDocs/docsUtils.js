@@ -15,26 +15,26 @@ function normalizeBadge(raw) {
 
 /**
  * Sort items by optional `order` field first (lower = earlier), then
- * alphabetically by label as a tie-breaker.
+ * folder/file preference and alphabetically by label as tie-breakers.
  * Items without `order` sort after items that have one.
  */
 function sortItems(items) {
     items.sort((a, b) => {
-        const aIsFolder = Boolean(a._isSection) || (Array.isArray(a.children) && a.children.length > 0);
-        const bIsFolder = Boolean(b._isSection) || (Array.isArray(b.children) && b.children.length > 0);
-
-        // Folders are always rendered before files.
-        if (aIsFolder !== bIsFolder) return aIsFolder ? -1 : 1;
-
         const aHasOrder = Number.isFinite(a._order);
         const bHasOrder = Number.isFinite(b._order);
 
-        // Ordered items come before unordered items inside the same bucket.
+        // Ordered items come before unordered items.
         if (aHasOrder !== bHasOrder) return aHasOrder ? -1 : 1;
 
         if (aHasOrder && bHasOrder && a._order !== b._order) {
             return a._order - b._order;
         }
+
+        const aIsFolder = Boolean(a._isSection) || (Array.isArray(a.children) && a.children.length > 0);
+        const bIsFolder = Boolean(b._isSection) || (Array.isArray(b.children) && b.children.length > 0);
+
+        // For equal order weight, keep sections ahead of leaf pages.
+        if (aIsFolder !== bIsFolder) return aIsFolder ? -1 : 1;
 
         return a.label.localeCompare(b.label);
     });

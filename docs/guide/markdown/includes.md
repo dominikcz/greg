@@ -13,6 +13,10 @@ Import an external source file as a code block:
 <<< @/snippets/example.js
 ```
 
+Output:
+
+<<< @/snippets/example.js
+
 The `@` alias resolves to the project root. The language is detected from the
 file extension.
 
@@ -24,6 +28,10 @@ Import only a named region of the file (marked with `#region name` / `#endregion
 <<< @/snippets/example.js#setup
 ```
 
+Output:
+
+<<< @/snippets/example.js#setup
+
 ### Range
 
 Import specific line numbers:
@@ -32,11 +40,19 @@ Import specific line numbers:
 <<< @/snippets/example.js{5-10}
 ```
 
+Output:
+
+<<< @/snippets/example.js{5-10}
+
 ### Title override
 
 ```md
 <<< @/snippets/example.js [my-example.js]
 ```
+
+Output:
+
+<<< @/snippets/example.js [my-example.js]
 
 ## Markdown include - `<!--@include:-->`
 

@@ -7,6 +7,11 @@ import remarkRehype from 'remark-rehype';
 import rehypeStringify from 'rehype-stringify';
 import { remarkImportsBrowser } from '../remarkImportsBrowser.js';
 
+const importsFixtureOptions = {
+	sourceRoot: path.join(process.cwd(), 'src/lib/MarkdownDocs/__tests__/fixtures'),
+	docsDir: 'docs',
+};
+
 // ─── rehype-slug ───────────────────────────────────────────────────────────────
 
 describe('rehype-slug', () => {
@@ -280,6 +285,22 @@ describe('rehype-code-group', () => {
 	});
 });
 
+describe('rehype-code-title', () => {
+	it('renders title bar for fenced code block with [title]', async () => {
+		const html = await processMarkdown('```js [example.js]\nexport const answer = 42;\n```');
+		expect(html).toContain('code-block-with-title');
+		expect(html).toContain('code-block-title');
+		expect(html).toContain('>example.js<');
+	});
+
+	it('does not render duplicate title bars inside code-group', async () => {
+		const html = await processMarkdown('::: code-group\n\n```js [config.js]\nexport default {}\n```\n\n```ts [config.ts]\nexport default {}\n```\n\n:::');
+		expect(html).toContain('>config.js<');
+		expect(html).toContain('>config.ts<');
+		expect(html).not.toContain('code-block-with-title');
+	});
+});
+
 describe('remarkContainers — content', () => {
 	it('renders markdown content inside containers', async () => {
 		const html = await processMarkdown('::: info\n**bold** and `code`\n:::');
@@ -341,7 +362,7 @@ describe('docsUtils — prepareMenu', async () => {
 		expect(flatten).toContain('guide');
 	});
 
-	it('keeps folders before files regardless of file order values', () => {
+	it('applies order across folders and files', () => {
 		const modules = {
 			'/docs/index.md': {},
 			'/docs/alpha.md': {},
@@ -351,11 +372,11 @@ describe('docsUtils — prepareMenu', async () => {
 			'/docs/alpha.md': { order: -100 },
 		};
 		const tree = prepareMenu(modules, '/docs', frontmatters).filter((x) => x.link !== '/docs');
-		expect(tree[0].link).toBe('/docs/guide');
-		expect(tree[1].link).toBe('/docs/alpha');
+		expect(tree[0].link).toBe('/docs/alpha');
+		expect(tree[1].link).toBe('/docs/guide');
 	});
 
-	it('sorts folders by index order first, then alphabetically for unordered folders', () => {
+	it('sorts by order first, then folder/file tie-break, then alphabetically', () => {
 		const modules = {
 			'/docs/index.md': {},
 			'/docs/zeta/index.md': {},
@@ -366,13 +387,14 @@ describe('docsUtils — prepareMenu', async () => {
 		const frontmatters = {
 			'/docs/zeta/index.md': { order: 20 },
 			'/docs/beta/index.md': { order: 10 },
+			'/docs/page.md': { order: 15 },
 		};
 		const tree = prepareMenu(modules, '/docs', frontmatters).filter((x) => x.link !== '/docs');
 		expect(tree.map((x) => x.link)).toEqual([
 			'/docs/beta',
+			'/docs/page',
 			'/docs/zeta',
 			'/docs/alpha',
-			'/docs/page',
 		]);
 	});
 
@@ -433,6 +455,25 @@ describe('docsUtils — prepareMenu', async () => {
 		expect(sidebar[1].children.map((x) => x.link)).toContain('/docs/reference/config');
 	});
 
+	it('orders guide pages before section folders when order is lower', () => {
+		const modules = {
+			'/docs/guide/index.md': {},
+			'/docs/guide/getting-started.md': {},
+			'/docs/guide/markdown/index.md': {},
+			'/docs/guide/markdown/code.md': {},
+		};
+		const frontmatters = {
+			'/docs/guide/getting-started.md': { order: 1, title: 'Getting Started' },
+			'/docs/guide/markdown/index.md': { order: 2, title: 'Markdown extensions' },
+		};
+
+		const tree = prepareMenu(modules, '/docs/guide', frontmatters).filter((x) => x.link !== '/docs/guide');
+		expect(tree.map((x) => x.link)).toEqual([
+			'/docs/guide/getting-started',
+			'/docs/guide/markdown',
+		]);
+	});
+
 	it('handleSectionClick toggles section and navigates only when index exists', () => {
 		const toggleSection = vi.fn();
 		const navigate = vi.fn();
@@ -474,25 +515,37 @@ describe('imports — snippets and markdown includes', () => {
 	});
 
 	it('supports snippet import with @ alias without slash', async () => {
-		const html = await processMarkdown('<<< @docs/markdown/snippet.js#snippet{2,2}', { filename: testFile });
+		const html = await processMarkdown('<<< @docs/markdown/snippet.js#snippet{2,2}', {
+			filename: testFile,
+			imports: importsFixtureOptions,
+		});
 		expect(html).toContain('..');
 		expect(html).not.toContain('export default foo');
 	});
 
 	it('resolves relative snippet path from /docs/... vfile path', async () => {
-		const html = await processMarkdown('<<< ./snippet.js', { filename: '/docs/markdown/includes.md' });
+		const html = await processMarkdown('<<< ./snippet.js', {
+			filename: '/docs/markdown/includes.md',
+			imports: importsFixtureOptions,
+		});
 		expect(html).toContain('function foo()');
 		expect(html).toContain('export default foo');
 	});
 
 	it('resolves relative snippet path from extensionless /docs/... route path', async () => {
-		const html = await processMarkdown('<<< ./snippet.js', { filename: '/docs/markdown/includes' });
+		const html = await processMarkdown('<<< ./snippet.js', {
+			filename: '/docs/markdown/includes',
+			imports: importsFixtureOptions,
+		});
 		expect(html).toContain('function foo()');
 		expect(html).toContain('export default foo');
 	});
 
 	it('resolves relative snippet path from transformed docs filename', async () => {
-		const html = await processMarkdown('<<< ./snippet.js', { filename: '/docs/markdown/includes.md.svelte' });
+		const html = await processMarkdown('<<< ./snippet.js', {
+			filename: '/docs/markdown/includes.md.svelte',
+			imports: importsFixtureOptions,
+		});
 		expect(html).toContain('function foo()');
 		expect(html).toContain('export default foo');
 	});
@@ -500,7 +553,7 @@ describe('imports — snippets and markdown includes', () => {
 	it('resolves snippet path with absolute / prefix from docsRoot', async () => {
 		const html = await processMarkdown('<<< /markdown/snippet.js', {
 			filename: testFile,
-			imports: { sourceRoot: process.cwd(), docsDir: 'docs' },
+			imports: importsFixtureOptions,
 		});
 		expect(html).toContain('function foo()');
 		expect(html).toContain('export default foo');
@@ -510,7 +563,7 @@ describe('imports — snippets and markdown includes', () => {
 		await expect(
 			processMarkdown('<<< ../../../etc/passwd', {
 				filename: '/docs/markdown/includes.md',
-				imports: { sourceRoot: process.cwd(), docsDir: 'docs' },
+				imports: importsFixtureOptions,
 			})
 		).rejects.toThrow('escapes the source root');
 	});
@@ -530,7 +583,10 @@ describe('imports — snippets and markdown includes', () => {
 	});
 
 	it('resolves relative markdown include path from /docs/... vfile path', async () => {
-		const html = await processMarkdown('<!--@include: ./__partial-basic.md-->', { filename: '/docs/markdown/includes.md' });
+		const html = await processMarkdown('<!--@include: ./__partial-basic.md-->', {
+			filename: '/docs/markdown/includes.md',
+			imports: importsFixtureOptions,
+		});
 		expect(html).toContain('<h3 id="configuration">');
 		expect(html).toContain('Can be created using <code>.foorc.json</code>.');
 	});
@@ -538,7 +594,7 @@ describe('imports — snippets and markdown includes', () => {
 	it('supports overriding docsDir for relative imports from virtual absolute paths', async () => {
 		const html = await processMarkdown('<<< ./snippet.js', {
 			filename: '/markdown/includes.md',
-			imports: { sourceRoot: process.cwd(), docsDir: 'docs' },
+			imports: importsFixtureOptions,
 		});
 		expect(html).toContain('function foo()');
 		expect(html).toContain('export default foo');
@@ -552,20 +608,26 @@ describe('imports — snippets and markdown includes', () => {
 	});
 
 	it('resolves / prefix in snippet imports (maps to docsDir root)', async () => {
-		const html = await processMarkdown('<<< /markdown/snippet.js#snippet{2,2}', { filename: testFile });
+		const html = await processMarkdown('<<< /markdown/snippet.js#snippet{2,2}', {
+			filename: testFile,
+			imports: importsFixtureOptions,
+		});
 		expect(html).toContain('..');
 		expect(html).not.toContain('export default foo');
 	});
 
 	it('resolves / prefix in markdown includes (maps to docsDir root)', async () => {
-		const html = await processMarkdown('<!--@include: /markdown/__partial-basic.md-->', { filename: testFile });
+		const html = await processMarkdown('<!--@include: /markdown/__partial-basic.md-->', {
+			filename: testFile,
+			imports: importsFixtureOptions,
+		});
 		expect(html).toContain('<h3 id="configuration">');
 		expect(html).toContain('Can be created using <code>.foorc.json</code>.');
 	});
 
 	it('normalizes internal link URLs (strips .md extension)', async () => {
-		const html = await processMarkdown('[Go to code](/docs/markdown/code.md)', { filename: testFile });
-		expect(html).toContain('href="/docs/markdown/code"');
+		const html = await processMarkdown('[Go to code](/docs/guide/markdown/code.md)', { filename: testFile });
+		expect(html).toContain('href="/docs/guide/markdown/code"');
 	});
 
 	it('does not normalize image src URLs', async () => {

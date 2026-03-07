@@ -5,7 +5,6 @@ import DocsSiteHeader from './DocsSiteHeader.svelte';
 import SearchModal from './SearchModal.svelte';
 import Spinner from './../spinner/spinner.svelte';
 import { prepareMenu, flattenMenu, getPrevNext, getBreadcrumbItems, parseSidebarConfig } from './docsUtils';
-import 'github-markdown-css';
 import './../scss/markdownDocs.scss';
 import { setPortalsContext } from './../portal';
 import CarbonAds from '../components/CarbonAds.svelte';
@@ -260,7 +259,7 @@ router.navigateWithAnchor(resolvedPath, hashPart || undefined);
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-<div class="catalog" data-theme={theme} onmousemove={sp.onMouseMove} onmouseup={sp.onMouseUp} onclick={handleCodeGroupClick} onkeydown={handleCodeGroupKeydown}>
+<div class="greg" data-theme={theme} onmousemove={sp.onMouseMove} onmouseup={sp.onMouseUp} onclick={handleCodeGroupClick} onkeydown={handleCodeGroupKeydown}>
 <DocsSiteHeader
 {rootPath}
 {mainTitle}
@@ -272,7 +271,7 @@ navigate={router.navigate}
 onOpenSearch={() => (searchOpen = true)}
 />
 
-<div class="catalog-body">
+<div class="greg-body">
 {#if showSidebar}
 <aside bind:this={sp.aside}>
 <DocsNavigation menu={menu} {rootPath} active={router.active} navigate={router.navigate} />
@@ -357,7 +356,7 @@ onNavigate={router.navigateWithAnchor}
 </div>
 
 <style lang="scss">
-.catalog {
+.greg {
 display: flex;
 flex-flow: column nowrap;
 background-color: var(--greg-background);
@@ -367,7 +366,7 @@ overflow: hidden;
 }
 
 /* -- Body layout ---------------------------------------------------------- */
-.catalog-body {
+.greg-body {
 display: flex;
 flex-flow: row nowrap;
 flex: 1;

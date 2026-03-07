@@ -13,6 +13,8 @@ import { remarkCustomAnchors } from './src/lib/MarkdownDocs/remarkCustomAnchors.
 import { remarkInlineAttrs } from './src/lib/MarkdownDocs/remarkInlineAttrs.js';
 import { remarkEscapeSvelte } from './src/lib/MarkdownDocs/remarkEscapeSvelte.js';
 import { remarkMathToHtml } from './src/lib/MarkdownDocs/remarkMathToHtml.js';
+import { parseCodeDirectives, decorateHighlightedCodeHtml } from './src/lib/MarkdownDocs/codeDirectives.js';
+import { normalizeCodeFenceInfo } from './src/lib/MarkdownDocs/codeFenceInfo.js';
 
 // ── Greg config ────────────────────────────────────────────────────────────────
 // Mirrors the VitePress convention:  export default { markdown: { math: true } }
@@ -24,7 +26,10 @@ const gregConfig = {
 };
 // ───────────────────────────────────────────────────────────────────────────────
 
-const shikiTheme = 'github-dark';
+const shikiThemes = {
+	light: 'github-light',
+	dark: 'github-dark',
+};
 const shikiDefaultLang = 'txt';
 const markdownSourceRoot = process.cwd();
 const markdownDocsDir = 'docs';
@@ -39,12 +44,13 @@ const shikiLangAliases = {
 };
 
 function parseFenceInfo(lang, metastring) {
-	const normalizedLang = String(lang ?? '').trim().toLowerCase() || shikiDefaultLang;
-	const meta = String(metastring ?? '').trim();
+	const normalized = normalizeCodeFenceInfo(lang ?? '', metastring ?? '');
+	const normalizedLang = normalized.lang || shikiDefaultLang;
+	const meta = normalized.meta;
 	const titleMatch = meta.match(/\[([^\]]+)\]/);
 	const title = titleMatch?.[1]?.trim() ?? '';
 
-	return { lang: normalizedLang, title };
+	return { lang: normalizedLang, title, meta };
 }
 
 function encodeAttribute(value) {
@@ -58,7 +64,7 @@ function injectCodeMetadata(html, lang, title) {
 }
 
 const highlighter = await createHighlighter({
-	themes: [shikiTheme],
+	themes: [shikiThemes.light, shikiThemes.dark],
 	langs: [
 		'javascript',
 		'typescript',
@@ -77,14 +83,21 @@ const highlighter = await createHighlighter({
 const mdsvexOptions = {
 	highlight: {
 		highlighter: (code, lang = shikiDefaultLang, metastring = '') => {
-			const { lang: rawLang, title } = parseFenceInfo(lang, metastring);
+			const { lang: rawLang, title, meta } = parseFenceInfo(lang, metastring);
+			const directives = parseCodeDirectives(code, meta, rawLang);
 			const mappedLang = shikiLangAliases[rawLang] ?? rawLang;
 			const loadedLangs = highlighter.getLoadedLanguages();
 			const safeLang = loadedLangs.includes(mappedLang) ? mappedLang
 				: loadedLangs.includes(rawLang) ? rawLang
 				: shikiDefaultLang;
+			let shikiHtml = highlighter.codeToHtml(directives.cleanedCode, {
+				lang: safeLang,
+				themes: shikiThemes,
+				defaultColor: false,
+			});
+			shikiHtml = decorateHighlightedCodeHtml(shikiHtml, directives);
 			const html = escapeSvelte(
-				injectCodeMetadata(highlighter.codeToHtml(code, { lang: safeLang, theme: shikiTheme }), mappedLang, title)
+				injectCodeMetadata(shikiHtml, mappedLang, title)
 			);
 			return `{@html \`${html}\` }`;
 		},

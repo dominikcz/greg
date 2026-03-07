@@ -1,31 +1,12 @@
 ---
 title: Code blocks and groups
-order: 4
+order: 5
 ---
 
 # Code blocks and groups
 
-## Syntax highlighting
-
-Code blocks are highlighted at build time by [Shiki](https://shiki.style) using
-the `github-dark` theme:
-
-````md
-```javascript
-const greeting = 'Hello, Greg!';
-console.log(greeting);
-```
-````
-
-Output:
-
-```javascript
-const greeting = 'Hello, Greg!';
-console.log(greeting);
-```
-
-Supported languages include `javascript`, `typescript`, `bash`, `json`, `html`,
-`css`, `yaml`, `markdown`, `svelte`, `txt`.
+For syntax highlighting, line focus/diff/word markers and VitePress-style
+compatibility notes, see [Syntax highlighting](./syntax-highlighting).
 
 ## Code block title
 
@@ -98,3 +79,17 @@ Explicit label override:
 
 :::
 ````
+
+Output:
+
+::: code-group labels=[Option A, Option B]
+
+```js
+// option A
+```
+
+```ts
+// option B
+```
+
+:::

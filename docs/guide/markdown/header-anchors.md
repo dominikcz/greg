@@ -11,7 +11,11 @@ Every heading automatically receives a slug-based `id` so it can be linked to:
 ## My Section
 ```
 
-Renders as `<h2 id="my-section">`.
+Output:
+
+## My Section
+
+Expected HTML includes `<h2 id="my-section">`.
 
 ## Custom anchors
 
@@ -22,3 +26,9 @@ Override the auto-generated slug with a `{#custom-id}` suffix:
 ```
 
 This lets you link to `#custom-anchor` even if the heading text changes.
+
+Output:
+
+## My Section {#custom-anchor}
+
+[Jump to custom anchor](#custom-anchor)

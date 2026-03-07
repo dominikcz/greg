@@ -276,7 +276,7 @@ export const MERMAID_THEMES = {
      * Material Design – dark variant.
      * Deep-navy surfaces (#2d2d44), elevated accent palette.
      * themeCSS is identical to `material`; colours adapt automatically via
-     * --mmd-* tokens redefined under .catalog[data-theme="dark"].
+     * --mmd-* tokens redefined under .greg[data-theme="dark"].
      */
     'material-dark': {
         theme: 'base',

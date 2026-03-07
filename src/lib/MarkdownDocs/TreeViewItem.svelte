@@ -82,6 +82,7 @@
 <style lang="scss">
 	li {
 		line-height: 1.5rem;
+		margin: 0.1rem 0;
 	}
 
 	ul {

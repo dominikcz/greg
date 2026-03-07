@@ -9,6 +9,7 @@ import rehypeStringify from 'rehype-stringify';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeCodeGroup from '../rehypeCodeGroup.js';
+import rehypeCodeTitle from '../rehypeCodeTitle.js';
 import { remarkContainers, rehypeContainers } from '../remarkContainers.js';
 import { rehypeTocPlaceholder } from '../rehypeToc.js';
 import { remarkCodeMeta } from '../remarkCodeMeta.js';
@@ -33,6 +34,7 @@ async function getProcessor(opts = {}) {
 		.use(rehypeAutolinkHeadings, { behavior: 'prepend', properties: { class: 'header-anchor', ariaHidden: 'true', tabIndex: -1 }, content: { type: 'text', value: '#' } })
 			.use(rehypeContainers, opts.containers ?? {})
 			.use(rehypeCodeGroup)
+			.use(rehypeCodeTitle)
 			.use(rehypeTocPlaceholder, opts.toc ?? {})
 			.use(rehypeStringify, { allowDangerousHtml: true });
 	}
@@ -47,6 +49,7 @@ async function getProcessor(opts = {}) {
 		.use(rehypeAutolinkHeadings, { behavior: 'prepend', properties: { class: 'header-anchor', ariaHidden: 'true', tabIndex: -1 }, content: { type: 'text', value: '#' } })
 			.use(rehypeContainers)
 			.use(rehypeCodeGroup)
+			.use(rehypeCodeTitle)
 			.use(rehypeTocPlaceholder)
 			.use(rehypeStringify, { allowDangerousHtml: true });
 	}

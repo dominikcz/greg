@@ -6,7 +6,7 @@
  * remark/rehype pipeline as the build-time mdsvex setup (minus Svelte-specific
  * and filesystem-specific plugins).
  *
- * Syntax highlighting is provided by highlight.js (client-side, tree-shakeable).
+ * Syntax highlighting is provided by Shiki (same engine as build-time mdsvex).
  * Svelte components (Badge, Button, Image, Link) are hydrated after render.
  * Mermaid diagrams are rendered via mermaid.js after render.
  */
@@ -28,6 +28,7 @@ import { remarkCodeMeta } from './remarkCodeMeta.js';
 import { remarkCustomAnchors } from './remarkCustomAnchors.js';
 import { remarkInlineAttrs } from './remarkInlineAttrs.js';
 import { remarkImportsBrowser } from './remarkImportsBrowser.js';
+import { parseCodeDirectives, decorateHighlightedCodeHtml } from './codeDirectives.js';
 
 import { MERMAID_THEMES, DEFAULT_MERMAID_THEME, getColorSchemeTheme } from './mermaidThemes.js';
 import Badge  from '../components/Badge.svelte';
@@ -35,8 +36,64 @@ import Button from '../components/Button.svelte';
 import Image  from '../components/Image.svelte';
 import Link   from '../components/Link.svelte';
 
-import hljs from 'highlight.js';
-import 'highlight.js/styles/github-dark.css';
+import { createHighlighter, type HighlighterGeneric } from 'shiki';
+
+const shikiThemes = {
+    light: 'github-light',
+    dark: 'github-dark',
+} as const;
+const shikiDefaultLang = 'txt';
+const shikiLangAliases: Record<string, string> = {
+    js: 'javascript',
+    ts: 'typescript',
+    sh: 'bash',
+    shell: 'bash',
+    zsh: 'bash',
+    yml: 'yaml',
+    md: 'markdown',
+};
+const shikiLangs = ['javascript', 'typescript', 'bash', 'json', 'html', 'css', 'yaml', 'markdown', 'svelte', 'txt'];
+
+let shikiHighlighterPromise: Promise<HighlighterGeneric<any, any>> | null = null;
+
+function getShikiHighlighter() {
+    if (!shikiHighlighterPromise) {
+        shikiHighlighterPromise = createHighlighter({
+            themes: [shikiThemes.light, shikiThemes.dark],
+            langs: shikiLangs,
+        });
+    }
+    return shikiHighlighterPromise;
+}
+
+function parseClassNameList(value: unknown): string[] {
+    if (Array.isArray(value)) return value.map(String).filter(Boolean);
+    if (typeof value === 'string') return value.split(/\s+/).filter(Boolean);
+    return [];
+}
+
+function mergeClassNames(...lists: Array<string[]>) {
+    return [...new Set(lists.flat().filter(Boolean))];
+}
+
+function extractAttr(html: string, tag: string, attr: string) {
+    const match = html.match(new RegExp(`<${tag}\\b[^>]*\\b${attr}="([^"]*)"`, 'i'));
+    return match?.[1] ?? '';
+}
+
+function extractCodeInnerHtml(shikiHtml: string) {
+    const match = shikiHtml.match(/<pre\b[^>]*>\s*<code\b[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/i);
+    return match?.[1] ?? '';
+}
+
+function resolveShikiLang(highlighter: HighlighterGeneric<any, any>, language: string) {
+    const rawLang = String(language || '').trim().toLowerCase();
+    const mapped = shikiLangAliases[rawLang] ?? rawLang;
+    const loaded = highlighter.getLoadedLanguages();
+    if (loaded.includes(mapped)) return mapped;
+    if (loaded.includes(rawLang)) return rawLang;
+    return shikiDefaultLang;
+}
 
 // ── Component registry ──────────────────────────────────────────────────────
 // Maps lowercase HTML tag name → Svelte component.
@@ -210,10 +267,12 @@ function rehypeStepsWrapper() {
     };
 }
 
-// ── Rehype plugin: highlight.js code blocks ──────────────────────────────────
+// ── Rehype plugin: shiki code blocks ─────────────────────────────────────────
 
-function rehypeHighlightJS() {
-    return (tree: any) => {
+function rehypeShiki() {
+    return async (tree: any) => {
+        const highlighter = await getShikiHighlighter();
+
         visit(tree, 'element', (node: any, _index: any, parent: any) => {
             if (node.tagName !== 'code') return;
             // Only highlight fenced code blocks (parent is <pre>)
@@ -223,25 +282,66 @@ function rehypeHighlightJS() {
                 ?.filter((c: any) => c.type === 'text')
                 .map((c: any) => c.value)
                 .join('') ?? '';
+            const meta = String(node.properties?.['data-code-meta'] ?? '');
 
             // Read language from class="language-xxx"
             const cls: string = (node.properties?.className ?? []).find((c: string) => c.startsWith('language-')) ?? '';
             const lang = cls.replace('language-', '');
+            const directives = parseCodeDirectives(raw, meta, lang);
 
             // Attach data-code-lang for rehypeCodeTitle / code group
             if (lang) node.properties['data-code-lang'] = lang;
 
-            let highlighted: string;
             try {
-                highlighted = lang && hljs.getLanguage(lang)
-                    ? hljs.highlight(raw, { language: lang, ignoreIllegals: true }).value
-                    : hljs.highlightAuto(raw).value;
+                const safeLang = resolveShikiLang(highlighter, lang);
+                const shikiHtml = highlighter.codeToHtml(directives.cleanedCode, {
+                    lang: safeLang,
+                    themes: shikiThemes,
+                    defaultColor: false,
+                });
+
+                const preClasses = parseClassNameList(extractAttr(shikiHtml, 'pre', 'class'));
+                const preStyle = extractAttr(shikiHtml, 'pre', 'style');
+                const preDir = extractAttr(shikiHtml, 'pre', 'dir');
+                const preTabIndex = extractAttr(shikiHtml, 'pre', 'tabindex');
+                const codeClasses = parseClassNameList(extractAttr(shikiHtml, 'code', 'class'));
+
+                let highlighted = extractCodeInnerHtml(shikiHtml);
+                highlighted = decorateHighlightedCodeHtml(highlighted, directives);
+
+                const hasFocusedLines = directives.lineInfo.some((info: any) => Boolean(info?.focus));
+                const hasDiff = directives.lineInfo.some((info: any) => Boolean(info?.diffAdd || info?.diffRemove || info?.diffWarning || info?.diffError));
+
+                parent.properties = {
+                    ...(parent.properties ?? {}),
+                    ...(preStyle ? { style: preStyle } : {}),
+                    ...(preDir ? { dir: preDir } : {}),
+                    ...(preTabIndex ? { tabIndex: Number(preTabIndex) } : {}),
+                    className: mergeClassNames(
+                        parseClassNameList(parent.properties?.className),
+                        preClasses,
+                        hasFocusedLines ? ['has-focused-lines'] : [],
+                        hasDiff ? ['has-diff'] : [],
+                    ),
+                };
+
+                node.properties = {
+                    ...(node.properties ?? {}),
+                    className: mergeClassNames(parseClassNameList(node.properties?.className), codeClasses),
+                };
+
+                if (directives.lineNumbers?.enabled) {
+                    const totalLines = directives.lineInfo.length;
+                    const start = Number.isFinite(directives.lineNumbers.start) ? directives.lineNumbers.start : 1;
+                    const maxDigits = String(Math.max(start + totalLines - 1, start)).length;
+                    node.properties['data-line-numbers'] = 'true';
+                    node.properties['data-line-numbers-max-digits'] = String(maxDigits);
+                }
+
+                node.children = [{ type: 'raw', value: highlighted }];
             } catch {
                 return; // leave as-is on failure
             }
-
-            node.properties.className = [...(node.properties.className ?? []), 'hljs'];
-            node.children = [{ type: 'raw', value: highlighted }];
         });
     };
 }
@@ -268,7 +368,7 @@ function buildProcessor(currentBaseUrl: string, currentDocsPrefix: string) {
         })
         .use(rehypeStepsWrapper)
         .use(rehypeMermaid)
-        .use(rehypeHighlightJS)
+        .use(rehypeShiki)
         .use(rehypeContainers)
         .use(rehypeCodeGroup)
         .use(rehypeCodeTitle)

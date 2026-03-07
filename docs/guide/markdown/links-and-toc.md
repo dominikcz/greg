@@ -15,6 +15,12 @@ Internal links use SPA navigation and update the page without a full reload:
 [Back to top](#)
 ```
 
+Output:
+
+[Getting Started](../getting-started)
+[API reference](/reference/api)
+[Back to top](#)
+
 `.md` and `.html` extensions are stripped automatically.
 
 ## Fragment links (same page)
@@ -23,11 +29,23 @@ Internal links use SPA navigation and update the page without a full reload:
 [See the examples below](#examples)
 ```
 
+Output:
+
+[See the examples below](#examples)
+
 Clicking a same-page `#anchor` link scrolls smoothly without a history push.
 
 ## External links
 
 External links open via the browser's default navigation.
+
+```md
+[Project website](https://example.com)
+```
+
+Output:
+
+[Project website](https://example.com)
 
 ## Table of contents - `[[toc]]`
 

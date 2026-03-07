@@ -91,3 +91,20 @@ The `> [!TYPE]` blockquote syntax is also supported:
 > [!CAUTION]
 > Dangerous action.
 ```
+
+Output:
+
+> [!NOTE]
+> Useful information.
+
+> [!TIP]
+> Pro tip.
+
+> [!IMPORTANT]
+> Key point.
+
+> [!WARNING]
+> Be careful.
+
+> [!CAUTION]
+> Dangerous action.
