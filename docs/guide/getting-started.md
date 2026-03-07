@@ -13,7 +13,7 @@ fast, beautiful single-page documentation site — complete with sidebar navigat
 full-text search, dark/light mode and a rich set of Markdown extensions.
 
 Greg is intentionally inspired by [VitePress](https://vitepress.dev), reusing most
-of its Markdown syntax and several UI components, but built entirely on Svelte 5
+of its Markdown syntax and several UI conventions, but built entirely on Svelte 5
 instead of Vue.
 
 
@@ -26,14 +26,35 @@ instead of Vue.
 | Vite        | 7.x     |
 
 
-## Installation
+## Quick start
 
-Clone or scaffold a new project from the Greg template, then install dependencies:
+The fastest way to start a new project is the interactive `init` command:
 
 ```sh
-git clone https://github.com/your-org/greg my-docs
-cd my-docs
-npm install
+npx @dominikcz/greg init
+```
+
+The wizard will ask for:
+- **Docs path** — where your Markdown files will live (default: `./docs`)
+- **Site title** and **description**
+- **TypeScript** — whether to use `.ts` for config files
+- **Package.json scripts** — automatically adds `dev`, `build`, `preview`
+- **Documentation contents** — empty starter, sample template, or generated fake docs
+- **Install dependencies** — optionally runs `npm install` immediately
+
+At the end you only need:
+
+```sh
+npm run dev
+```
+
+
+## Manual installation
+
+If you prefer to wire things up yourself:
+
+```sh
+npm install --save-dev @dominikcz/greg @sveltejs/vite-plugin-svelte svelte vite
 ```
 
 
@@ -42,19 +63,15 @@ npm install
 ```
 .
 ├─ docs/                  ← your Markdown pages live here
-│  ├─ index.md            ← root /docs page
+│  ├─ index.md            ← home page
 │  ├─ guide/
-│  │  └─ getting-started.md
 │  └─ reference/
-│     └─ api.md
 ├─ src/
 │  ├─ App.svelte          ← mounts <MarkdownDocs>
-│  ├─ main.js
-│  └─ lib/
-│     ├─ components/      ← Badge, Hero, Features, TeamPage …
-│     └─ MarkdownDocs/    ← engine internals
-├─ svelte.config.js       ← mdsvex options + remark/rehype plug-ins
-├─ vite.config.js         ← Vite config + search-index plug-in
+│  └─ main.js
+├─ svelte.config.js       ← mdsvex options (must be .js)
+├─ vite.config.js         ← Vite config + Greg plugins
+├─ greg.config.js         ← site title, sidebar, outline …
 └─ package.json
 ```
 
@@ -62,10 +79,27 @@ The `docs/` directory is the **content root**. Every `.md` file inside it (excep
 files whose name starts with `__`) becomes a page accessible via its path.
 
 
+## Mounting the engine
+
+`src/App.svelte` simply mounts `<MarkdownDocs>` — no props required when using `greg.config`:
+
+```svelte
+<script>
+    import MarkdownDocs from '@dominikcz/greg'
+</script>
+
+<MarkdownDocs />
+```
+
+See the [`<MarkdownDocs>` reference](/docs/reference/markdowndocs) for a full list
+of available props.
+
+
 ## Development server
 
 ```sh
 npm run dev
+# or: greg dev
 ```
 
 The site is served at `http://localhost:5173` by default. Changes to `.md` files
@@ -76,23 +110,8 @@ are hot-reloaded instantly.
 
 ```sh
 npm run build
+# or: greg build
 ```
 
-The output in `dist/` is a fully static SPA that can be served by any CDN or web
-server. See [Deploying](./deploying) for hosting-specific guides.
-
-
-## Mounting the engine
-
-The entry point `src/App.svelte` mounts the `<MarkdownDocs>` component:
-
-```svelte
-<script>
-  import MarkdownDocs from './lib/MarkdownDocs/MarkdownDocs.svelte';
-</script>
-
-<MarkdownDocs rootPath="/docs" version="1.0.0" />
-```
-
-See the [`<MarkdownDocs>` reference](/docs/reference/markdowndocs) for a full list
-of available props.
+Outputs a fully static SPA in `dist/` that can be served by any CDN or web server.
+See [Deploying](./deploying) for hosting-specific guides.

@@ -13,7 +13,7 @@ Mount it in `src/App.svelte`:
 
 ```svelte
 <script>
-  import MarkdownDocs from './lib/MarkdownDocs/MarkdownDocs.svelte';
+    import MarkdownDocs from '@dominikcz/greg'
 </script>
 
 <MarkdownDocs rootPath="/docs" version="1.0.0" />

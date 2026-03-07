@@ -13,7 +13,7 @@ import * as p from '@clack/prompts';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fork } from 'node:child_process';
+import { fork, spawnSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -52,6 +52,13 @@ function ensure(relPath, content) {
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
     writeFileSync(full, content, 'utf-8');
     console.log(`  ${g('+')} ${relPath}`);
+}
+
+// ── Package manager detector ────────────────────────────────────────────────
+function detectPm() {
+    if (existsSync(join(cwd, 'pnpm-lock.yaml'))) return 'pnpm';
+    if (existsSync(join(cwd, 'yarn.lock'))) return 'yarn';
+    return 'npm';
 }
 
 // ── main ──────────────────────────────────────────────────────────────────────
@@ -123,22 +130,32 @@ async function main() {
         }
     }
 
-    // ── package.json scripts ──────────────────────────────────────────────────
-    if (addScripts) {
+    // ── package.json scripts + devDependencies ────────────────────────────────
+    // @dominikcz/greg is written to devDependencies directly (never via npm install)
+    // so that local `npm link` and future registry installs both work correctly.
+    const { version: gregVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
+    {
         const pkgPath = join(cwd, 'package.json');
         if (existsSync(pkgPath)) {
             try {
                 const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-                pkg.scripts ??= {};
                 let changed = false;
-                for (const [k, v] of [['dev', 'greg dev'], ['build', 'greg build'], ['preview', 'greg preview']]) {
-                    if (!pkg.scripts[k]) { pkg.scripts[k] = v; changed = true; }
+                if (addScripts) {
+                    pkg.scripts ??= {};
+                    for (const [k, v] of [['dev', 'greg dev'], ['build', 'greg build'], ['preview', 'greg preview']]) {
+                        if (!pkg.scripts[k]) { pkg.scripts[k] = v; changed = true; }
+                    }
+                }
+                pkg.devDependencies ??= {};
+                if (!pkg.devDependencies['@dominikcz/greg']) {
+                    pkg.devDependencies['@dominikcz/greg'] = `^${gregVersion}`;
+                    changed = true;
                 }
                 if (changed) {
                     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
-                    p.log.success('package.json  ' + d('(scripts added)'));
+                    p.log.success('package.json  ' + d('(updated)'));
                 } else {
-                    p.log.warn('package.json  ' + d('(scripts already present, skipped)'));
+                    p.log.warn('package.json  ' + d('(already up to date, skipped)'));
                 }
             } catch {
                 p.log.warn('Could not update package.json');
@@ -148,26 +165,52 @@ async function main() {
                 name: 'my-docs',
                 version: '0.0.1',
                 type: 'module',
-                scripts: { dev: 'greg dev', build: 'greg build', preview: 'greg preview' },
+                ...(addScripts ? { scripts: { dev: 'greg dev', build: 'greg build', preview: 'greg preview' } } : {}),
+                devDependencies: { '@dominikcz/greg': `^${gregVersion}` },
             };
             writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
             console.log(`  ${g('+')} package.json`);
         }
     }
 
-    // ── Next steps ────────────────────────────────────────────────────────────
-    const devDeps = [
-        '@dominikcz/greg',
+    // ── Install dependencies ──────────────────────────────────────────────────
+    // @dominikcz/greg is already in package.json devDependencies — install only peer deps.
+    const peerDepsArr = [
         '@sveltejs/vite-plugin-svelte',
         'svelte',
         'vite',
         ...(useTS ? ['typescript'] : []),
-    ].join(' ');
+    ];
+    const pm = detectPm();
+    const installArgs = pm === 'npm'
+        ? ['install', '--save-dev', ...peerDepsArr]
+        : ['add', '-D', ...peerDepsArr];
+
+    const installNow = orCancel(await p.confirm({ message: 'Install dependencies now?', initialValue: true }));
+
+    if (installNow) {
+        p.log.step(`Running ${pm} ${installArgs[0]}…`);
+        const result = spawnSync(pm, installArgs, { cwd, stdio: 'inherit', shell: true });
+        if (result.status !== 0) {
+            p.log.warn('Installation failed. Run manually:');
+            console.log(`  ${c(`${pm} ${installArgs.join(' ')}`)}`);
+        }
+
+        // Try to link @dominikcz/greg for local development (fails silently when not needed)
+        if (!existsSync(join(cwd, 'node_modules/@dominikcz/greg'))) {
+            const linkResult = spawnSync('npm', ['link', '@dominikcz/greg'], { cwd, stdio: 'pipe', shell: true });
+            if (linkResult.status !== 0) {
+                p.log.warn('@dominikcz/greg not found locally. Run after publishing or linking:');
+                console.log(`  ${c('npm link @dominikcz/greg')}  ${d('(local dev)')}`);
+                console.log(`  ${c('npm install')}  ${d('(after publishing)')}`);
+            }
+        }
+    }
 
     p.outro(
-        `${b(g('Done!'))}  Next steps:\n\n` +
-        `  ${c('npm install --save-dev')} ${devDeps}\n` +
-        `  ${c('npm run dev')}`
+        installNow
+            ? `${b(g('Done!'))}  Start your project:\n\n  ${c('npm run dev')}`
+            : `${b(g('Done!'))}  Next steps:\n\n  ${c(`${pm} ${installArgs.join(' ')}`)}\n  ${c('npm run dev')}`
     );
 }
 

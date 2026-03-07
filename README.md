@@ -1,45 +1,118 @@
 # Greg
 
-TODO:
+Svelte 5 + Vite-powered documentation engine. Write Markdown, get a beautiful documentation site — hot-reloaded in milliseconds.
 
-- komponenty z rehype:
-  - [x] TOC
-  - [x] Custom Containers 
-  - [x] code groups
-  - [x] slugs + autolinks
-  - [x] shiki
-  - [x] include MD: <!--@include: ./__partial.md-->
-  - [x] code snippets: <<< @/filepath
-- [x] obsługa frontmatter
-- [x] obsługa layout w markdown
-- [x] nazwy w menu z frontmatter
+Inspired by [VitePress](https://vitepress.dev), built on Svelte 5.
 
-0.7 ✅
-- [x] konfiguracja w jednym dedykowanym pliku greg.config.js (`vitePluginGregConfig`)
-- [x] dodatki do frontmatter:
-  - [x] sterowanie outline kompatybilne z VitePress (per-page `outline:` frontmatter)
-  - [x] badge dla strony (`badge:` frontmatter, pokazywany w nawigacji)
-- [x] możliwość nadpisania sidebar w konfiguracji (`sidebar: 'auto' | SidebarItem[]`)
-  - domyślnie `'auto'` (istniejące zachowanie)
-  - na sztywno lub z automatycznymi fragmentami (`auto:` w pozycji sidebar)
-- [x] konfigurowalne parametry (prop lub greg.config.js):
-  - [x] pokazywanie breadcrumb w dokumencie (`breadcrumb: true`)
-  - [x] back to top (`backToTop: true`)
-  - [x] pokazywanie daty ostatniej modyfikacji strony (`lastModified: true`)
-- [x] nawigacja prev/next kompatybilna z VitePress (auto + frontmatter `prev:`/`next:`)
+## Quick start
 
-0.8
-- [x] wyszukiwanie lokalne i po stronie serwera
-- [x] pakiet
-- [x] obsługa CLI `greg dev`, `greg build`
-- [x] komponent steps jak w Starlight
+```sh
+npx @dominikcz/greg init
+```
 
-0.9
-- [ ] integracja z AI
-- [ ] wersja wielojęzyczna
-- [ ] wersje dokumentacji
+The interactive wizard will ask for docs path, site title, TypeScript preference, and the type of initial documentation (empty, sample, or generated fake docs). It can also install all required dependencies for you.
 
-1.0 
-- [ ] tryb edycji
-- [ ] komentarze
-- porządki w kodzie, formatowanie itd. itp.
+At the end you only need:
+
+```sh
+npm run dev
+```
+
+## Manual installation
+
+```sh
+npm install --save-dev @dominikcz/greg @sveltejs/vite-plugin-svelte svelte vite
+```
+
+**`vite.config.js`**
+```js
+import { defineConfig } from 'vite'
+import { svelte } from '@sveltejs/vite-plugin-svelte'
+import {
+    vitePluginGregConfig,
+    vitePluginSearchIndex,
+    vitePluginSearchServer,
+    vitePluginFrontmatter,
+    vitePluginCopyDocs,
+} from '@dominikcz/greg/plugins'
+
+export default defineConfig({
+    plugins: [
+        svelte(),
+        vitePluginGregConfig(),
+        vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
+        vitePluginSearchServer({ docsDir: 'docs', rootPath: '/docs' }),
+        vitePluginFrontmatter({ docsDir: 'docs' }),
+        vitePluginCopyDocs({ docsDir: 'docs' }),
+    ],
+})
+```
+
+**`svelte.config.js`** (must be `.js` — not `.ts`)
+```js
+export { default } from '@dominikcz/greg/svelte.config'
+```
+
+**`greg.config.js`** (or `.ts`)
+```js
+/** @type {import('@dominikcz/greg').GregConfig} */
+export default {
+    rootPath: '/docs',
+    mainTitle: 'My Docs',
+    sidebar: 'auto',
+}
+```
+
+**`src/App.svelte`**
+```svelte
+<script>
+    import MarkdownDocs from '@dominikcz/greg'
+</script>
+
+<MarkdownDocs />
+```
+
+## CLI
+
+| Command | Description |
+|---|---|
+| `greg init` | Interactive project scaffolding |
+| `greg dev` | Start Vite dev server |
+| `greg build` | Production build |
+| `greg preview` | Preview production build |
+| `greg search-server` | Standalone search API server |
+
+## TypeScript
+
+Greg ships types at `@dominikcz/greg`. `greg.config.ts` is supported — it is transpiled via esbuild at build time.
+
+```ts
+import type { GregConfig } from '@dominikcz/greg'
+
+export default {
+    rootPath: '/docs',
+    mainTitle: 'My Docs',
+} satisfies GregConfig
+```
+
+> **Note:** `svelte.config` must remain a `.js` file — `@sveltejs/vite-plugin-svelte` loads it directly via Node ESM without a TypeScript transform.
+
+## Links
+
+- [Documentation](https://github.com/dominikcz/greg)
+- [GitHub](https://github.com/dominikcz/greg)
+- [npm](https://www.npmjs.com/package/@dominikcz/greg)
+
+---
+
+## TODO
+
+### 0.9
+- [ ] AI search integration
+- [ ] i18n support
+- [ ] multiple versions support
+
+### 1.0 
+- [ ] edit mode
+- [ ] comments
+- [ ] code cleanup

@@ -67,5 +67,9 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "unist-util-visit": "^5.1.0"
+  },
+  "overrides": {
+    "dompurify": ">=3.3.2",
+    "immutable": ">=5.1.5"
   }
 }
