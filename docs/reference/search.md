@@ -1,6 +1,5 @@
 ---
 title: Search
-order: 4
 ---
 
 # Search

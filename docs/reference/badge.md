@@ -1,6 +1,5 @@
 ---
 title: Badge
-order: 2
 ---
 
 # Badge
@@ -8,6 +7,13 @@ order: 2
 The `Badge` component adds an inline status label to headings or any inline content.
 
 ## Usage
+
+`Badge` supports two authoring styles:
+
+- Markdown inline usage (`<Badge ... />`) in docs pages
+- Direct component usage in `.svelte` files
+
+### Markdown inline usage
 
 `Badge` is available in every Markdown page without an import:
 
@@ -18,12 +24,28 @@ The `Badge` component adds an inline status label to headings or any inline cont
 ### Title <Badge type="danger" text="deprecated" />
 ```
 
-Renders as:
+**Output:**
 
 ### Title <Badge type="info" text="default" />
 ### Title <Badge type="tip" text="stable" />
 ### Title <Badge type="warning" text="beta" />
 ### Title <Badge type="danger" text="deprecated" />
+
+### Direct component usage (`.svelte`)
+
+```svelte
+<script>
+  import Badge from '$components/Badge.svelte';
+</script>
+
+<h3>
+  Title <Badge type="tip" text="stable" />
+</h3>
+```
+
+**Output:**
+
+Equivalent inline status badge rendered next to heading text.
 
 
 ## Custom children

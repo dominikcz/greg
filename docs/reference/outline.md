@@ -1,6 +1,5 @@
 ---
 title: Outline
-order: 3
 ---
 
 # Outline (On This Page)

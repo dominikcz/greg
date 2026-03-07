@@ -17,7 +17,6 @@
     import Outline from "./Outline.svelte";
     import { useRouter } from "./useRouter.svelte";
     import { useSplitter } from "./useSplitter.svelte";
-    import { handleCodeGroupClick, handleCodeGroupKeydown } from "./codeGroup";
     import allFrontmatters from "virtual:greg-frontmatter";
     import MarkdownRenderer from "./MarkdownRenderer.svelte";
     import LayoutHome from "./layouts/LayoutHome.svelte";
@@ -352,8 +351,6 @@
     data-theme={theme}
     onmousemove={sp.onMouseMove}
     onmouseup={sp.onMouseUp}
-    onclick={handleCodeGroupClick}
-    onkeydown={handleCodeGroupKeydown}
 >
     <DocsSiteHeader
         {rootPath}

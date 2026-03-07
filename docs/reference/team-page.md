@@ -1,6 +1,5 @@
----
+﻿---
 title: Team Page
-order: 7
 ---
 
 # Team Page
@@ -9,29 +8,40 @@ Greg ships Svelte ports of the VitePress team-page components.
 There are two ways to display team members: embedded in a doc page, or as a
 dedicated full-page layout.
 
+## Authoring styles
+
+Team components are available in both authoring contexts:
+
+- Markdown docs pages (`.md`) via component tags
+- Direct `.svelte` usage via imported components
 
 ## Show team members inside a page
 
 Use `<TeamMembers>` anywhere in a Markdown page:
 
-```md
+::: code-group labels=[markdown, output]
+
+<<< @/snippets/reference/team-members-example.md
+
+<!--@include: @/snippets/reference/team-members-example.md-->
+
+:::
+
+### Direct component usage (`.svelte`)
+
+::: code-group labels=[markdown, output]
+
+```svelte
 <script>
-const members = [
-  {
-    avatar: 'https://github.com/octocat.png',
-    name: 'Monalisa Octocat',
-    title: 'Lead Developer',
-    links: [
-      { icon: 'github', link: 'https://github.com/octocat' },
-    ],
-  },
-];
+  import TeamMembers from '$components/TeamMembers.svelte';
 </script>
 
-## Our Team
-
-<TeamMembers {members} />
+<<< @/snippets/reference/team-members-medium-example.md
 ```
+
+<!--@include: @/snippets/reference/team-members-medium-example.md-->
+
+:::
 
 ### `<TeamMembers>` props
 
@@ -45,55 +55,36 @@ interface Props {
 `small` is better for inline use inside regular doc pages; `medium` suits a
 dedicated team page.
 
-
 ## Create a full team page
 
 Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
 
-```md
-<script>
-const coreMembers = [
-  {
-    avatar: 'https://github.com/janedoe.png',
-    name: 'Jane Doe',
-    title: 'Creator',
-    org: 'Acme Corp',
-    orgLink: 'https://acme.com',
-    desc: 'Open source enthusiast.',
-    links: [
-      { icon: 'github',   link: 'https://github.com/janedoe' },
-      { icon: 'twitter',  link: 'https://twitter.com/janedoe' },
-    ],
-    sponsor: 'https://github.com/sponsors/janedoe',
-  },
-];
+::: code-group labels=[markdown, output]
 
-const contributors = [ /* … */ ];
+<<< @/snippets/reference/team-full-example.md
+
+<!--@include: @/snippets/reference/team-full-example.md-->
+
+:::
+
+### Direct component usage (`.svelte`)
+
+::: code-group labels=[markdown, output]
+
+```svelte
+<script>
+  import TeamPage from '$components/TeamPage.svelte';
+  import TeamPageTitle from '$components/TeamPageTitle.svelte';
+  import TeamPageSection from '$components/TeamPageSection.svelte';
+  import TeamMembers from '$components/TeamMembers.svelte';
 </script>
 
-<TeamPage>
-  <TeamPageTitle>
-    {#snippet title()}Our Team{/snippet}
-    {#snippet lead()}The people behind Greg.{/snippet}
-  </TeamPageTitle>
-
-  <TeamPageSection>
-    {#snippet title()}Core Team{/snippet}
-    {#snippet lead()}Active maintainers.{/snippet}
-    {#snippet members()}
-      <TeamMembers size="medium" members={coreMembers} />
-    {/snippet}
-  </TeamPageSection>
-
-  <TeamPageSection>
-    {#snippet title()}Contributors{/snippet}
-    {#snippet members()}
-      <TeamMembers size="small" members={contributors} />
-    {/snippet}
-  </TeamPageSection>
-</TeamPage>
+<<< @/snippets/reference/team-full-example.md
 ```
 
+<!--@include: @/snippets/reference/team-full-example.md-->
+
+:::
 
 ## Component reference
 
@@ -135,12 +126,11 @@ Wrapper that provides correct vertical spacing between sections. Accepts only
 ### `<TeamPageTitle>`
 
 Section title block at the top of a `<TeamPage>`. Accepts `title` and `lead`
-snippets.
+props or their snippet variants.
 
 ### `<TeamPageSection>`
 
-A section within a `<TeamPage>`. Accepts `title`, `lead` and `members` snippets.
-
+A section within a `<TeamPage>`. Accepts `title` / `lead` props and children.
 
 ## Social icons
 
@@ -153,7 +143,7 @@ The `icon` property of a `SocialLinkItem` can be:
 
 ```md
 links: [
-  { icon: 'github',  link: 'https://github.com/…' },
-  { icon: { svg: '<svg …>…</svg>' }, link: 'https://…' },
+  { icon: 'github',  link: 'https://github.com/...' },
+  { icon: { svg: '<svg ...>...</svg>' }, link: 'https://...' },
 ]
 ```

@@ -7,27 +7,23 @@
      * and filesystem-specific plugins).
      *
      * Syntax highlighting is provided by Shiki (same engine as build-time mdsvex).
-     * Svelte components (Badge, Button, Image, Link) are hydrated after render.
+    * Svelte components (Badge, Button, Image, Link, CodeGroup) are hydrated after render.
      * Mermaid diagrams are rendered via mermaid.js after render.
      */
     import { unified } from "unified";
-    import remarkParse from "remark-parse";
-    import remarkGfm from "remark-gfm";
-    import remarkRehype from "remark-rehype";
-    import rehypeStringify from "rehype-stringify";
-    import rehypeSlug from "rehype-slug";
-    import rehypeAutolinkHeadings from "rehype-autolink-headings";
     import { visit } from "unist-util-visit";
     import { mount, unmount, untrack } from "svelte";
 
-    import { rehypeTocPlaceholder } from "./rehypeToc.js";
-    import { remarkContainers, rehypeContainers } from "./remarkContainers.js";
-    import rehypeCodeGroup from "./rehypeCodeGroup.js";
-    import rehypeCodeTitle from "./rehypeCodeTitle.js";
-    import { remarkCodeMeta } from "./remarkCodeMeta.js";
-    import { remarkCustomAnchors } from "./remarkCustomAnchors.js";
-    import { remarkInlineAttrs } from "./remarkInlineAttrs.js";
-    import { remarkImportsBrowser } from "./remarkImportsBrowser.js";
+    import {
+        COMPONENT_REGISTRY,
+        getRuntimeRenderHandlers,
+        getThemeChangeRenderHandlers,
+        runRenderHandlers,
+        getRemarkPluginEntries,
+        getRehypePluginEntries,
+        applyPluginEntries,
+        type RenderHandler,
+    } from "./markdownRendererRuntime";
     import {
         parseCodeDirectives,
         decorateHighlightedCodeHtml,
@@ -38,11 +34,6 @@
         DEFAULT_MERMAID_THEME,
         getColorSchemeTheme,
     } from "./mermaidThemes.js";
-    import Badge from "../components/Badge.svelte";
-    import Button from "../components/Button.svelte";
-    import Image from "../components/Image.svelte";
-    import Link from "../components/Link.svelte";
-
     import { createHighlighter, type HighlighterGeneric } from "shiki";
 
     const shikiThemes = {
@@ -124,45 +115,26 @@
         return shikiDefaultLang;
     }
 
-    // ── Component registry ──────────────────────────────────────────────────────
-    // Maps lowercase HTML tag name → Svelte component.
-    // When markdown contains e.g. <Badge type="tip" text="NEW" />, the browser
-    // lowercases it to <badge>; after render we mount the real Svelte component.
-
-    const COMPONENT_REGISTRY: Record<string, any> = {
-        badge: Badge,
-        button: Button,
-        image: Image,
-        link: Link,
-    };
+    let runtimeRenderHandlers: RenderHandler[] = [];
+    let themeChangeRenderHandlers: RenderHandler[] = [];
 
     let mountedInstances: ReturnType<typeof mount>[] = [];
 
     function hydrateComponents(root: HTMLElement) {
         for (const c of mountedInstances) unmount(c);
         mountedInstances = [];
-        for (const [tagName, Component] of Object.entries(COMPONENT_REGISTRY)) {
-            for (const el of Array.from(
-                root.querySelectorAll(tagName),
-            ) as HTMLElement[]) {
-                // Keep code-group tabs as native <button> elements. If we hydrate
-                // them into the generic Button component they look like CTA buttons
-                // instead of tabs and lose rcg-tab styling.
-                if (tagName === "button" && el.closest(".rehype-code-group"))
-                    continue;
 
-                const props: Record<string, string> = {};
-                for (const attr of Array.from(el.attributes)) {
-                    props[attr.name] = attr.value;
-                }
-                // If Badge / Button has text children but no text prop, pass textContent
-                if (!props.text && el.textContent?.trim()) {
-                    props.text = el.textContent.trim();
-                }
+        for (const [tagName, entry] of Object.entries(COMPONENT_REGISTRY)) {
+            const selector = entry.selector ?? tagName;
+            for (const el of Array.from(
+                root.querySelectorAll(selector),
+            ) as HTMLElement[]) {
+                const props = entry.buildProps(el);
+
                 const wrapper = document.createElement("span");
                 el.replaceWith(wrapper);
                 mountedInstances.push(
-                    mount(Component, { target: wrapper, props }),
+                    mount(entry.component, { target: wrapper, props }),
                 );
             }
         }
@@ -439,37 +411,30 @@
     // gets the correct relative-path context.
 
     function buildProcessor(currentBaseUrl: string, currentDocsPrefix: string) {
-        return unified()
-            .use(remarkParse)
-            .use(remarkGfm)
-            .use(remarkInlineAttrs)
-            .use(remarkImportsBrowser, {
-                baseUrl: currentBaseUrl,
-                docsPrefix: currentDocsPrefix,
-            })
-            .use(remarkCodeMeta)
-            .use(remarkContainers)
-            .use(remarkCustomAnchors)
-            .use(remarkRehype, { allowDangerousHtml: true })
-            .use(rehypeSlug)
-            .use(rehypeAutolinkHeadings, {
-                behavior: "prepend",
-                properties: {
-                    class: "header-anchor",
-                    ariaHidden: "true",
-                    tabIndex: -1,
-                },
-                content: { type: "text", value: "#" },
-            })
-            .use(rehypeStepsWrapper)
-            .use(rehypeMermaid)
-            .use(rehypeShiki)
-            .use(rehypeContainers)
-            .use(rehypeCodeGroup)
-            .use(rehypeCodeTitle)
-            .use(rehypeTocPlaceholder)
-            .use(rehypeStringify, { allowDangerousHtml: true });
+        const processor = unified();
+        applyPluginEntries(
+            processor,
+            getRemarkPluginEntries(currentBaseUrl, currentDocsPrefix),
+        );
+        applyPluginEntries(
+            processor,
+            getRehypePluginEntries({
+                rehypeStepsWrapper,
+                rehypeMermaid,
+                rehypeShiki,
+            }),
+        );
+        return processor;
     }
+
+    runtimeRenderHandlers = getRuntimeRenderHandlers({
+        hydrateComponents,
+        initMermaid,
+    });
+
+    themeChangeRenderHandlers = getThemeChangeRenderHandlers({
+        rerenderMermaid,
+    });
 
     // ── Reactive rendering ────────────────────────────────────────────────────────
 
@@ -498,11 +463,9 @@
     $effect(() => {
         const _ = html;
         if (!_ || !containerEl) return;
-        hydrateComponents(containerEl);
-        initMermaid(
-            containerEl,
-            untrack(() => activeMermaidThemeConfig),
-        );
+        void runRenderHandlers(containerEl, runtimeRenderHandlers, {
+            mermaidThemeConfig: untrack(() => activeMermaidThemeConfig),
+        });
     });
 
     // Effect 2: fires when the effective mermaid theme changes (light ↔ dark toggle).
@@ -512,7 +475,9 @@
     $effect(() => {
         const config = activeMermaidThemeConfig;
         if (!containerEl) return;
-        rerenderMermaid(containerEl, config);
+        void runRenderHandlers(containerEl, themeChangeRenderHandlers, {
+            mermaidThemeConfig: config,
+        });
     });
 </script>
 

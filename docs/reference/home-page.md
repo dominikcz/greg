@@ -1,34 +1,52 @@
----
+﻿---
 title: Home Page
-order: 6
 ---
 
-# Home Page — Hero & Features
+# Home Page - Hero & Features
 
 Greg does not use frontmatter-based layouts. Instead, the `<Hero>` and
 `<Features>` components are used directly inside Markdown pages to compose a
 landing / home page.
 
+For these components there is no dedicated directive/container shorthand
+(like `::: ...`). Use component tags directly (`<Hero ... />`,
+`<Features ... />`).
+
+## Authoring styles
+
+`Hero` and `Features` are available in both authoring contexts:
+
+- Markdown docs pages (`.md`) via component tags
+- Direct `.svelte` usage via imported components
 
 ## Hero
 
 The `<Hero>` component renders a large introductory section with a name, tagline,
 optional image and call-to-action buttons.
 
-### Basic usage
+::: code-group labels=[markdown, output]
 
-```md
-<Hero
-  name="My Project"
-  text="The fastest way to document things."
-  tagline="Write once, ship everywhere."
-  image={{ src: '/logo.svg', alt: 'My Project logo' }}
-  actions={[
-    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
-    { theme: 'alt',   text: 'GitHub',      link: 'https://github.com/…' },
-  ]}
-/>
+<<< @/snippets/reference/home-hero-example.md
+
+<!--@include: @/snippets/reference/home-hero-example.md-->
+
+:::
+
+### Direct component usage (`.svelte`)
+
+::: code-group labels=[markdown, output]
+
+```svelte
+<script>
+  import Hero from '$components/Hero.svelte';
+</script>
+
+<<< @/snippets/reference/home-hero-example.md
 ```
+
+<!--@include: @/snippets/reference/home-hero-example.md-->
+
+:::
 
 ### Props
 
@@ -47,7 +65,7 @@ type ThemeImage =
   | { dark: string; light: string; alt?: string };
 
 interface Props {
-  name?: string;       // product name — displayed with accent colour
+  name?: string;       // product name - displayed with accent colour
   text?: string;       // main tagline (h1)
   tagline?: string;    // sub-tagline
   image?: ThemeImage;  // optional hero image (right side)
@@ -67,21 +85,34 @@ For advanced customisation, `Hero` exposes several Svelte snippet slots:
 | `heroImage`        | Replaces the default image           |
 | `heroActionsAfter` | After the action buttons             |
 
-
 ## Features
 
 The `<Features>` component renders a responsive grid of feature cards below the
 Hero section.
 
-### Basic usage
+::: code-group labels=[markdown, output]
 
-```md
-<Features features={[
-  { icon: '🚀', title: 'Fast', details: 'Highlights code at build time with Shiki.' },
-  { icon: '🔍', title: 'Searchable', details: 'Full-text fuzzy search included.' },
-  { icon: '🌗', title: 'Themed', details: 'Dark and light modes out of the box.' },
-]} />
+<<< @/snippets/reference/home-features-example.md
+
+<!--@include: @/snippets/reference/home-features-example.md-->
+
+:::
+
+### Direct component usage (`.svelte`)
+
+::: code-group labels=[markdown, output]
+
+```svelte
+<script>
+  import Features from '$components/Features.svelte';
+</script>
+
+<<< @/snippets/reference/home-features-example.md
 ```
+
+<!--@include: @/snippets/reference/home-features-example.md-->
+
+:::
 
 ### Icon types
 
@@ -89,9 +120,9 @@ Icons can be emoji strings, image URLs, or dark/light image pairs:
 
 ```md
 <Features features={[
-  { icon: '🛠️',     title: '…', details: '…' },
-  { icon: { src: '/icons/rocket.svg' },              title: '…', details: '…' },
-  { icon: { dark: '/icons/d.svg', light: '/icons/l.svg' }, title: '…', details: '…' },
+  { icon: 'tool', title: 'Tooling', details: 'Fast setup.' },
+  { icon: { src: '/icons/rocket.svg' }, title: 'Launch', details: 'Ready to go.' },
+  { icon: { dark: '/icons/d.svg', light: '/icons/l.svg' }, title: 'Theme-aware', details: 'Matches color mode.' },
 ]} />
 ```
 
@@ -122,27 +153,12 @@ The grid automatically adapts based on the number of features:
 | Multiple of 3 | 3-column               |
 | Other         | 4-column with wrapping |
 
-
 ## Full home page example
 
-```md
-<script>
-  // Optional — all components are auto-imported
-</script>
+::: code-group labels=[markdown, output]
 
-<Hero
-  name="Greg"
-  text="Svelte-powered documentation engine"
-  tagline="Write Markdown, get beautiful docs."
-  actions={[
-    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
-    { theme: 'alt',   text: 'GitHub',      link: 'https://github.com/your-org/greg' },
-  ]}
-/>
+<<< @/snippets/reference/home-full-example.md
 
-<Features features={[
-  { icon: '📝', title: 'Markdown-first', details: 'Rich extensions, zero config.' },
-  { icon: '⚡', title: 'Vite-powered',   details: 'Instant HMR and fast builds.' },
-  { icon: '🔷', title: 'Svelte 5',       details: 'Runes-based, no overhead.' },
-]} />
-```
+<!--@include: @/snippets/reference/home-full-example.md-->
+
+:::

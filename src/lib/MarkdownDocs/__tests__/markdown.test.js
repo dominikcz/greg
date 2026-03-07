@@ -249,10 +249,9 @@ describe('remarkContainers — unknown type is ignored', () => {
 describe('rehype-code-group', () => {
 	it('renders ::: code-group labels into tabbed group', async () => {
 		const html = await processMarkdown('::: code-group labels=[npm, pnpm]\n\n```bash\nnpm i\n```\n\n```bash\npnpm add\n```\n\n:::');
+		expect(html).toContain('<codegroup');
 		expect(html).toContain('rehype-code-group');
-		expect(html).toContain('rcg-tab-container');
-		expect(html).toContain('>npm<');
-		expect(html).toContain('>pnpm<');
+		expect(html).toMatch(/data-codegroup-tabs="\[[^"]*npm[^"]*pnpm[^"]*\]"/);
 		expect(html).toContain('rcg-block');
 		expect(html).not.toContain('<head>');
 		expect(html).not.toContain('<script');
@@ -260,20 +259,17 @@ describe('rehype-code-group', () => {
 
 	it('infers labels from code block language when labels are omitted', async () => {
 		const html = await processMarkdown('::: code-group\n\n```javascript\nconsole.log(1)\n```\n\n```typescript\nconst n: number = 1\n```\n\n:::');
-		expect(html).toContain('>js<');
-		expect(html).toContain('>ts<');
+		expect(html).toMatch(/data-codegroup-tabs="\[[^"]*js[^"]*ts[^"]*\]"/);
 	});
 
 	it('prefers title metadata for labels when available', async () => {
 		const html = await processMarkdown('::: code-group\n\n<pre data-code-lang="js" data-code-title="config.js"><code>a</code></pre>\n\n<pre data-code-lang="ts" data-code-title="config.ts"><code>b</code></pre>\n\n:::');
-		expect(html).toContain('>config.js<');
-		expect(html).toContain('>config.ts<');
+		expect(html).toMatch(/data-codegroup-tabs="\[[^"]*config\.js[^"]*config\.ts[^"]*\]"/);
 	});
 
 	it('uses bracket title from fenced code metastring when labels are omitted', async () => {
 		const html = await processMarkdown('::: code-group\n\n```js [config.js]\nexport default {}\n```\n\n```ts [config.ts]\nexport default {}\n```\n\n:::');
-		expect(html).toContain('>config.js<');
-		expect(html).toContain('>config.ts<');
+		expect(html).toMatch(/data-codegroup-tabs="\[[^"]*config\.js[^"]*config\.ts[^"]*\]"/);
 	});
 
 	it('keeps raw html blocks inside code-group', async () => {
@@ -295,8 +291,7 @@ describe('rehype-code-title', () => {
 
 	it('does not render duplicate title bars inside code-group', async () => {
 		const html = await processMarkdown('::: code-group\n\n```js [config.js]\nexport default {}\n```\n\n```ts [config.ts]\nexport default {}\n```\n\n:::');
-		expect(html).toContain('>config.js<');
-		expect(html).toContain('>config.ts<');
+		expect(html).toMatch(/data-codegroup-tabs="\[[^"]*config\.js[^"]*config\.ts[^"]*\]"/);
 		expect(html).not.toContain('code-block-with-title');
 	});
 });
@@ -504,8 +499,7 @@ describe('imports — snippets and markdown includes', () => {
 
 	it('supports snippet title from trailing [title]', async () => {
 		const html = await processMarkdown('::: code-group\n\n<<< ./snippets/sample.js [sample.js]\n\n<<< ./snippets/sample.js [copy.js]\n\n:::', { filename: testFile });
-		expect(html).toContain('>sample.js<');
-		expect(html).toContain('>copy.js<');
+		expect(html).toMatch(/data-codegroup-tabs="\[[^"]*sample\.js[^"]*copy\.js[^"]*\]"/);
 	});
 
 	it('supports snippet region and line range selection', async () => {

@@ -105,37 +105,13 @@ function inferLabelFromBlock(block, index) {
 	return `Tab ${index + 1}`;
 }
 
-function createTabs(tabLabels, uniqueId) {
-	return {
-		type: 'element',
-		tagName: 'div',
-		properties: { className: ['rcg-tab-container'], role: 'tablist' },
-		children: tabLabels.map((label, index) => ({
-			type: 'element',
-			tagName: 'button',
-			properties: {
-				type: 'button',
-				className: ['rcg-tab', ...(index === 0 ? ['active'] : [])],
-				role: 'tab',
-				'aria-selected': index === 0 ? 'true' : 'false',
-				'aria-controls': `${uniqueId}-block-${index}`,
-				id: `${uniqueId}-tab-${index}`,
-			},
-			children: [{ type: 'text', value: label }],
-		})),
-	};
-}
-
-function createBlockWrapper(block, uniqueId, index) {
+function createBlockWrapper(block, index) {
 	const isActive = index === 0;
 	return {
 		type: 'element',
 		tagName: 'div',
 		properties: {
 			className: ['rcg-block', ...(isActive ? ['active'] : [])],
-			role: 'tabpanel',
-			'aria-labelledby': `${uniqueId}-tab-${index}`,
-			id: `${uniqueId}-block-${index}`,
 			...(isActive ? {} : { hidden: true }),
 		},
 		children: [block],
@@ -144,8 +120,6 @@ function createBlockWrapper(block, uniqueId, index) {
 
 export default function rehypeCodeGroup() {
 	return (tree) => {
-		let counter = 0;
-
 		visit(tree, 'element', (node, index, parent) => {
 			if (!parent || typeof index !== 'number') return;
 			if (node.tagName !== 'p') return;
@@ -166,7 +140,6 @@ export default function rehypeCodeGroup() {
 			if (endIndex === -1) return;
 
 			const explicitLabels = (startMatch[1] ?? '').split(',').map((label) => label.trim()).filter(Boolean);
-			const uniqueId = `rcg-${counter++}`;
 			const between = parent.children.slice(index + 1, endIndex);
 			const codeBlocks = between.filter((child) => !isIgnorableNode(child));
 			const usedLabels = codeBlocks.map((block, blockIndex) => {
@@ -175,12 +148,13 @@ export default function rehypeCodeGroup() {
 
 			const groupNode = {
 				type: 'element',
-				tagName: 'div',
-				properties: { className: ['rehype-code-group'] },
-				children: [
-					createTabs(usedLabels, uniqueId),
-					...codeBlocks.map((block, blockIndex) => createBlockWrapper(block, uniqueId, blockIndex)),
-				],
+				tagName: 'codegroup',
+				properties: {
+					className: ['rehype-code-group'],
+					'data-codegroup-tabs': JSON.stringify(usedLabels),
+					'data-codegroup-active': '0',
+				},
+				children: codeBlocks.map((block, blockIndex) => createBlockWrapper(block, blockIndex)),
 			};
 
 			parent.children.splice(index, endIndex - index + 1, groupNode);

@@ -1,6 +1,5 @@
 ---
 title: Theme & Styling
-order: 5
 ---
 
 # Theme & Styling

@@ -1,6 +1,5 @@
 ---
 title: Steps
-order: 11
 ---
 
 # Steps
@@ -10,6 +9,13 @@ ideal for installation guides, tutorials, and any sequential workflow.
 It is inspired by the Starlight `<Steps>` component.
 
 ## Usage
+
+`Steps` supports two authoring styles:
+
+- Markdown tag usage in docs pages (`<Steps>...</Steps>`)
+- Direct component usage in `.svelte` files
+
+### Markdown tag usage
 
 Wrap a standard Markdown ordered list with `<Steps>`. No import is needed —
 the component is available automatically on every docs page.
@@ -29,6 +35,8 @@ the component is available automatically on every docs page.
    Navigate to `http://localhost:5173` in your browser.
 
 </Steps>
+
+**Output:**
 ````
 
 **Result:**
@@ -45,6 +53,26 @@ the component is available automatically on every docs page.
    Navigate to `http://localhost:5173` in your browser.
 
 </Steps>
+
+### Direct component usage (`.svelte`)
+
+```svelte
+<script>
+   import Steps from '$components/Steps.svelte';
+</script>
+
+<Steps>
+   <ol>
+      <li><strong>Install dependencies</strong>Run <code>npm install</code>.</li>
+      <li><strong>Start dev server</strong>Run <code>npm run dev</code>.</li>
+      <li><strong>Open app</strong>Visit <code>http://localhost:5173</code>.</li>
+   </ol>
+</Steps>
+```
+
+**Output:**
+
+Equivalent numbered steps UI as in Markdown usage.
 
 ## Step titles
 

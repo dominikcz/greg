@@ -1,6 +1,5 @@
 ---
 title: MarkdownDocs Component
-order: 1
 ---
 
 # `<MarkdownDocs>` Component
@@ -150,3 +149,51 @@ const gregConfig = {
   },
 };
 ```
+
+## Runtime extension model
+
+`MarkdownRenderer.svelte` now delegates registry-style extension points to
+`src/lib/MarkdownDocs/markdownRendererRuntime.ts` instead of keeping hardcoded
+branches inline. This keeps runtime rendering predictable and makes new
+features easier to add.
+
+### 1) Component hydration registry
+
+`COMPONENT_REGISTRY` maps a tag name to:
+
+- a Svelte `component`
+- a `buildProps(el)` function
+
+This is used for custom component tags like `badge`, `button`, `image`,
+`link`, and `codegroup`.
+
+### 2) Markdown plugin registries
+
+The markdown pipeline is assembled from two ordered registries:
+
+- `getRemarkPluginEntries(baseUrl, docsPrefix)`
+- `getRehypePluginEntries()`
+
+These cover, among others:
+
+- custom containers (`remarkContainers` + `rehypeContainers`)
+- code blocks (`rehypeShiki`, `rehypeCodeTitle`, `rehypeCodeGroup`)
+- Mermaid preprocessing (`rehypeMermaid`)
+- Steps normalization (`rehypeStepsWrapper`)
+- headings/TOC (`rehypeSlug`, `rehypeAutolinkHeadings`, `rehypeTocPlaceholder`)
+
+### 3) Render handlers (post-HTML stage)
+
+After HTML is rendered, handlers are executed from ordered lists:
+
+- `RUNTIME_RENDER_HANDLERS` (full render pass)
+- `THEME_CHANGE_RENDER_HANDLERS` (theme-only pass)
+
+Current handlers include component hydration and Mermaid initialization/re-render.
+
+## What to extend where
+
+- Use **component registry** for interactive widgets rendered from custom tags.
+- Use **rehype/remark registries** for static HTML transforms.
+- Use **render handlers** for browser-only work that needs live DOM access
+  (for example diagram engines).
