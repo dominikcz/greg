@@ -24,7 +24,7 @@ search: {
 | -------- | ----------------------------------------------------------------------- | ---------------------------- |
 | `server` | Browser calls `GET /api/search?q=...` and receives ready-ranked results | Large doc sets, best default |
 | `local`  | Browser downloads `/search-index.json` and runs Fuse.js locally         | Small doc sets               |
-| `none`   | Search UI is disabled                                                   | Sites without search         |
+| `none`   | Built-in search UI (button + modal + shortcuts) is disabled            | Sites without built-in search |
 
 
 ## How indexing works
@@ -44,8 +44,7 @@ At **run time**:
 Use both plugins in `vite.config.js`:
 
 ```js
-import { vitePluginSearchIndex } from './src/lib/MarkdownDocs/vitePluginSearchIndex.js';
-import { vitePluginSearchServer } from './src/lib/MarkdownDocs/vitePluginSearchServer.js';
+import { vitePluginSearchIndex, vitePluginSearchServer } from '@dominikcz/greg/plugins';
 
 export default defineConfig({
   plugins: [
@@ -93,6 +92,9 @@ If you want Algolia, Meilisearch, Typesense, or your own backend:
 
 - set `provider: 'none'` in `greg.config.js`,
 - pass `searchProvider` prop to `<MarkdownDocs>`.
+
+With `searchProvider` provided, Greg enables the Search button/modal again and
+routes queries through your function.
 
 `searchProvider` signature:
 

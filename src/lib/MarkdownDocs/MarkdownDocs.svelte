@@ -190,7 +190,9 @@
     });
 
     // -- Search ------------------------------------------------------------------
-    const searchEnabled = (gregConfig as any)?.search?.provider !== "none";
+    const searchEnabled =
+        Boolean(searchProvider) ||
+        (gregConfig as any)?.search?.provider !== "none";
     let searchOpen = $state(false);
 
     $effect(() => {
@@ -360,6 +362,7 @@
         {version}
         {nav}
         {theme}
+        showSearch={searchEnabled}
         onThemeChange={(t) => (theme = t)}
         navigate={router.navigate}
         onOpenSearch={() => (searchOpen = true)}
@@ -484,12 +487,14 @@
             {/if}
         </aside>
     </div>
-    <SearchModal
-        bind:open={searchOpen}
-        onClose={() => (searchOpen = false)}
-        onNavigate={router.navigateWithAnchor}
-        {searchProvider}
-    />
+    {#if searchEnabled}
+        <SearchModal
+            bind:open={searchOpen}
+            onClose={() => (searchOpen = false)}
+            onNavigate={router.navigateWithAnchor}
+            {searchProvider}
+        />
+    {/if}
     {#if backToTop}
         <BackToTop target={mainEl} />
     {/if}

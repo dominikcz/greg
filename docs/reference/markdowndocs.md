@@ -117,7 +117,7 @@ full-text search index:
 
 ```js
 // vite.config.js
-import { vitePluginSearchIndex } from './src/lib/MarkdownDocs/vitePluginSearchIndex.js';
+import { vitePluginSearchIndex } from '@dominikcz/greg/plugins';
 
 export default defineConfig({
   plugins: [

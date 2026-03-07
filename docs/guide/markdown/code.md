@@ -5,7 +5,7 @@ order: 5
 
 # Code blocks and groups
 
-For syntax highlighting, line focus/diff/word markers and VitePress-style
+For syntax highlighting, line focus/diff markers and VitePress-style
 compatibility notes, see [Syntax highlighting](./syntax-highlighting).
 
 ## Code block title

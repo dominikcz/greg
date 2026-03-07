@@ -6,7 +6,7 @@ order: 4
 ## Syntax highlighting
 
 Code blocks are highlighted at build time by [Shiki](https://shiki.style) using
-the `github-dark` theme:
+`github-light` (light mode) and `github-dark` (dark mode):
 
 <<< /__partials/markdown/examples/basic.md
 

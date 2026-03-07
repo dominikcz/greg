@@ -96,14 +96,17 @@ splitter snaps to the accent colour on hover.
 
 ## Code highlighting theme
 
-Code blocks are highlighted by Shiki. The default theme is `github-dark` (applied
-for both light and dark modes — Shiki runs at build time, not in the browser).
+Code blocks are highlighted by Shiki. Greg uses dual themes by default:
+`github-light` for light mode and `github-dark` for dark mode.
 
-To change the theme, edit `svelte.config.js`:
+To change themes, edit `svelte.config.js`:
 
 ```js
 // svelte.config.js
-const shikiTheme = 'dracula';   // any Shiki-supported theme
+const shikiThemes = {
+  light: 'github-light',
+  dark: 'github-dark',
+};
 ```
 
 Supported Shiki themes: see [shiki.style/themes](https://shiki.style/themes).

@@ -109,7 +109,6 @@ export default {
 
 ### 0.9
 
-- [ ] full shiki support
 - [ ] AI search integration
 - [ ] i18n support
 - [ ] multiple versions support

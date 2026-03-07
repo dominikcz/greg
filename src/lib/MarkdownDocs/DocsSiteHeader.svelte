@@ -14,6 +14,7 @@
 		version?: string;
 		nav?: NavItem[];
 		theme: "light" | "dark";
+		showSearch?: boolean;
 		onThemeChange: (t: "light" | "dark") => void;
 		navigate: (path: string) => void;
 		onOpenSearch: () => void;
@@ -48,6 +49,7 @@
 		version = "",
 		nav = [],
 		theme,
+		showSearch = true,
 		onThemeChange,
 		navigate,
 		onOpenSearch,
@@ -228,25 +230,27 @@
 				aria-pressed={theme === "dark"}><Moon size={15} /></button
 			>
 		</div>
-		<button class="search-trigger" onclick={onOpenSearch} type="button">
-			<svg
-				class="search-trigger-icon"
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-			>
-				<circle cx="11" cy="11" r="8" /><line
-					x1="21"
-					y1="21"
-					x2="16.65"
-					y2="16.65"
-				/>
-			</svg>
-			<span class="search-trigger-label">Search…</span>
-			<span class="search-trigger-hint"><kbd>Ctrl</kbd><kbd>K</kbd></span>
-		</button>
+		{#if showSearch}
+			<button class="search-trigger" onclick={onOpenSearch} type="button">
+				<svg
+					class="search-trigger-icon"
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<circle cx="11" cy="11" r="8" /><line
+						x1="21"
+						y1="21"
+						x2="16.65"
+						y2="16.65"
+					/>
+				</svg>
+				<span class="search-trigger-label">Search…</span>
+				<span class="search-trigger-hint"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+			</button>
+		{/if}
 	</div>
 </header>
 
