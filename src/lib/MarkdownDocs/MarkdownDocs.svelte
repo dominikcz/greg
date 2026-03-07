@@ -190,9 +190,10 @@
     });
 
     // -- Search ------------------------------------------------------------------
-    const searchEnabled =
+    const searchEnabled = $derived(
         Boolean(searchProvider) ||
-        (gregConfig as any)?.search?.provider !== "none";
+            (gregConfig as any)?.search?.provider !== "none",
+    );
     let searchOpen = $state(false);
 
     $effect(() => {
@@ -301,9 +302,7 @@
 
         if (href.startsWith("#")) {
             event.preventDefault();
-            document
-                .getElementById(href.slice(1))
-                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            router.navigateWithAnchor(router.active, href.slice(1));
             return;
         }
 

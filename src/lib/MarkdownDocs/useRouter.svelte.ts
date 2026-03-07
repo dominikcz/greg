@@ -14,16 +14,36 @@ function normalizePath(raw: string): string {
 	return decodeURI(raw).replace(/\/$/, '') || '/';
 }
 
+function normalizeHash(raw?: string): string {
+	if (!raw) return '';
+	const value = String(raw).trim().replace(/^#/, '');
+	return value ? `#${value}` : '';
+}
+
+export function buildNavigationUrl(path: string, anchor?: string): string {
+	return `${normalizePath(path)}${normalizeHash(anchor)}`;
+}
+
+export function isSameNavigationTarget(
+	currentPath: string,
+	currentHash: string | undefined,
+	nextPath: string,
+	nextAnchor?: string,
+): boolean {
+	return normalizePath(currentPath) === normalizePath(nextPath)
+		&& normalizeHash(currentHash) === normalizeHash(nextAnchor);
+}
+
 export function useRouter(
 	knownPaths: Record<string, unknown>,
 	getRootPath: () => string,
 ) {
 	let active = $state(normalizePath(window.location.pathname));
 
-	function navigate(path: string) {
-		if (normalizePath(window.location.pathname) === path) return;
-		history.pushState(null, '', path);
-		active = path;
+	function navigate(path: string, anchor?: string) {
+		if (isSameNavigationTarget(window.location.pathname, window.location.hash || '', path, anchor)) return;
+		history.pushState(null, '', buildNavigationUrl(path, anchor));
+		active = normalizePath(path);
 	}
 
 	function handlePopState() {
@@ -55,7 +75,7 @@ export function useRouter(
 		navigate,
 		/** Navigate and after content loads scroll to anchor. */
 		navigateWithAnchor(path: string, anchor?: string) {
-			navigate(path);
+			navigate(path, anchor);
 			if (anchor) {
 				tick().then(() => setTimeout(() => {
 					document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' });

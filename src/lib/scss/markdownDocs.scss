@@ -439,7 +439,7 @@
     /* ── Heading anchors ──────────────────────────────────────────────── */
     h1, h2, h3, h4, h5, h6 {
         &:hover .header-anchor,
-        .header-anchor:focus {
+        &:has(.header-anchor:focus-within) .header-anchor {
             opacity: 1;
         }
     }
@@ -1056,8 +1056,7 @@ body::-webkit-scrollbar-thumb:hover,
         color: var(--greg-color);
     }
 
-    &:focus,
-    &:focus-visible {
+    &:focus-within {
         outline: none;
         box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--greg-accent) 45%, transparent);
     }

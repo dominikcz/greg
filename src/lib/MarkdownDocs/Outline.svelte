@@ -154,6 +154,7 @@
 	});
 
 	function scrollTo(id: string) {
+		history.pushState(null, "", `${window.location.pathname}#${id}`);
 		container
 			?.querySelector(`#${CSS.escape(id)}`)
 			?.scrollIntoView({ behavior: "smooth", block: "start" });

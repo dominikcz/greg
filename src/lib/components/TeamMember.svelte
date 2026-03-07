@@ -256,7 +256,8 @@
     }
 
     :global(.sp-link:hover),
-    :global(.sp-link:focus) {
+    .links:focus-within :global(.sp-link),
+    :global(.sp-link:focus-within) {
         outline: none;
         color: var(--greg-menu-active-color);
         background-color: var(--greg-sponsor-color);
