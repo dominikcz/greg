@@ -68,7 +68,7 @@ router:
 
 ```md
 [Getting Started](./getting-started)           <!-- relative -->
-[API Reference](/docs/reference/api)           <!-- absolute -->
+[API Reference](/reference/api)           <!-- absolute -->
 [Go to anchor](#section-heading)               <!-- same-page anchor -->
 [Other page + anchor](./other#some-section)    <!-- cross-page anchor -->
 ```

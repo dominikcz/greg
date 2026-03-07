@@ -56,7 +56,7 @@ and reference them with absolute paths.
 
 ## Inline attributes for sizing
 
-Use the [inline attributes](/docs/guide/markdown#inline-attributes-on-links-and-images)
+Use the [inline attributes](/guide/markdown/inline-attributes)
 syntax to add `width`, `height` or CSS classes directly in Markdown:
 
 ```md

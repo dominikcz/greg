@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import path from 'node:path';
 import { process as processMarkdown } from './helpers.js';
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import rehypeStringify from 'rehype-stringify';
+import { remarkImportsBrowser } from '../remarkImportsBrowser.js';
 
 // ─── rehype-slug ───────────────────────────────────────────────────────────────
 
@@ -574,5 +579,33 @@ describe('imports — snippets and markdown includes', () => {
 			imports: { sourceRoot: process.cwd(), docsDir: 'documentation' },
 		});
 		expect(html).toContain('href="/documentation/foo"');
+	});
+});
+
+describe('remarkImportsBrowser — link normalization', () => {
+	async function renderBrowserMarkdown(markdown, options) {
+		const file = await unified()
+			.use(remarkParse)
+			.use(remarkImportsBrowser, options)
+			.use(remarkRehype)
+			.use(rehypeStringify)
+			.process(markdown);
+		return String(file);
+	}
+
+	it('resolves ./ links relative to current markdown file directory', async () => {
+		const html = await renderBrowserMarkdown('[Header](./header-anchors)', {
+			baseUrl: '/docs/guide/markdown/index.md',
+			docsPrefix: '/docs',
+		});
+		expect(html).toContain('href="/docs/guide/markdown/header-anchors"');
+	});
+
+	it('maps leading / links to docsPrefix rootPath', async () => {
+		const html = await renderBrowserMarkdown('[Config](/reference/api.md)', {
+			baseUrl: '/documentation/guide/markdown/index.md',
+			docsPrefix: '/documentation',
+		});
+		expect(html).toContain('href="/documentation/reference/api"');
 	});
 });

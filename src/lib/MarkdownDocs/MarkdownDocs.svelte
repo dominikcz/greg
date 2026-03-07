@@ -228,12 +228,24 @@ const hashIdx  = href.indexOf('#');
 const pathPart = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
 const hashPart = hashIdx >= 0 ? href.slice(hashIdx + 1) : '';
 
+const cleanRootPath = rootPath.replace(/\/+$/, '');
+
 let resolvedPath: string;
 if (pathPart.startsWith('/')) {
+// In markdown docs, leading "/" is docs-root relative (rootPath),
+// matching include semantics.
+if (pathPart === cleanRootPath || pathPart.startsWith(cleanRootPath + '/')) {
 resolvedPath = pathPart;
 } else {
+resolvedPath = cleanRootPath + pathPart;
+}
+} else {
 try {
-resolvedPath = new URL(pathPart, window.location.origin + router.active).pathname;
+// Resolve relative links against the current markdown file directory,
+// not the route path (which may not end with "/").
+const mdPath = router.activeMarkdownPath ?? `${router.active}.md`;
+const mdDir = mdPath.slice(0, mdPath.lastIndexOf('/') + 1);
+resolvedPath = new URL(pathPart, window.location.origin + mdDir).pathname;
 } catch {
 return;
 }

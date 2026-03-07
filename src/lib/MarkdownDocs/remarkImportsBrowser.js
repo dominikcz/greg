@@ -31,6 +31,11 @@ const extToLang = {
     '.bash': 'bash', '.yml': 'yaml', '.yaml': 'yaml',
 };
 
+const PARSE_BASE_ORIGIN =
+    typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : 'https://example.invalid';
+
 // ── URL / path utilities ──────────────────────────────────────────────────────
 
 /** Browser-safe extname: '/foo/bar.js' → '.js' */
@@ -48,20 +53,25 @@ function extname(urlPath) {
  *   ./path  ../path     → resolved relative to currentDirUrl
  */
 function resolveImportUrl(specifier, currentDirUrl, docsPrefix) {
+    const cleanPrefix = docsPrefix.replace(/\/+$/, '');
+
     if (specifier === '@') return '/';
     if (specifier.startsWith('@/')) return '/' + specifier.slice(2);
     if (specifier.startsWith('@')) return '/' + specifier.slice(1);
 
     // /absolute → inside docsPrefix
-    if (specifier.startsWith('/')) return docsPrefix + '/' + specifier.slice(1);
+    if (specifier.startsWith('/')) {
+        if (specifier === cleanPrefix || specifier.startsWith(cleanPrefix + '/')) return specifier;
+        return cleanPrefix + specifier;
+    }
 
     // relative (./foo, ../bar, plain name)
     // Append trailing slash to currentDirUrl to ensure correct resolution
     const base = currentDirUrl.endsWith('/') ? currentDirUrl : currentDirUrl + '/';
     try {
-        return new URL(specifier, 'http://x' + base).pathname;
+        return new URL(specifier, PARSE_BASE_ORIGIN + base).pathname;
     } catch {
-        return docsPrefix + '/' + specifier;
+        return cleanPrefix + '/' + specifier;
     }
 }
 
@@ -83,10 +93,12 @@ function normalizeInternalLinkUrl(url) {
     return (normalized || '.') + hashPart;
 }
 
-function expandAliasInUrls(node) {
+function expandAliasInUrls(node, currentDirUrl, docsPrefix) {
     if (node.type === 'link' && typeof node.url === 'string') {
+        if (node.url.startsWith('#')) return;
         if (!node.data?.hProperties?.target) {
-            node.url = normalizeInternalLinkUrl(node.url);
+            const resolved = resolveImportUrl(node.url, currentDirUrl, docsPrefix);
+            node.url = normalizeInternalLinkUrl(resolved);
         }
     }
 }
@@ -271,7 +283,7 @@ async function transformChildren(children, currentDirUrl, docsPrefix, depth) {
     for (let i = 0; i < children.length; i++) {
         const node = children[i];
         const nodeDir = node?.data?.__includeDirUrl || currentDirUrl;
-        expandAliasInUrls(node);
+        expandAliasInUrls(node, nodeDir, docsPrefix);
 
         if (node?.type === 'paragraph' && Array.isArray(node.children)) {
             const line = node.children.map(inlineNodeText).join('').trim();

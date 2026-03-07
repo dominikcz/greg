@@ -83,7 +83,7 @@ Controls the right-side **Outline** (on-this-page) panel.
 - **Default:** `undefined`
 
 Displays a [Carbon Ads](https://www.carbonads.net/) block in the outline sidebar.
-See the [Carbon Ads reference](/docs/reference/carbon-ads) for details.
+See the [Carbon Ads reference](/reference/carbon-ads) for details.
 
 ```svelte
 <MarkdownDocs

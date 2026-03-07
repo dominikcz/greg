@@ -117,6 +117,6 @@ Greg currently ships as an SPA.
 Implications for Greg deployments:
 
 - Configure your server to rewrite all routes to `index.html`
-  (see [Deploying](/docs/guide/deploying)).
+  (see [Deploying](/guide/deploying)).
 - Crawlers that do not execute JavaScript will not see full page content.
 - Page-specific `<meta>` tags are not generated as static HTML per route.

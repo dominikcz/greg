@@ -91,7 +91,7 @@ files whose name starts with `__`) becomes a page accessible via its path.
 <MarkdownDocs />
 ```
 
-See the [`<MarkdownDocs>` reference](/docs/reference/markdowndocs) for a full list
+See the [`<MarkdownDocs>` reference](/reference/markdowndocs) for a full list
 of available props.
 
 
