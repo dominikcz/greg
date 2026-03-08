@@ -10,6 +10,50 @@ export default {
     /** URL prefix of the docs folder. */
     rootPath: '/docs',
 
+    // ── Locales (VitePress-compatible) ─────────────────────────────────────
+    /**
+     * Optional VitePress-style locale map.
+     * Keys are locale paths ('/', '/pl/', ...), resolved under `rootPath`.
+     *
+     * Example for rootPath '/docs':
+     * - '/'    -> '/docs'
+     * - '/pl/' -> '/docs/pl'
+     */
+    // locales: {
+    //     '/': {
+    //         lang: 'en-US',
+    //         title: 'Greg',
+    //         themeConfig: {
+    //             nav: [
+    //                 { text: 'Guide', link: '/docs/guide' },
+    //                 { text: 'Reference', link: '/docs/reference' },
+    //             ],
+    //             sidebar: [
+    //                 { text: 'Guide', auto: '/guide' },
+    //                 { text: 'Reference', auto: '/reference' },
+    //             ],
+    //             outline: [2, 3],
+    //             lastUpdatedText: 'Last updated:',
+    //         },
+    //     },
+    //     '/pl/': {
+    //         lang: 'pl-PL',
+    //         title: 'Greg PL',
+    //         themeConfig: {
+    //             nav: [
+    //                 { text: 'Przewodnik', link: '/docs/pl/guide' },
+    //                 { text: 'Referencja', link: '/docs/pl/reference' },
+    //             ],
+    //             sidebar: [
+    //                 { text: 'Przewodnik', auto: '/pl/guide' },
+    //                 { text: 'Referencja', auto: '/pl/reference' },
+    //             ],
+    //             outline: { level: [2, 3], label: 'Na tej stronie' },
+    //             lastUpdatedText: 'Zaktualizowano:',
+    //         },
+    //     },
+    // },
+
     /** Version badge shown in the header (empty string = hidden). */
     // version: '1.0.0',
 

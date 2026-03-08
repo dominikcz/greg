@@ -26,6 +26,12 @@
     import PrevNext from "./PrevNext.svelte";
     import { EllipsisVertical } from "@lucide/svelte";
     import gregConfig from "virtual:greg-config";
+    import {
+        type LocaleConfig,
+        getLocaleSwitchItems,
+        normalizeRootPath,
+        resolveLocaleForPath,
+    } from "./localeUtils";
 
     type CarbonAdsOptions = {
         code: string;
@@ -38,12 +44,33 @@
         | { level?: OutlineLevel; label?: string };
 
     type BadgeSpec = string | { text: string; type?: string };
+    type ThemeableImage =
+        | string
+        | { src: string; alt?: string }
+        | { light: string; dark: string; alt?: string };
+    type SocialLinkItem = {
+        icon: string | { svg: string };
+        link: string;
+        ariaLabel?: string;
+    };
     type SidebarItem = {
         text: string;
         link?: string;
         items?: SidebarItem[];
         auto?: string;
         badge?: BadgeSpec;
+    };
+
+    type TopNavItem = {
+        text: string;
+        link?: string;
+        target?: string;
+        items?: {
+            text: string;
+            link?: string;
+            target?: string;
+            items?: { text: string; link?: string; target?: string }[];
+        }[];
     };
 
     type Props = {
@@ -87,17 +114,39 @@
          */
         sidebar?: "auto" | SidebarItem[];
         /** Top navigation bar items. */
-        nav?: {
-            text: string;
-            link?: string;
-            target?: string;
-            items?: {
-                text: string;
-                link?: string;
-                target?: string;
-                items?: { text: string; link?: string; target?: string }[];
-            }[];
-        }[];
+        nav?: TopNavItem[];
+        /** VitePress-compatible i18n routing behavior for locale switcher. */
+        i18nRouting?: boolean;
+        /** VitePress-compatible language switcher aria-label. */
+        langMenuLabel?: string;
+        /** VitePress-compatible mobile sidebar menu label. */
+        sidebarMenuLabel?: string;
+        /** VitePress-compatible skip-to-content label. */
+        skipToContentLabel?: string;
+        /** VitePress-compatible back-to-top aria-label. */
+        returnToTopLabel?: string;
+        /** VitePress-compatible appearance switcher label. */
+        darkModeSwitchLabel?: string;
+        /** VitePress-compatible title for light mode button. */
+        lightModeSwitchTitle?: string;
+        /** VitePress-compatible title for dark mode button. */
+        darkModeSwitchTitle?: string;
+        /** VitePress-compatible previous/next labels. */
+        docFooter?: {
+            prev?: string | false;
+            next?: string | false;
+        };
+        externalLinkIcon?: boolean;
+        siteTitle?: string | false;
+        logo?: ThemeableImage;
+        socialLinks?: SocialLinkItem[];
+        editLink?: { pattern: string; text?: string };
+        footer?: { message?: string; copyright?: string };
+        aside?: boolean | "left";
+        lastUpdated?: {
+            text?: string;
+            formatOptions?: Intl.DateTimeFormatOptions & { forceLocale?: boolean };
+        };
         /**
          * Custom search provider.
          * `(query: string, limit?: number) => Promise<SearchResult[]>`
@@ -110,20 +159,57 @@
 
     let {
         children,
-        rootPath = (gregConfig as any).rootPath ?? "/docs",
-        version = (gregConfig as any).version ?? "",
-        mainTitle = (gregConfig as any).mainTitle ?? "Greg",
+        rootPath: configuredRootPath = (gregConfig as any).rootPath ?? "/docs",
+        version: globalVersion = (gregConfig as any).version ?? "",
+        mainTitle: globalMainTitle = (gregConfig as any).mainTitle ?? "Greg",
         carbonAds = (gregConfig as any).carbonAds,
-        outline = (gregConfig as any).outline ?? ([2, 3] as [number, number]),
+        outline: globalOutline =
+            (gregConfig as any).outline ?? ([2, 3] as [number, number]),
         mermaidTheme = (gregConfig as any).mermaidTheme,
         mermaidThemes,
         breadcrumb = (gregConfig as any).breadcrumb ?? false,
         backToTop = (gregConfig as any).backToTop ?? false,
-        lastModified = (gregConfig as any).lastModified ?? false,
-        sidebar = (gregConfig as any).sidebar ?? "auto",
-        nav = (gregConfig as any).nav ?? [],
+        lastModified: globalLastModified = (gregConfig as any).lastModified ?? false,
+        sidebar: globalSidebar = (gregConfig as any).sidebar ?? "auto",
+        nav: globalNav = (gregConfig as any).nav ?? [],
+        i18nRouting = (gregConfig as any).i18nRouting ?? true,
+        langMenuLabel: globalLangMenuLabel =
+            (gregConfig as any).langMenuLabel ?? "Change language",
+        sidebarMenuLabel: globalSidebarMenuLabel =
+            (gregConfig as any).sidebarMenuLabel ?? "Menu",
+        skipToContentLabel: globalSkipToContentLabel =
+            (gregConfig as any).skipToContentLabel ?? "Skip to content",
+        returnToTopLabel: globalReturnToTopLabel =
+            (gregConfig as any).returnToTopLabel ?? "Back to top",
+        darkModeSwitchLabel: globalDarkModeSwitchLabel =
+            (gregConfig as any).darkModeSwitchLabel ?? "Appearance",
+        lightModeSwitchTitle: globalLightModeSwitchTitle =
+            (gregConfig as any).lightModeSwitchTitle ?? "Switch to light theme",
+        darkModeSwitchTitle: globalDarkModeSwitchTitle =
+            (gregConfig as any).darkModeSwitchTitle ?? "Switch to dark theme",
+        docFooter: globalDocFooter =
+            (gregConfig as any).docFooter ??
+            ({ prev: "Previous", next: "Next" } as {
+                prev?: string | false;
+                next?: string | false;
+            }),
+        externalLinkIcon: globalExternalLinkIcon =
+            (gregConfig as any).externalLinkIcon ?? false,
+        siteTitle: globalSiteTitle = (gregConfig as any).siteTitle,
+        logo: globalLogo = (gregConfig as any).logo,
+        socialLinks: globalSocialLinks =
+            ((gregConfig as any).socialLinks ?? []) as SocialLinkItem[],
+        editLink: globalEditLink = (gregConfig as any).editLink,
+        footer: globalFooter = (gregConfig as any).footer,
+        aside: globalAside = (gregConfig as any).aside ?? true,
+        lastUpdated: globalLastUpdated = (gregConfig as any).lastUpdated,
         searchProvider,
     }: Props = $props();
+
+    const configLocales = ((gregConfig as any).locales ?? {}) as Record<
+        string,
+        LocaleConfig
+    >;
 
     // -- Outline -----------------------------------------------------------------
     function normalizeOutline(
@@ -146,8 +232,6 @@
         return { level: o as OutlineLevel, label: "On this page" };
     }
 
-    const globalOutlineNorm = $derived(normalizeOutline(outline));
-
     let mainEl = $state<HTMLElement | undefined>(undefined);
 
     // -- Modules -----------------------------------------------------------------
@@ -168,14 +252,6 @@
         _mtime?: string;
     };
     const frontmatters = allFrontmatters as Record<string, FrontmatterEntry>;
-
-    let menu = $derived(
-        Array.isArray(sidebar)
-            ? (parseSidebarConfig(sidebar, frontmatters, rootPath) ??
-                  prepareMenu(frontmatters, rootPath, frontmatters))
-            : prepareMenu(frontmatters, rootPath, frontmatters),
-    );
-    let flat = $derived(flattenMenu(menu));
 
     // -- Theme -------------------------------------------------------------------
     function getSystemTheme(): "light" | "dark" {
@@ -305,7 +381,235 @@
     });
 
     // -- Router ------------------------------------------------------------------
-    const router = useRouter(frontmatters, () => rootPath);
+    const router = useRouter(frontmatters, (path) =>
+        resolveLocaleForPath(path, configuredRootPath, configLocales, {
+            mainTitle: globalMainTitle,
+            nav: globalNav,
+            sidebar: globalSidebar,
+            outline: globalOutline,
+            langMenuLabel: globalLangMenuLabel,
+            sidebarMenuLabel: globalSidebarMenuLabel,
+            skipToContentLabel: globalSkipToContentLabel,
+            returnToTopLabel: globalReturnToTopLabel,
+            darkModeSwitchLabel: globalDarkModeSwitchLabel,
+            lightModeSwitchTitle: globalLightModeSwitchTitle,
+            darkModeSwitchTitle: globalDarkModeSwitchTitle,
+            docFooter: globalDocFooter,
+            externalLinkIcon: globalExternalLinkIcon,
+            siteTitle: globalSiteTitle,
+            logo: globalLogo,
+            socialLinks: globalSocialLinks,
+            editLink: globalEditLink,
+            footer: globalFooter,
+            aside: globalAside,
+            lastUpdated: globalLastUpdated,
+        }).rootPath,
+    );
+
+    const localeContext = $derived(
+        resolveLocaleForPath(router.active, configuredRootPath, configLocales, {
+            mainTitle: globalMainTitle,
+            nav: globalNav,
+            sidebar: globalSidebar,
+            outline: globalOutline,
+            langMenuLabel: globalLangMenuLabel,
+            sidebarMenuLabel: globalSidebarMenuLabel,
+            skipToContentLabel: globalSkipToContentLabel,
+            returnToTopLabel: globalReturnToTopLabel,
+            darkModeSwitchLabel: globalDarkModeSwitchLabel,
+            lightModeSwitchTitle: globalLightModeSwitchTitle,
+            darkModeSwitchTitle: globalDarkModeSwitchTitle,
+            docFooter: globalDocFooter,
+            externalLinkIcon: globalExternalLinkIcon,
+            siteTitle: globalSiteTitle,
+            logo: globalLogo,
+            socialLinks: globalSocialLinks,
+            editLink: globalEditLink,
+            footer: globalFooter,
+            aside: globalAside,
+            lastUpdated: globalLastUpdated,
+        }),
+    );
+    const currentRootPath = $derived(localeContext.rootPath);
+    const mainTitle = $derived(localeContext.mainTitle);
+    const nav = $derived(localeContext.nav);
+    const sidebar = $derived(localeContext.sidebar);
+    const outline = $derived(localeContext.outline);
+    const version = $derived(globalVersion);
+    const localeFrontmatters = $derived.by(() => {
+        const inLocale = Object.fromEntries(
+            Object.entries(frontmatters).filter(([key]) => {
+                if (
+                    key !== currentRootPath + "/index.md" &&
+                    !key.startsWith(currentRootPath + "/")
+                ) {
+                    return false;
+                }
+                // Root locale should not include localized subtrees (e.g. /docs/pl/*).
+                if (currentRootPath === normalizeRootPath(configuredRootPath)) {
+                    const otherLocaleRoots = localeContext.allRootPaths.filter(
+                        (rp) => rp !== currentRootPath,
+                    );
+                    if (
+                        otherLocaleRoots.some(
+                            (rp) =>
+                                key === rp + "/index.md" ||
+                                key.startsWith(rp + "/"),
+                        )
+                    ) {
+                        return false;
+                    }
+                }
+                return true;
+            }),
+        );
+        return inLocale;
+    });
+    const menu = $derived.by(() => {
+        return Array.isArray(sidebar)
+            ? (parseSidebarConfig(
+                  sidebar,
+                  localeFrontmatters,
+                  currentRootPath,
+              ) ??
+                  prepareMenu(
+                      localeFrontmatters,
+                      currentRootPath,
+                      localeFrontmatters,
+                  ))
+            : prepareMenu(
+                  localeFrontmatters,
+                  currentRootPath,
+                  localeFrontmatters,
+              );
+    });
+    const flat = $derived(flattenMenu(menu));
+    const localeSwitchItems = $derived(
+        getLocaleSwitchItems({
+            entries: localeContext.entries,
+            activePath: router.active,
+            activeRootPath: currentRootPath,
+            activeLocaleKey: localeContext.key,
+            frontmatters,
+            preservePath: i18nRouting,
+        }),
+    );
+    const langMenuLabel = $derived(
+        localeContext.langMenuLabel ?? "Change language",
+    );
+    const sidebarMenuLabel = $derived(
+        localeContext.sidebarMenuLabel ?? "Menu",
+    );
+    const skipToContentLabel = $derived(
+        localeContext.skipToContentLabel ?? "Skip to content",
+    );
+    const returnToTopLabel = $derived(
+        localeContext.returnToTopLabel ?? "Back to top",
+    );
+    const darkModeSwitchLabel = $derived(
+        localeContext.darkModeSwitchLabel ?? "Appearance",
+    );
+    const lightModeSwitchTitle = $derived(
+        localeContext.lightModeSwitchTitle ?? "Switch to light theme",
+    );
+    const darkModeSwitchTitle = $derived(
+        localeContext.darkModeSwitchTitle ?? "Switch to dark theme",
+    );
+    const docFooterPrevLabel = $derived(
+        localeContext.docFooter?.prev ?? "Previous",
+    );
+    const docFooterNextLabel = $derived(
+        localeContext.docFooter?.next ?? "Next",
+    );
+    const siteTitle = $derived(
+        localeContext.siteTitle === undefined
+            ? mainTitle
+            : localeContext.siteTitle,
+    );
+    const logo = $derived(localeContext.logo);
+    const socialLinks = $derived(localeContext.socialLinks ?? []);
+    const editLink = $derived(localeContext.editLink);
+    const footer = $derived(localeContext.footer);
+    const asideMode = $derived(localeContext.aside ?? true);
+    const externalLinkIcon = $derived(localeContext.externalLinkIcon ?? false);
+
+    const lastModified = $derived.by(() => {
+        const hasVisibilityToggle = Boolean(globalLastModified);
+        const hasLastUpdatedConfig =
+            Boolean(globalLastUpdated) ||
+            Boolean(localeContext.lastUpdated) ||
+            Boolean(localeContext.lastUpdatedText);
+
+        if (!hasVisibilityToggle && !hasLastUpdatedConfig) return false;
+
+        const base =
+            (typeof globalLastModified === "object"
+                ? globalLastModified
+                : globalLastUpdated) ?? {};
+
+        if (typeof globalLastModified === "object" || globalLastUpdated) {
+            return {
+                ...base,
+                formatOptions:
+                    localeContext.lastUpdated?.formatOptions ??
+                    base.formatOptions,
+                text:
+                    localeContext.lastUpdated?.text ??
+                    localeContext.lastUpdatedText ??
+                    base.text,
+            };
+        }
+        if (localeContext.lastUpdated || localeContext.lastUpdatedText) {
+            return {
+                text:
+                    localeContext.lastUpdated?.text ??
+                    localeContext.lastUpdatedText,
+                formatOptions: localeContext.lastUpdated?.formatOptions,
+            };
+        }
+        return true;
+    });
+
+    function resolveLastModifiedFormat(
+        value: unknown,
+    ): Intl.DateTimeFormatOptions {
+        const source =
+            value && typeof value === "object" && "formatOptions" in value
+                ? (value as any).formatOptions
+                : null;
+        if (!source || typeof source !== "object") {
+            return { dateStyle: "medium" };
+        }
+        const { forceLocale: _forceLocale, ...rest } = source as any;
+        return Object.keys(rest).length ? rest : { dateStyle: "medium" };
+    }
+
+    function resolveLastModifiedLocale(value: unknown): string {
+        const source =
+            value && typeof value === "object" && "formatOptions" in value
+                ? (value as any).formatOptions
+                : null;
+        const forceLocale =
+            Boolean(source && typeof source === "object" && (source as any).forceLocale);
+        const explicitLocale =
+            value && typeof value === "object" && "locale" in value
+                ? (value as any).locale
+                : null;
+
+        if (explicitLocale) return explicitLocale;
+        if (forceLocale && localeContext.lang) return localeContext.lang;
+        return navigator.language;
+    }
+
+    $effect(() => {
+        if (!localeContext.lang) return;
+        document.documentElement.lang = localeContext.lang;
+    });
+
+    $effect(() => {
+        if (!localeContext.dir) return;
+        document.documentElement.dir = localeContext.dir;
+    });
 
     type CompiledMarkdownModule = {
         default: any;
@@ -366,19 +670,24 @@
     // Resolve the key of the active page in the frontmatter map so we can read
     // `layout` (and any other fields) without loading the full module.
     const activeKey = $derived.by(() => {
-        const rel = router.active.replace(rootPath, "").replace(/^\//, "");
+        const rel = router.active
+            .replace(currentRootPath, "")
+            .replace(/^\//, "");
         const candidates: string[] = rel
-            ? [`${rootPath}/${rel}.md`, `${rootPath}/${rel}/index.md`]
-            : [`${rootPath}/index.md`, `${rootPath}index.md`];
+            ? [
+                  `${currentRootPath}/${rel}.md`,
+                  `${currentRootPath}/${rel}/index.md`,
+              ]
+            : [`${currentRootPath}/index.md`, `${currentRootPath}index.md`];
         return candidates.find((c) => c in frontmatters) ?? null;
     });
 
     const activeFrontmatter = $derived(
         activeKey ? frontmatters[activeKey] : undefined,
     );
-    /** True when the URL is inside rootPath but no matching file exists. */
+    /** True when the URL is inside the current locale root path but no matching file exists. */
     const notFound = $derived(
-        activeKey === null && router.active.startsWith(rootPath),
+        activeKey === null && router.active.startsWith(currentRootPath),
     );
     const activeLayout = $derived<"doc" | "home" | "page">(
         activeFrontmatter?.layout ?? "doc",
@@ -393,7 +702,7 @@
             ? normalizeOutline(
                   activeFrontmatter.outline as OutlineOption | boolean,
               )
-            : globalOutlineNorm,
+            : normalizeOutline(outline),
     );
 
     /** Auto prev/next from sidebar order; overridable per-page via frontmatter. */
@@ -427,7 +736,7 @@
     /** Whether the left nav sidebar should be visible. */
     const showSidebar = $derived(activeLayout === "doc");
     /** Whether the right outline / ads aside should be visible. */
-    const showOutline = $derived(activeLayout === "doc");
+    const showOutline = $derived(activeLayout === "doc" && asideMode !== false);
 
     // -- Splitter ----------------------------------------------------------------
     const sp = useSplitter();
@@ -468,7 +777,7 @@
         const pathPart = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
         const hashPart = hashIdx >= 0 ? href.slice(hashIdx + 1) : "";
 
-        const cleanRootPath = rootPath.replace(/\/+$/, "");
+        const cleanRootPath = currentRootPath.replace(/\/+$/, "");
 
         let resolvedPath: string;
         if (pathPart.startsWith("/")) {
@@ -497,7 +806,8 @@
         }
 
         resolvedPath = resolvedPath.replace(/\.(md|html)$/i, "");
-        resolvedPath = resolvedPath.replace(/\/index$/, "") || rootPath;
+        resolvedPath =
+            resolvedPath.replace(/\/index$/, "") || currentRootPath;
 
         event.preventDefault();
         router.navigateWithAnchor(resolvedPath, hashPart || undefined);
@@ -508,29 +818,40 @@
 <div
     class="greg"
     data-theme={theme}
+    data-external-link-icon={externalLinkIcon ? "true" : "false"}
     onmousemove={sp.onMouseMove}
     onmouseup={sp.onMouseUp}
     onclick={handleCodeGroupClick}
     onkeydown={handleCodeGroupKeydown}
 >
+    <a class="skip-link" href="#greg-main-content">{skipToContentLabel}</a>
     <DocsSiteHeader
-        {rootPath}
+        rootPath={currentRootPath}
+        {siteTitle}
+        {logo}
+        {socialLinks}
         {mainTitle}
         {version}
         {nav}
+        locales={localeSwitchItems}
+        {langMenuLabel}
         {theme}
+        {darkModeSwitchLabel}
+        {lightModeSwitchTitle}
+        {darkModeSwitchTitle}
         showSearch={searchEnabled}
         onThemeChange={(t) => setThemeManually(t)}
         navigate={router.navigate}
         onOpenSearch={() => (searchOpen = true)}
     />
 
-    <div class="greg-body">
+    <div class="greg-body" class:aside-left={asideMode === "left"}>
         {#if showSidebar}
             <aside bind:this={sp.aside}>
                 <DocsNavigation
                     {menu}
-                    {rootPath}
+                    rootPath={currentRootPath}
+                    ariaLabel={sidebarMenuLabel}
                     active={router.active}
                     navigate={router.navigate}
                 />
@@ -548,10 +869,12 @@
         {/if}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
         <main
+            id="greg-main-content"
             bind:this={mainEl}
             class:layout-home={activeLayout === "home"}
             class:layout-page={activeLayout === "page"}
             onclick={handleInternalLinks}
+            tabindex="-1"
         >
             {#if activeLayout === "home"}
                 <LayoutHome
@@ -570,7 +893,7 @@
                                 <Breadcrumb
                                     items={breadcrumbItems}
                                     navigate={router.navigate}
-                                    {rootPath}
+                                    rootPath={currentRootPath}
                                 />
                             {/if}
                             {@const CompiledPage = compiledModule.default}
@@ -582,13 +905,10 @@
                                     (typeof lastModified === "object"
                                         ? lastModified.text
                                         : null) ?? "Last updated:"}
-                                {@const lmFmt = (typeof lastModified === "object"
-                                    ? lastModified.formatOptions
-                                    : null) ?? { dateStyle: "medium" as const }}
+                                {@const lmFmt =
+                                    resolveLastModifiedFormat(lastModified)}
                                 {@const lmLocale =
-                                    (typeof lastModified === "object"
-                                        ? lastModified.locale
-                                        : null) ?? navigator.language}
+                                    resolveLastModifiedLocale(lastModified)}
                                 <p class="doc-last-modified">
                                     {lmLabel}
                                     {new Intl.DateTimeFormat(
@@ -601,6 +921,8 @@
                                 <PrevNext
                                     prev={prevNext.prev}
                                     next={prevNext.next}
+                                    prevLabel={docFooterPrevLabel || undefined}
+                                    nextLabel={docFooterNextLabel || undefined}
                                     navigate={router.navigate}
                                 />
                             {/if}
@@ -620,13 +942,13 @@
                             <Breadcrumb
                                 items={breadcrumbItems}
                                 navigate={router.navigate}
-                                {rootPath}
+                                rootPath={currentRootPath}
                             />
                         {/if}
                         <MarkdownRenderer
                             {markdown}
                             baseUrl={router.activeMarkdownPath}
-                            docsPrefix={rootPath}
+                            docsPrefix={currentRootPath}
                             {mermaidTheme}
                             {mermaidThemes}
                             colorTheme={theme}
@@ -636,13 +958,10 @@
                                 (typeof lastModified === "object"
                                     ? lastModified.text
                                     : null) ?? "Last updated:"}
-                            {@const lmFmt = (typeof lastModified === "object"
-                                ? lastModified.formatOptions
-                                : null) ?? { dateStyle: "medium" as const }}
+                            {@const lmFmt =
+                                resolveLastModifiedFormat(lastModified)}
                             {@const lmLocale =
-                                (typeof lastModified === "object"
-                                    ? lastModified.locale
-                                    : null) ?? navigator.language}
+                                resolveLastModifiedLocale(lastModified)}
                             <p class="doc-last-modified">
                                 {lmLabel}
                                 {new Intl.DateTimeFormat(lmLocale, lmFmt).format(
@@ -650,10 +969,50 @@
                                 )}
                             </p>
                         {/if}
+                        {#if
+                            editLink?.pattern &&
+                            router.activeMarkdownPath &&
+                            activeLayout === "doc"
+                        }
+                            {@const editPath = router.activeMarkdownPath
+                                .replace(normalizeRootPath(configuredRootPath), "")
+                                .replace(/^\//, "")}
+                            <p class="doc-edit-link">
+                                <a
+                                    href={editLink.pattern.replace(
+                                        /:path/g,
+                                        editPath,
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >{editLink.text ?? "Edit this page"}</a>
+                            </p>
+                        {/if}
+                        {#if
+                            editLink?.pattern &&
+                            router.activeMarkdownPath &&
+                            activeLayout === "doc"
+                        }
+                            {@const editPath = router.activeMarkdownPath
+                                .replace(normalizeRootPath(configuredRootPath), "")
+                                .replace(/^\//, "")}
+                            <p class="doc-edit-link">
+                                <a
+                                    href={editLink.pattern.replace(
+                                        /:path/g,
+                                        editPath,
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >{editLink.text ?? "Edit this page"}</a>
+                            </p>
+                        {/if}
                         {#if activeLayout === "doc"}
                             <PrevNext
                                 prev={prevNext.prev}
                                 next={prevNext.next}
+                                prevLabel={docFooterPrevLabel || undefined}
+                                nextLabel={docFooterNextLabel || undefined}
                                 navigate={router.navigate}
                             />
                         {/if}
@@ -668,10 +1027,10 @@
                     <p class="not-found-path"><code>{router.active}</code></p>
                     <!-- svelte-ignore a11y_invalid_attribute -->
                     <a
-                        href={rootPath}
+                        href={currentRootPath}
                         onclick={(e) => {
                             e.preventDefault();
-                            router.navigate(rootPath);
+                            router.navigate(currentRootPath);
                         }}>Wróć do dokumentacji</a
                     >
                 </div>
@@ -682,7 +1041,7 @@
         </main>
         <aside
             class="greg-aside-outline"
-            class:hidden={(!outlineNorm && !carbonAds) || !showOutline}
+            class:hidden={(!outlineNorm && !carbonAds) || !showOutline || asideMode === false}
         >
             {#if outlineNorm && showOutline}
                 <Outline
@@ -701,20 +1060,53 @@
             {/if}
         </aside>
     </div>
+    {#if
+        !showSidebar &&
+        (footer?.message || footer?.copyright)
+    }
+        <footer class="doc-footer">
+            {#if footer?.message}<p>{footer.message}</p>{/if}
+            {#if footer?.copyright}<p>{footer.copyright}</p>{/if}
+        </footer>
+    {/if}
     {#if searchEnabled}
         <SearchModal
             bind:open={searchOpen}
             onClose={() => (searchOpen = false)}
             onNavigate={router.navigateWithAnchor}
+            localeRootPath={currentRootPath}
+            allLocaleRootPaths={localeContext.allRootPaths}
+            baseRootPath={normalizeRootPath(configuredRootPath)}
             {searchProvider}
         />
     {/if}
     {#if backToTop}
-        <BackToTop target={mainEl} />
+        <BackToTop target={mainEl} label={returnToTopLabel} />
     {/if}
 </div>
 
 <style lang="scss">
+    .skip-link {
+        position: absolute;
+        left: 0.75rem;
+        top: 0.5rem;
+        z-index: 1000;
+        padding: 0.4rem 0.6rem;
+        border-radius: 0.4rem;
+        border: 1px solid var(--greg-border-color);
+        background: var(--greg-header-background);
+        color: var(--greg-color);
+        text-decoration: none;
+        transform: translateY(-150%);
+        transition: transform 0.15s ease;
+    }
+
+    .skip-link:focus-visible {
+        transform: translateY(0);
+        outline: 2px solid var(--greg-accent);
+        outline-offset: 2px;
+    }
+
     .greg {
         display: flex;
         flex-flow: column nowrap;
@@ -731,6 +1123,18 @@
         flex: 1;
         overflow: hidden;
         width: 100%;
+
+        &.aside-left {
+            .greg-aside-outline {
+                order: 1;
+                border-left: none;
+                border-right: 1px solid var(--greg-border-color);
+            }
+
+            main {
+                order: 2;
+            }
+        }
     }
 
     .splitter {
@@ -841,6 +1245,31 @@
         font-size: 0.8rem;
         color: var(--greg-menu-section-color);
         margin-top: 1.5rem;
+    }
+
+    .doc-edit-link {
+        font-size: 0.85rem;
+        margin: 0.25rem 0 0;
+
+        a {
+            color: var(--greg-accent);
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+    }
+
+    .doc-footer {
+        border-top: 1px solid var(--greg-border-color);
+        padding: 1rem 2rem;
+        color: var(--greg-menu-section-color);
+        font-size: 0.85rem;
+
+        p {
+            margin: 0.2rem 0;
+        }
     }
 
     .not-found {

@@ -2,8 +2,6 @@
 title: Theme & Styling
 ---
 
-# Theme & Styling
-
 Greg ships a carefully crafted two-tone design system — a clean purple-accent
 **light** theme and a warm ember **dark** theme. Both are configured entirely via
 CSS custom properties.
@@ -72,13 +70,13 @@ All visual properties are controlled through CSS custom properties defined on
 
 ### Sidebar splitter
 
-| Variable                                   | Light default | Description                          |
-| ------------------------------------------ | ------------- | ------------------------------------ |
-| `--greg-splitter-handler-background`       | `#e5e5ea`     | Splitter handle background           |
-| `--greg-splitter-handler-color`            | `#7a7a8c`     | Splitter handle icon colour          |
-| `--greg-splitter-active-border`            | `#646cff`     | Splitter border colour on hover      |
+| Variable                                    | Light default | Description                          |
+| ------------------------------------------- | ------------- | ------------------------------------ |
+| `--greg-splitter-handler-background`        | `#e5e5ea`     | Splitter handle background           |
+| `--greg-splitter-handler-color`             | `#7a7a8c`     | Splitter handle icon colour          |
+| `--greg-splitter-active-border`             | `#646cff`     | Splitter border colour on hover      |
 | `--greg-splitter-active-handler-background` | `#646cff`     | Splitter handle background on hover  |
-| `--greg-splitter-active-handler-color`     | `#f8f8f8`     | Splitter handle icon colour on hover |
+| `--greg-splitter-active-handler-color`      | `#f8f8f8`     | Splitter handle icon colour on hover |
 
 ### Code blocks
 

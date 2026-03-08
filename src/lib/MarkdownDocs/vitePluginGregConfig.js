@@ -16,6 +16,7 @@
  *   breadcrumb   boolean          – show breadcrumb above content
  *   backToTop    boolean          – show Back To Top button
  *   lastModified boolean          – show last-modified date below content
+ *   locales      Record<string, LocaleConfig> – VitePress-style locale map
  *   sidebar      'auto' | SidebarItem[]
  *
  * HMR: changing greg.config.js triggers a full page reload.

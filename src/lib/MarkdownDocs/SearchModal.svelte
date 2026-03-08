@@ -41,6 +41,9 @@
         open: boolean;
         onClose: () => void;
         onNavigate: (path: string, anchor?: string) => void;
+        localeRootPath?: string;
+        allLocaleRootPaths?: string[];
+        baseRootPath?: string;
         searchProvider?: SearchProviderFn;
     };
 
@@ -48,8 +51,42 @@
         open = $bindable(false),
         onClose,
         onNavigate,
+        localeRootPath = "/docs",
+        allLocaleRootPaths = [],
+        baseRootPath = "/docs",
         searchProvider,
     }: Props = $props();
+
+    function normalizePath(path: string): string {
+        const value = String(path || "").trim();
+        if (!value || value === "/") return "/";
+        return "/" + value.replace(/^\/+|\/+$/g, "");
+    }
+
+    function isPathInActiveLocale(path: string): boolean {
+        const id = normalizePath(path);
+        const currentRoot = normalizePath(localeRootPath);
+        const baseRoot = normalizePath(baseRootPath);
+        const roots = (allLocaleRootPaths ?? []).map(normalizePath);
+
+        if (!(id === currentRoot || id.startsWith(currentRoot + "/"))) {
+            return false;
+        }
+
+        // Root locale should not include localized subtrees.
+        if (currentRoot === baseRoot) {
+            const otherRoots = roots.filter((rp) => rp !== currentRoot);
+            if (
+                otherRoots.some(
+                    (rp) => id === rp || id.startsWith(rp + "/"),
+                )
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     // ── Config ─────────────────────────────────────────────────────────────────
 
@@ -150,7 +187,11 @@
 
         if (mode === "local") {
             if (!fuse) return;
-            results = fuse.search(q, { limit: 10 }).map(buildLocalResult);
+            results = fuse
+                .search(q, { limit: 50 })
+                .filter((res) => isPathInActiveLocale(res.item.id))
+                .slice(0, 10)
+                .map(buildLocalResult);
             selectedIndex = 0;
             return;
         }
@@ -170,7 +211,9 @@
                 const data = await res.json();
                 raw = data.results ?? [];
             }
-            results = raw;
+            results = raw
+                .filter((result) => isPathInActiveLocale(result.id))
+                .slice(0, 10);
             selectedIndex = 0;
         } catch (e: any) {
             if (e?.name === "AbortError") return; // superseded by newer query — ignore

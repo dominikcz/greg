@@ -2,8 +2,6 @@
 title: MarkdownDocs Component
 ---
 
-# `<MarkdownDocs>` Component
-
 `MarkdownDocs` is the top-level component that wires together the entire
 documentation engine: routing, sidebar navigation, the outline panel, search,
 dark/light mode and Carbon Ads.
@@ -20,6 +18,81 @@ Mount it in `src/App.svelte`:
 
 
 ## Props
+
+### `locales` (via `greg.config.js`)
+
+- **Type:** `Record<string, LocaleConfig>`
+- **Location:** `greg.config.js` (not a direct `<MarkdownDocs>` prop)
+
+VitePress-compatible localization is supported through `greg.config.js`:
+
+- locale keys like `'/'`, `'/pl/'`
+- locale-specific `lang`, `title`
+- optional locale `label` used in header language switcher
+- locale-specific `themeConfig` keys:
+  `nav`, `sidebar`, `outline`, `lastUpdatedText`, `langMenuLabel`,
+  `sidebarMenuLabel`, `skipToContentLabel`, `returnToTopLabel`,
+  `darkModeSwitchLabel`, `lightModeSwitchTitle`, `darkModeSwitchTitle`,
+  `docFooter`, `siteTitle`, `logo`, `socialLinks`, `editLink`, `footer`, `aside`, `lastUpdated`
+
+Language switcher behavior:
+
+- appears in the header when two or more locales are defined
+- with `i18nRouting: true` (default), preserves current relative page across locales
+- with `i18nRouting: false`, switches directly to locale root
+- falls back to target locale root when the mapped page does not exist
+
+Locale paths are resolved under `rootPath`:
+
+- if `rootPath = '/docs'`
+- locale `'/'` maps to `'/docs'`
+- locale `'/pl/'` maps to `'/docs/pl'`
+
+```js
+export default {
+  rootPath: '/docs',
+  i18nRouting: true,
+  locales: {
+    '/': {
+      lang: 'en-US',
+      title: 'Docs',
+      themeConfig: {
+        nav: [{ text: 'Guide', link: '/docs/guide' }],
+        sidebar: [{ text: 'Guide', auto: '/guide' }],
+        outline: [2, 3],
+        lastUpdatedText: 'Last updated:',
+        langMenuLabel: 'Change language',
+        sidebarMenuLabel: 'Menu',
+        skipToContentLabel: 'Skip to content',
+        returnToTopLabel: 'Return to top',
+        darkModeSwitchLabel: 'Appearance',
+        lightModeSwitchTitle: 'Switch to light theme',
+        darkModeSwitchTitle: 'Switch to dark theme',
+        docFooter: { prev: 'Previous', next: 'Next' },
+      },
+    },
+    '/pl/': {
+      lang: 'pl-PL',
+      label: 'Polski',
+      title: 'Dokumentacja',
+      themeConfig: {
+        nav: [{ text: 'Przewodnik', link: '/docs/pl/guide' }],
+        sidebar: [{ text: 'Przewodnik', auto: '/pl/guide' }],
+        outline: { level: [2, 3], label: 'Na tej stronie' },
+        lastUpdatedText: 'Zaktualizowano:',
+        langMenuLabel: 'Zmien jezyk',
+        sidebarMenuLabel: 'Menu',
+        skipToContentLabel: 'Przejdz do tresci',
+        returnToTopLabel: 'Wroc na gore',
+        darkModeSwitchLabel: 'Wyglad',
+        lightModeSwitchTitle: 'Przelacz na jasny motyw',
+        darkModeSwitchTitle: 'Przelacz na ciemny motyw',
+        docFooter: { prev: 'Poprzednia', next: 'Nastepna' },
+      },
+    },
+  },
+}
+```
 
 ### `rootPath`
 

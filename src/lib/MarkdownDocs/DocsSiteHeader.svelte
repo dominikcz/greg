@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Sun, Moon } from "@lucide/svelte";
+	import { Languages, Sun, Moon } from "@lucide/svelte";
+	import SocialLink from "../components/SocialLink.svelte";
 
 	type NavItem = {
 		text: string;
@@ -10,10 +11,21 @@
 
 	type Props = {
 		rootPath: string;
+		siteTitle?: string | false;
+		logo?:
+			| string
+			| { src: string; alt?: string }
+			| { light: string; dark: string; alt?: string };
+		socialLinks?: { icon: string | { svg: string }; link: string; ariaLabel?: string }[];
 		mainTitle?: string;
 		version?: string;
 		nav?: NavItem[];
+		locales?: { key: string; label: string; link: string; active: boolean }[];
+		langMenuLabel?: string;
 		theme: "light" | "dark";
+		darkModeSwitchLabel?: string;
+		lightModeSwitchTitle?: string;
+		darkModeSwitchTitle?: string;
 		showSearch?: boolean;
 		onThemeChange: (t: "light" | "dark") => void;
 		navigate: (path: string) => void;
@@ -45,15 +57,49 @@
 
 	let {
 		rootPath,
+		siteTitle,
+		logo,
+		socialLinks = [],
 		mainTitle = "Greg",
 		version = "",
 		nav = [],
+		locales = [],
+		langMenuLabel = "Change language",
 		theme,
+		darkModeSwitchLabel = "Appearance",
+		lightModeSwitchTitle = "Switch to light theme",
+		darkModeSwitchTitle = "Switch to dark theme",
 		showSearch = true,
 		onThemeChange,
 		navigate,
 		onOpenSearch,
 	}: Props = $props();
+
+	function resolveLogoSrc(
+		img:
+			| string
+			| { src: string; alt?: string }
+			| { light: string; dark: string; alt?: string }
+			| undefined,
+		t: "light" | "dark",
+	): string {
+		if (!img) return t === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg";
+		if (typeof img === "string") return img;
+		if ("src" in img) return img.src;
+		return t === "dark" ? img.dark : img.light;
+	}
+
+	const resolvedTitle = $derived(siteTitle === undefined ? mainTitle : siteTitle);
+	const logoSrc = $derived(resolveLogoSrc(logo, theme));
+	const logoAlt = $derived.by(() => {
+		if (logo && typeof logo === "object" && "alt" in logo && logo.alt) return logo.alt;
+		if (siteTitle === false) return mainTitle;
+		return (resolvedTitle as string) ?? mainTitle;
+	});
+
+	let activeLocaleLink = $derived(
+		locales.find((locale) => locale.active)?.link ?? locales[0]?.link ?? '',
+	);
 </script>
 
 <svelte:window
@@ -66,6 +112,7 @@
 		<a
 			href={rootPath}
 			class="site-title"
+			aria-label={logoAlt}
 			onclick={(e) => {
 				e.preventDefault();
 				navigate(rootPath);
@@ -74,10 +121,12 @@
 			<span
 				class="site-logo"
 				role="img"
-				aria-label="Greg logo"
-				style={`background-image: url(${theme === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg"})`}
+				aria-label={logoAlt}
+				style={`background-image: url(${logoSrc})`}
 			></span>
-			{mainTitle}
+			{#if resolvedTitle !== false}
+				{resolvedTitle}
+			{/if}
 		</a>
 		{#if version}
 			<span class="version-badge">v{version}</span>
@@ -217,13 +266,48 @@
 		{/each}
 	</nav>
 	<div class="header-right">
-		<div class="theme-group" role="group" aria-label="Color theme">
+		{#if socialLinks.length}
+			<div class="header-social-links" aria-label="Social links">
+				{#each socialLinks as social (social.link)}
+					<SocialLink
+						icon={social.icon}
+						link={social.link}
+						ariaLabel={social.ariaLabel}
+						me={false}
+					/>
+				{/each}
+			</div>
+		{/if}
+		{#if locales.length > 1}
+			<label class="locale-switcher" aria-label={langMenuLabel}>
+				<Languages size={15} aria-hidden="true" />
+				<select
+					class="locale-select"
+					value={activeLocaleLink}
+					onchange={(e) => {
+						const selected = (e.currentTarget as HTMLSelectElement).value;
+						if (!selected || selected === activeLocaleLink) return;
+						if (EXTERNAL_RE.test(selected)) {
+							window.location.href = selected;
+							return;
+						}
+						navigate(selected);
+					}}
+				>
+					{#each locales as locale}
+						<option value={locale.link}>{locale.label}</option>
+					{/each}
+				</select>
+			</label>
+		{/if}
+		<div class="theme-group" role="group" aria-label={darkModeSwitchLabel}>
 			<button
 				class="theme-btn"
 				class:active={theme === "light"}
 				onclick={() => onThemeChange("light")}
 				type="button"
-				aria-label="Light mode"
+				aria-label={lightModeSwitchTitle}
+				title={lightModeSwitchTitle}
 				aria-pressed={theme === "light"}><Sun size={15} /></button
 			>
 			<button
@@ -231,7 +315,8 @@
 				class:active={theme === "dark"}
 				onclick={() => onThemeChange("dark")}
 				type="button"
-				aria-label="Dark mode"
+				aria-label={darkModeSwitchTitle}
+				title={darkModeSwitchTitle}
 				aria-pressed={theme === "dark"}><Moon size={15} /></button
 			>
 		</div>
@@ -448,6 +533,35 @@
 		max-width: 24rem;
 	}
 
+	.header-social-links {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+	}
+
+	.locale-switcher {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.2rem 0.45rem;
+		border: 1px solid var(--greg-border-color);
+		border-radius: 6px;
+		color: var(--greg-menu-section-color);
+		background: var(--greg-menu-background);
+		flex-shrink: 0;
+	}
+
+	.locale-select {
+		background: transparent;
+		border: none;
+		font-size: 0.8rem;
+		color: var(--greg-color);
+		font-family: inherit;
+		outline: none;
+		min-width: 4.5rem;
+		cursor: pointer;
+	}
+
 	.theme-group {
 		display: flex;
 		border: 1px solid var(--greg-border-color);
@@ -540,6 +654,65 @@
 				line-height: 1.5;
 				font-family: inherit;
 			}
+		}
+	}
+
+	@media (max-width: 900px) {
+		.header-right {
+			max-width: none;
+			gap: 0.45rem;
+		}
+
+		.locale-switcher {
+			padding: 0.2rem 0.35rem;
+		}
+
+		.locale-select {
+			min-width: 3.8rem;
+			font-size: 0.75rem;
+		}
+
+		.search-trigger {
+			width: auto;
+			padding: 0.38rem 0.55rem;
+		}
+
+		.search-trigger-hint {
+			display: none;
+		}
+	}
+
+	@media (max-width: 700px) {
+		.site-header {
+			padding: 0 0.75rem;
+		}
+
+		.version-badge {
+			display: none;
+		}
+
+		.locale-switcher {
+			padding: 0.2rem 0.28rem;
+		}
+
+		.locale-switcher :global(svg) {
+			display: none;
+		}
+
+		.locale-select {
+			min-width: 3.25rem;
+		}
+
+		.theme-btn {
+			padding: 0.35rem 0.4rem;
+		}
+
+		.search-trigger {
+			padding: 0.38rem 0.45rem;
+		}
+
+		.search-trigger-label {
+			display: none;
 		}
 	}
 </style>

@@ -5,12 +5,22 @@
         prev: NavItem;
         next: NavItem;
         navigate: (path: string) => void;
+        prevLabel?: string;
+        nextLabel?: string;
+        navLabel?: string;
     };
-    let { prev, next, navigate }: Props = $props();
+    let {
+        prev,
+        next,
+        navigate,
+        prevLabel = "Previous",
+        nextLabel = "Next",
+        navLabel = "Previous and next pages",
+    }: Props = $props();
 </script>
 
 {#if prev || next}
-    <nav class="prev-next" aria-label="Previous and next pages">
+    <nav class="prev-next" aria-label={navLabel}>
         <div class="side">
             {#if prev}
                 <a
@@ -21,7 +31,7 @@
                         navigate(prev.link);
                     }}
                 >
-                    <span class="label">← Previous</span>
+                    <span class="label">← {prevLabel}</span>
                     <span class="title">{prev.label}</span>
                 </a>
             {/if}
@@ -36,7 +46,7 @@
                         navigate(next.link);
                     }}
                 >
-                    <span class="label">Next →</span>
+                    <span class="label">{nextLabel} →</span>
                     <span class="title">{next.label}</span>
                 </a>
             {/if}

@@ -25,6 +25,7 @@ npm install --save-dev @dominikcz/greg @sveltejs/vite-plugin-svelte svelte vite
 ```
 
 **`vite.config.js`**
+
 ```js
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
@@ -49,11 +50,13 @@ export default defineConfig({
 ```
 
 **`svelte.config.js`** (must be `.js` — not `.ts`)
+
 ```js
 export { default } from '@dominikcz/greg/svelte.config'
 ```
 
 **`greg.config.js`** (or `.ts`)
+
 ```js
 /** @type {import('@dominikcz/greg').GregConfig} */
 export default {
@@ -68,12 +71,88 @@ export default {
 ```
 
 **`src/App.svelte`**
+
 ```svelte
 <script>
     import MarkdownDocs from '@dominikcz/greg'
 </script>
 
 <MarkdownDocs />
+```
+
+## Localization (VitePress-compatible)
+
+Greg supports VitePress-style `locales` in `greg.config.js`.
+
+- Locale keys use paths like `'/'`, `'/pl/'`, `'/de/'`
+- They are resolved under `rootPath`
+- Supported per locale: `lang`, `title`, `label`
+- Supported per locale `themeConfig` keys:
+    `nav`, `sidebar`, `outline`, `lastUpdatedText`, `langMenuLabel`,
+    `sidebarMenuLabel`, `skipToContentLabel`, `returnToTopLabel`,
+    `darkModeSwitchLabel`, `lightModeSwitchTitle`, `darkModeSwitchTitle`,
+    `docFooter`, `siteTitle`, `logo`, `socialLinks`, `editLink`, `footer`, `aside`, `lastUpdated`
+- Header automatically shows a language switcher when at least two locales are configured
+- `i18nRouting: true` (default) keeps the same relative page when possible
+- `i18nRouting: false` switches directly to locale root
+
+```js
+/** @type {import('@dominikcz/greg').GregConfig} */
+export default {
+    rootPath: '/docs',
+    i18nRouting: true,
+    locales: {
+        '/': {
+            lang: 'en-US',
+            title: 'My Docs',
+            themeConfig: {
+                nav: [
+                    { text: 'Guide', link: '/docs/guide' },
+                    { text: 'Reference', link: '/docs/reference' },
+                ],
+                sidebar: [
+                    { text: 'Guide', auto: '/guide' },
+                    { text: 'Reference', auto: '/reference' },
+                ],
+                outline: [2, 3],
+                lastUpdatedText: 'Last updated:',
+                langMenuLabel: 'Change language',
+                sidebarMenuLabel: 'Menu',
+                skipToContentLabel: 'Skip to content',
+                returnToTopLabel: 'Return to top',
+                darkModeSwitchLabel: 'Appearance',
+                lightModeSwitchTitle: 'Switch to light theme',
+                darkModeSwitchTitle: 'Switch to dark theme',
+                docFooter: { prev: 'Previous', next: 'Next' },
+            },
+        },
+        '/pl/': {
+            lang: 'pl-PL',
+            label: 'Polski',
+            title: 'Moje Dokumenty',
+            themeConfig: {
+                nav: [
+                    { text: 'Przewodnik', link: '/docs/pl/guide' },
+                    { text: 'Referencja', link: '/docs/pl/reference' },
+                ],
+                sidebar: [
+                    { text: 'Przewodnik', auto: '/pl/guide' },
+                    { text: 'Referencja', auto: '/pl/reference' },
+                ],
+                outline: { level: [2, 3], label: 'Na tej stronie' },
+                lastUpdatedText: 'Zaktualizowano:',
+                langMenuLabel: 'Zmien jezyk',
+                sidebarMenuLabel: 'Menu',
+                skipToContentLabel: 'Przejdz do tresci',
+                returnToTopLabel: 'Wroc na gore',
+                darkModeSwitchLabel: 'Wyglad',
+                lightModeSwitchTitle: 'Przelacz na jasny motyw',
+                darkModeSwitchTitle: 'Przelacz na ciemny motyw',
+                docFooter: { prev: 'Poprzednia', next: 'Nastepna' },
+            },
+        },
+    },
+}
 ```
 
 ## CLI
@@ -114,7 +193,6 @@ export default {
 ### 0.9
 
 - [ ] AI search integration
-- [ ] i18n support
 - [ ] multiple versions support
 
 ### 1.0

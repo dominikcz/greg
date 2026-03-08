@@ -36,7 +36,7 @@ export function isSameNavigationTarget(
 
 export function useRouter(
 	knownPaths: Record<string, unknown>,
-	getRootPath: () => string,
+	getRootPathForPath: (path: string) => string,
 ) {
 	let active = $state(normalizePath(window.location.pathname));
 
@@ -57,7 +57,7 @@ export function useRouter(
 
 	/** Resolved .md file path for the active route, or null if unknown. */
 	const activeMarkdownPath = $derived.by(() => {
-		const rootPath = getRootPath();
+		const rootPath = getRootPathForPath(active);
 		const rel = active.replace(rootPath, '').replace(/^\//, '');
 		const candidates = rel
 			? [`${rootPath}/${rel}.md`, `${rootPath}/${rel}/index.md`]

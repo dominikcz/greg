@@ -3,8 +3,6 @@ title: Getting Started
 order: 1
 ---
 
-# Getting Started
-
 ## What is Greg?
 
 Greg is a **Svelte 5 + Vite-powered documentation engine**. You write content in
@@ -15,6 +13,13 @@ full-text search, dark/light mode and a rich set of Markdown extensions.
 Greg is intentionally inspired by [VitePress](https://vitepress.dev){target="_blank" rel="noopener noreferrer"}, reusing most
 of its Markdown syntax and several UI conventions, but built entirely on Svelte 5
 instead of Vue.
+
+## Why Greg?
+
+Greg is tuned for **large documentation sets**: metadata is preprocessed,
+navigation is generated predictably, and search is designed to scale to big docs.
+That focus gives strong config-level compatibility with VitePress, while some
+runtime API and platform features are intentionally different.
 
 
 ## Prerequisites
@@ -35,6 +40,7 @@ npx @dominikcz/greg init
 ```
 
 The wizard will ask for:
+
 - **Docs path** — where your Markdown files will live (default: `./docs`)
 - **Site title** and **description**
 - **TypeScript** — whether to use `.ts` for config files
@@ -60,7 +66,7 @@ npm install --save-dev @dominikcz/greg @sveltejs/vite-plugin-svelte svelte vite
 
 ## Project structure
 
-```
+```text
 .
 ├─ docs/                  ← your Markdown pages live here
 │  ├─ index.md            ← home page

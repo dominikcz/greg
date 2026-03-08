@@ -16,6 +16,17 @@ export type NavItem = {
     items?: NavItem[];
 };
 
+export type ThemeableImage =
+    | string
+    | { src: string; alt?: string }
+    | { light: string; dark: string; alt?: string };
+
+export type SocialLinkItem = {
+    icon: string | { svg: string };
+    link: string;
+    ariaLabel?: string;
+};
+
 export type SidebarItem = {
     text: string;
     link?: string;
@@ -24,6 +35,65 @@ export type SidebarItem = {
     auto?: string;
     badge?: BadgeSpec;
     collapsed?: boolean;
+};
+
+export type LocaleThemeConfig = {
+    nav?: NavItem[];
+    sidebar?: 'auto' | SidebarItem[];
+    outline?: OutlineOption | boolean;
+    /** VitePress-compatible text label for last-modified meta. */
+    lastUpdatedText?: string;
+    /** VitePress-compatible language switcher aria-label. */
+    langMenuLabel?: string;
+    /** VitePress-compatible mobile sidebar menu label. */
+    sidebarMenuLabel?: string;
+    /** VitePress-compatible skip-to-content label. */
+    skipToContentLabel?: string;
+    /** VitePress-compatible back-to-top aria-label. */
+    returnToTopLabel?: string;
+    /** VitePress-compatible theme switch group label. */
+    darkModeSwitchLabel?: string;
+    /** VitePress-compatible light mode toggle title. */
+    lightModeSwitchTitle?: string;
+    /** VitePress-compatible dark mode toggle title. */
+    darkModeSwitchTitle?: string;
+    /** VitePress-compatible labels above prev/next links. */
+    docFooter?: {
+        prev?: string | false;
+        next?: string | false;
+    };
+    siteTitle?: string | false;
+    logo?: ThemeableImage;
+    socialLinks?: SocialLinkItem[];
+    editLink?: {
+        pattern: string;
+        text?: string;
+    };
+    footer?: {
+        message?: string;
+        copyright?: string;
+    };
+    aside?: boolean | 'left';
+    /** VitePress-compatible full lastUpdated options. */
+    lastUpdated?: {
+        text?: string;
+        formatOptions?: Intl.DateTimeFormatOptions & { forceLocale?: boolean };
+    };
+    externalLinkIcon?: boolean;
+};
+
+export type LocaleConfig = {
+    /** e.g. 'en-US', 'pl-PL' */
+    lang?: string;
+    /** Text direction for locale, e.g. 'ltr' or 'rtl'. */
+    dir?: 'ltr' | 'rtl';
+    /** Locale-specific site title (mapped to header title). */
+    title?: string;
+    description?: string;
+    label?: string;
+    link?: string;
+    themeConfig?: LocaleThemeConfig;
+    [key: string]: unknown;
 };
 
 export type GregConfig = {
@@ -61,6 +131,59 @@ export type GregConfig = {
      * Rendered between the site title and the search/theme controls.
      */
     nav?: NavItem[];
+
+    /**
+     * VitePress-compatible locale map.
+     * Example keys: '/', '/pl/', '/de/'.
+     * Locale root path is resolved relative to `rootPath`.
+     */
+    locales?: Record<string, LocaleConfig>;
+
+    /**
+     * VitePress-compatible i18n routing behavior.
+     * true (default): switch locale while preserving relative page path when possible.
+     * false: switch locale to locale root.
+     */
+    i18nRouting?: boolean;
+
+    /** VitePress-compatible language switcher aria-label. */
+    langMenuLabel?: string;
+    /** VitePress-compatible mobile sidebar menu label. */
+    sidebarMenuLabel?: string;
+    /** VitePress-compatible skip-to-content label. */
+    skipToContentLabel?: string;
+    /** VitePress-compatible back-to-top aria-label. */
+    returnToTopLabel?: string;
+    /** VitePress-compatible theme switch group label. */
+    darkModeSwitchLabel?: string;
+    /** VitePress-compatible light mode toggle title. */
+    lightModeSwitchTitle?: string;
+    /** VitePress-compatible dark mode toggle title. */
+    darkModeSwitchTitle?: string;
+    /** VitePress-compatible labels above prev/next links. */
+    docFooter?: {
+        prev?: string | false;
+        next?: string | false;
+    };
+    siteTitle?: string | false;
+    logo?: ThemeableImage;
+    socialLinks?: SocialLinkItem[];
+    editLink?: {
+        pattern: string;
+        text?: string;
+    };
+    footer?: {
+        message?: string;
+        copyright?: string;
+    };
+    aside?: boolean | 'left';
+    /** VitePress-compatible full lastUpdated options. */
+    lastUpdated?: {
+        text?: string;
+        formatOptions?: Intl.DateTimeFormatOptions & { forceLocale?: boolean };
+    };
+    externalLinkIcon?: boolean;
+
     /**
      * Sidebar configuration.
      *   'auto'      – generate sidebar from docs folder structure (default)

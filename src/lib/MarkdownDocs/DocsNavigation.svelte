@@ -9,12 +9,14 @@
 		menu: TreeViewItem[];
 		active: string;
 		rootPath?: string;
+		ariaLabel?: string;
 		navigate: (path: string) => void;
 	}
 	let {
 		menu,
 		active = "",
 		rootPath = "./",
+		ariaLabel = "Menu",
 		navigate,
 	}: DocsNavigationProps = $props();
 
@@ -31,7 +33,7 @@
 	}
 </script>
 
-<nav>
+<nav aria-label={ariaLabel}>
 	{#each items as item}
 		{@const isSection = item.children && item.children.length > 0}
 		{@const key = item.link ?? item.label}

@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
+    import { ExternalLink } from "@lucide/svelte";
 
     type Props = {
         tag?: string;
@@ -44,17 +45,24 @@
     );
 </script>
 
-<svelte:element
-    this={resolvedTag}
-    class={classes}
-    {href}
-    target={resolvedTarget}
-    rel={resolvedRel}
->
-    {#if children}
-        {@render children()}
-    {/if}
-</svelte:element>
+{#if resolvedTag === "a"}
+    <a class={classes} href={href} target={resolvedTarget} rel={resolvedRel}>
+        {#if children}
+            {@render children()}
+        {/if}
+        {#if isExternal && !noIcon}
+            <span class="external-icon" aria-hidden="true">
+                <ExternalLink size={11} strokeWidth={2} />
+            </span>
+        {/if}
+    </a>
+{:else}
+    <svelte:element this={resolvedTag} class={classes}>
+        {#if children}
+            {@render children()}
+        {/if}
+    </svelte:element>
+{/if}
 
 <style>
     .Link {
@@ -74,21 +82,24 @@
         color: color-mix(in srgb, var(--greg-accent) 80%, white);
     }
 
-    .Link.external-link-icon:after {
-        content: "";
-        display: inline-block;
-        width: 11px;
-        height: 11px;
+    .external-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         margin-left: 3px;
         vertical-align: middle;
-        background: currentColor;
-        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/%3E%3C/svg%3E")
-            center/contain no-repeat;
-        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14'/%3E%3C/svg%3E")
-            center/contain no-repeat;
+        line-height: 1;
     }
 
-    .Link.no-icon:after {
+    .external-icon :global(svg) {
+        stroke: currentColor;
+    }
+
+    .Link.no-icon .external-icon {
+        display: none;
+    }
+
+    :global(.greg[data-external-link-icon="false"]) .Link.external-link-icon .external-icon {
         display: none;
     }
 </style>
