@@ -84,26 +84,45 @@
 {/if}
 
 <style>
-    /* Hide dark variant in light mode */
-    @media (prefers-color-scheme: light) {
-        :global(.Image.dark) {
-            display: none;
-        }
-    }
-
-    /* Hide light variant in dark mode */
-    @media (prefers-color-scheme: dark) {
-        :global(.Image.light) {
-            display: none;
-        }
-    }
-
-    /* Respect explicit .dark/.light class on <html> (for JS theme switcher) */
-    :global(html:not(.dark) .Image.dark) {
+    /* Default: light variant visible, dark variant hidden. */
+    :global(.Image.dark) {
         display: none;
     }
 
+    /* Greg runtime theme switcher is authoritative. */
+    :global(.greg[data-theme="light"] .Image.dark) {
+        display: none;
+    }
+
+    :global(.greg[data-theme="light"] .Image.light) {
+        display: initial;
+    }
+
+    :global(.greg[data-theme="dark"] .Image.light) {
+        display: none;
+    }
+
+    :global(.greg[data-theme="dark"] .Image.dark) {
+        display: initial;
+    }
+
+    /* Fallback outside Greg container. */
+    @media (prefers-color-scheme: dark) {
+        :global(:not(.greg) .Image.light) {
+            display: none;
+        }
+
+        :global(:not(.greg) .Image.dark) {
+            display: initial;
+        }
+    }
+
+    /* Legacy explicit .dark class on <html>. */
     :global(html.dark .Image.light) {
         display: none;
+    }
+
+    :global(html.dark .Image.dark) {
+        display: initial;
     }
 </style>

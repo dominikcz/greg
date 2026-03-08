@@ -7,6 +7,10 @@ hero:
   name: Greg
   text: Svelte-powered documentation engine
   tagline: Write Markdown, get beautiful documentation — hot-reloaded in milliseconds.
+  image:
+    light: /greg-logo-light.svg
+    dark: /greg-logo-dark.svg
+    alt: Greg logo
   actions:
     - theme: brand
       text: Getting Started

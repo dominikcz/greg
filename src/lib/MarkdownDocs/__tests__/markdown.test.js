@@ -279,6 +279,35 @@ describe('rehype-code-group', () => {
 		expect(html).toContain('npm i');
 		expect(html).toContain('pnpm add');
 	});
+
+	it('does not spill into following sections when closing delimiter is malformed around html', async () => {
+		const md = [
+			'::: code-group labels=[markdown, output]',
+			'',
+			'```md',
+			'<Features features={[{ icon: \'docs\', title: \'Docs\' }]} />',
+			'```',
+			'',
+			'<Features features={[{ icon: \'docs\', title: \'Docs\' }]} />',
+			':::',
+			'',
+			'### Direct component usage (`.svelte`)',
+			'',
+			'::: code-group labels=[svelte, output]',
+			'',
+			'```svelte',
+			'<script>\n  import Features from \'$components/Features.svelte\';\n</script>',
+			'```',
+			'',
+			':::',
+		].join('\n');
+
+		const html = await processMarkdown(md);
+		expect(html).toMatch(/data-codegroup-tabs="\[[^"]*markdown[^"]*output[^"]*\]"/);
+		expect(html).toMatch(/data-codegroup-tabs="\[[^"]*svelte[^"]*\]"/);
+		expect(html).not.toContain('Tab 3');
+		expect(html).not.toContain('Tab 4');
+	});
 });
 
 describe('rehype-code-title', () => {
@@ -663,5 +692,13 @@ describe('remarkImportsBrowser — link normalization', () => {
 			docsPrefix: '/documentation',
 		});
 		expect(html).toContain('href="/documentation/reference/api"');
+	});
+
+	it('keeps external links unchanged', async () => {
+		const html = await renderBrowserMarkdown('[VitePress](https://vitepress.dev)', {
+			baseUrl: '/docs/guide/getting-started.md',
+			docsPrefix: '/docs',
+		});
+		expect(html).toContain('href="https://vitepress.dev"');
 	});
 });

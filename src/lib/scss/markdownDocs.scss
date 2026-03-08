@@ -339,6 +339,16 @@
         margin-bottom: var(--base-size-16);
         font-weight: var(--base-text-weight-semibold);
         line-height: 1.25;
+
+        a:not(.header-anchor) {
+            text-decoration: none;
+            text-decoration-color: transparent;
+
+            &:hover {
+                text-decoration: underline;
+                text-decoration-color: var(--fgColor-accent);
+            }
+        }
     }
 
     h1 {

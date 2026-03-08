@@ -1,8 +1,7 @@
 ﻿---
 title: Home Page
+renderer: mdsvex
 ---
-
-# Home Page - Hero & Features
 
 Greg does not use frontmatter-based layouts. Instead, the `<Hero>` and
 `<Features>` components are used directly inside Markdown pages to compose a
@@ -19,6 +18,9 @@ For these components there is no dedicated directive/container shorthand
 - Markdown docs pages (`.md`) via component tags
 - Direct `.svelte` usage via imported components
 
+In Markdown pages, Greg auto-registers these components, so no import is needed.
+In plain `.svelte` files, you still need explicit imports.
+
 ## Hero
 
 The `<Hero>` component renders a large introductory section with a name, tagline,
@@ -28,23 +30,61 @@ optional image and call-to-action buttons.
 
 <<< @/snippets/reference/home-hero-example.md
 
-<!--@include: @/snippets/reference/home-hero-example.md-->
+<Hero
+  name="My Project"
+  text="The fastest way to document things."
+  tagline="Write once, ship everywhere."
+  image={{
+    light: { src: '/greg-logo-light.svg', alt: 'My Project logo' },
+    dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
+  }}
+  actions={[
+    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'alt', text: 'GitHub', link: 'https://github.com/your-org/your-repo' },
+  ]}
+/>
 
 :::
 
-### Direct component usage (`.svelte`)
+### Direct component usage for Hero (`.svelte`)
 
-::: code-group labels=[markdown, output]
+In `.svelte` files, import the component explicitly:
+
+::: code-group labels=[svelte, output]
 
 ```svelte
 <script>
   import Hero from '$components/Hero.svelte';
 </script>
 
-<<< @/snippets/reference/home-hero-example.md
+<Hero
+  name="My Project"
+  text="The fastest way to document things."
+  tagline="Write once, ship everywhere."
+  image={{
+    light: { src: '/greg-logo-light.svg', alt: 'My Project logo' },
+    dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
+  }}
+  actions={[
+    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'alt', text: 'GitHub', link: 'https://github.com/your-org/your-repo' },
+  ]}
+/>
 ```
 
-<!--@include: @/snippets/reference/home-hero-example.md-->
+<Hero
+  name="My Project"
+  text="The fastest way to document things."
+  tagline="Write once, ship everywhere."
+  image={{
+    light: { src: '/greg-logo-light.svg', alt: 'My Project logo' },
+    dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
+  }}
+  actions={[
+    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'alt', text: 'GitHub', link: 'https://github.com/your-org/your-repo' },
+  ]}
+/>
 
 :::
 
@@ -60,9 +100,13 @@ interface HeroAction {
 }
 
 type ThemeImage =
-  | string                              // same image for both themes
-  | { src: string; alt?: string }
-  | { dark: string; light: string; alt?: string };
+  | string // same image for both themes
+  | { src: string; alt?: string; width?: number | string; height?: number | string }
+  | {
+      light: string | { src: string; alt?: string; width?: number | string; height?: number | string };
+      dark: string | { src: string; alt?: string; width?: number | string; height?: number | string };
+      alt?: string;
+    };
 
 interface Props {
   name?: string;       // product name - displayed with accent colour
@@ -72,6 +116,10 @@ interface Props {
   actions?: HeroAction[];
 }
 ```
+
+If you use a manual theme toggle, prefer the `light`/`dark` image pair form.
+A single image with only `@media (prefers-color-scheme)` follows system theme,
+not necessarily the in-app toggle state.
 
 ### Snippet slots
 
@@ -94,23 +142,43 @@ Hero section.
 
 <<< @/snippets/reference/home-features-example.md
 
-<!--@include: @/snippets/reference/home-features-example.md-->
+<Features
+  features={[
+    { icon: 'docs', title: 'Markdown-first', details: 'Rich extensions, zero config.' },
+    { icon: 'vite', title: 'Vite-powered', details: 'Instant HMR and fast builds.' },
+    { icon: 'svelte', title: 'Svelte 5', details: 'Runes-based, no overhead.' },
+  ]}
+/>
 
 :::
 
 ### Direct component usage (`.svelte`)
 
-::: code-group labels=[markdown, output]
+In `.svelte` files, import the component explicitly:
+
+::: code-group labels=[svelte, output]
 
 ```svelte
 <script>
   import Features from '$components/Features.svelte';
 </script>
 
-<<< @/snippets/reference/home-features-example.md
+<Features
+  features={[
+    { icon: 'docs', title: 'Markdown-first', details: 'Rich extensions, zero config.' },
+    { icon: 'vite', title: 'Vite-powered', details: 'Instant HMR and fast builds.' },
+    { icon: 'svelte', title: 'Svelte 5', details: 'Runes-based, no overhead.' },
+  ]}
+/>
 ```
 
-<!--@include: @/snippets/reference/home-features-example.md-->
+<Features
+  features={[
+    { icon: 'docs', title: 'Markdown-first', details: 'Rich extensions, zero config.' },
+    { icon: 'vite', title: 'Vite-powered', details: 'Instant HMR and fast builds.' },
+    { icon: 'svelte', title: 'Svelte 5', details: 'Runes-based, no overhead.' },
+  ]}
+/>
 
 :::
 

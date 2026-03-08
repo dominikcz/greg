@@ -114,16 +114,27 @@ const mdsvexOptions = {
 	],
 	rehypePlugins: [
 		rehypeSlug,
-		[rehypeAutolinkHeadings, { behavior: 'wrap' }],
+		[
+			rehypeAutolinkHeadings,
+			{
+				behavior: 'prepend',
+				properties: {
+					class: 'header-anchor',
+					ariaHidden: 'true',
+					tabIndex: -1,
+				},
+				content: { type: 'text', value: '#' },
+			},
+		],
 		rehypeContainers,
-		rehypeCodeGroup,
+		[rehypeCodeGroup, { output: 'static-tabs' }],
 		rehypeCodeTitle,
 		rehypeTocPlaceholder,
 	],
 }
 /** @type {import("@sveltejs/vite-plugin-svelte").SvelteConfig} */
 export default {
-	extensions: ['.svelte', '.svx'],
-	preprocess: mdsvex({ extensions: ['.svx'], ...mdsvexOptions }),
+	extensions: ['.svelte', '.svx', '.md'],
+	preprocess: mdsvex({ extensions: ['.svx', '.md'], ...mdsvexOptions }),
 };
 

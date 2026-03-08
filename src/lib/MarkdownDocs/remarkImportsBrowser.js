@@ -96,6 +96,7 @@ function normalizeInternalLinkUrl(url) {
 function expandAliasInUrls(node, currentDirUrl, docsPrefix) {
     if (node.type === 'link' && typeof node.url === 'string') {
         if (node.url.startsWith('#')) return;
+        if (EXTERNAL_URL_RE.test(node.url)) return;
         if (!node.data?.hProperties?.target) {
             const resolved = resolveImportUrl(node.url, currentDirUrl, docsPrefix);
             node.url = normalizeInternalLinkUrl(resolved);
@@ -232,6 +233,15 @@ function inlineNodeText(node) {
     return '';
 }
 
+function looksLikeSvelteMarkup(content) {
+    const text = String(content ?? '').trim();
+    if (!text) return false;
+    const hasComponentTag = /<\/?[A-Z][A-Za-z0-9]*\b/.test(text);
+    const hasSvelteExpressionAttr = /=\s*\{/.test(text);
+    const hasSvelteBlockSyntax = /\{[#/:@][^}]+\}/.test(text);
+    return (hasComponentTag && hasSvelteExpressionAttr) || hasSvelteBlockSyntax;
+}
+
 // ── Async tree transformers ───────────────────────────────────────────────────
 
 async function buildSnippetNode(rawSpec, currentDirUrl, docsPrefix) {
@@ -265,6 +275,12 @@ async function buildIncludeNodes(rawSpec, currentDirUrl, docsPrefix) {
     if (withBraces.braces) content = selectLines(content, withBraces.braces);
     // Strip frontmatter from included files
     content = content.replace(/^---[\r\n][\s\S]*?[\r\n]---[\r\n]?/, '');
+
+    if (looksLikeSvelteMarkup(content)) {
+        const includeDirUrl = url.substring(0, url.lastIndexOf('/') + 1);
+        return { nodes: [{ type: 'html', value: content }], includeDirUrl };
+    }
+
     const tree = unified().use(remarkParse).parse(content);
     const includeDirUrl = url.substring(0, url.lastIndexOf('/') + 1);
     return { nodes: tree.children ?? [], includeDirUrl };

@@ -11,10 +11,33 @@ CSS custom properties.
 
 ## Dark / light mode
 
-The user's OS preference (`prefers-color-scheme`) is detected on first load. The
-choice is persisted in `localStorage` under the key `greg-theme`.
+The user's OS preference (`prefers-color-scheme`) is detected on first load.
+Greg follows system theme by default and only persists a value in
+`localStorage` after a manual toggle.
 
 A light/dark toggle is always visible in the top-right header.
+
+When the user toggles theme manually, Greg switches to manual mode and stores:
+
+- `greg-theme-source = "manual"`
+- `greg-theme = "light" | "dark"`
+
+If system mode is active, those keys are removed and Greg follows
+`prefers-color-scheme`.
+
+## Theme-aware favicon and header logo
+
+Greg can switch favicon and header logo from app theme state (`data-theme`), not
+only from browser/system preference.
+
+If you need this behavior, use separate assets for each theme, for example:
+
+- `/favicon-light.svg`
+- `/favicon-dark.svg`
+
+Why two files: a single `favicon.svg` with only
+`@media (prefers-color-scheme: dark)` reacts to system theme. It does not always
+match an in-app manual toggle.
 
 
 ## CSS variables

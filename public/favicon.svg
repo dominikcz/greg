@@ -1,0 +1,44 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Greg favicon simplified">
+  <style>
+    :root {
+      --accent: #646cff;
+      --accent-shadow: #3940b8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --accent: #ff6f61;
+        --accent-shadow: #9b453d;
+      }
+    }
+  </style>
+  <defs>
+    <!-- Same graph silhouette as main logo, scaled to favicon space -->
+    <g id="gMain" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <g stroke="currentColor" stroke-width="3.5">
+        <path d="M34.06 33.64L42.41 31.24L50.34 34.28L46.68 43.90L33.89 53.29L17.85 45.08L13.61 29.30L20.48 17.15L31.76 13.14L41.84 15.04"/>
+      </g>
+      <g stroke="currentColor" stroke-width="1.25" fill="currentColor">
+        <circle cx="34.06" cy="33.64" r="2.4"/>
+        <circle cx="42.41" cy="31.24" r="2.4"/>
+        <circle cx="50.34" cy="34.28" r="2.8"/>
+        <circle cx="46.68" cy="43.90" r="3.0"/>
+        <circle cx="33.89" cy="53.29" r="3.0"/>
+        <circle cx="17.85" cy="45.08" r="3.3"/>
+        <circle cx="13.61" cy="29.30" r="2.9"/>
+        <circle cx="20.48" cy="17.15" r="2.4"/>
+        <circle cx="31.76" cy="13.14" r="2.3"/>
+        <circle cx="41.84" cy="15.04" r="2.1"/>
+      </g>
+    </g>
+  </defs>
+
+  <g transform="translate(-8 -10.5) scale(1.24)">
+    <!-- Shifted lower layer with reduced gap -->
+    <g color="var(--accent-shadow)">
+      <use href="#gMain" transform="translate(1.2 1.8)"/>
+    </g>
+    <g color="var(--accent)">
+      <use href="#gMain"/>
+    </g>
+  </g>
+</svg>

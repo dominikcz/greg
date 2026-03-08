@@ -71,7 +71,12 @@
 				navigate(rootPath);
 			}}
 		>
-			<span class="site-logo" role="img" aria-label="Greg logo"></span>
+			<span
+				class="site-logo"
+				role="img"
+				aria-label="Greg logo"
+				style={`background-image: url(${theme === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg"})`}
+			></span>
 			{mainTitle}
 		</a>
 		{#if version}
@@ -291,9 +296,9 @@
 			width: 22px;
 			height: 22px;
 			flex-shrink: 0;
-			background-color: var(--greg-accent);
-			mask: url("/greg.svg") center / contain no-repeat;
-			-webkit-mask: url("/greg.svg") center / contain no-repeat;
+			background-position: center;
+			background-repeat: no-repeat;
+			background-size: contain;
 		}
 
 		&:hover {

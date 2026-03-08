@@ -18,6 +18,82 @@ function getNodeText(node) {
 	return node.children.map(getNodeText).join('');
 }
 
+function isHeadingElement(node) {
+	return node?.type === 'element' && /^h[1-6]$/i.test(String(node.tagName ?? ''));
+}
+
+function isCodeGroupStartNode(node) {
+	if (node?.type !== 'element' || node.tagName !== 'p') return false;
+	return START_DELIMITER_REGEX.test(getNodeText(node).trim());
+}
+
+function isEndDelimiterNode(node) {
+	if (!node) return false;
+	if (node.type === 'element' && node.tagName === 'p') {
+		return getNodeText(node).trim() === END_DELIMITER;
+	}
+	if (node.type === 'raw' || node.type === 'text') {
+		return String(node.value ?? '').trim() === END_DELIMITER;
+	}
+	return false;
+}
+
+function splitNodeWithAttachedEndDelimiter(node) {
+	if (!node) return null;
+
+	let kind = null;
+	let value = '';
+
+	if (node.type === 'raw' || node.type === 'text') {
+		kind = node.type;
+		value = String(node.value ?? '');
+	} else if (
+		node.type === 'element' &&
+		node.tagName === 'p' &&
+		Array.isArray(node.children) &&
+		node.children.every((child) => child?.type === 'text')
+	) {
+		kind = 'p-text';
+		value = node.children.map((child) => String(child.value ?? '')).join('');
+	}
+
+	if (!kind) return null;
+
+	const match = value.match(/^(.*)\r?\n\s*:::\s*$/s);
+	if (!match) return null;
+
+	const prefix = match[1] ?? '';
+	const delimiterNode = {
+		type: 'element',
+		tagName: 'p',
+		properties: {},
+		children: [{ type: 'text', value: END_DELIMITER }],
+	};
+
+	if (!prefix.trim()) return [delimiterNode];
+
+	if (kind === 'raw' || kind === 'text') {
+		return [{ ...node, value: prefix }, delimiterNode];
+	}
+
+	return [
+		{
+			...node,
+			children: [{ type: 'text', value: prefix }],
+		},
+		delimiterNode,
+	];
+}
+
+function stripTrailingDelimiter(node) {
+	if (!node || (node.type !== 'raw' && node.type !== 'text')) return node;
+	const value = String(node.value ?? '');
+	if (!/(?:^|\r?\n)\s*:::\s*$/.test(value)) return node;
+	const stripped = value.replace(/\r?\n\s*:::\s*$/, '');
+	if (!stripped.trim()) return null;
+	return { ...node, value: stripped };
+}
+
 function isIgnorableNode(node) {
 	if (!node) return true;
 	if (node.type === 'text') return !String(node.value ?? '').trim();
@@ -118,8 +194,48 @@ function createBlockWrapper(block, index) {
 	};
 }
 
-export default function rehypeCodeGroup() {
+function createTabs(tabLabels, uniqueId) {
+	return {
+		type: 'element',
+		tagName: 'div',
+		properties: { className: ['rcg-tab-container'], role: 'tablist' },
+		children: tabLabels.map((label, index) => ({
+			type: 'element',
+			tagName: 'button',
+			properties: {
+				type: 'button',
+				className: ['rcg-tab', ...(index === 0 ? ['active'] : [])],
+				role: 'tab',
+				'aria-selected': index === 0 ? 'true' : 'false',
+				'aria-controls': `${uniqueId}-block-${index}`,
+				id: `${uniqueId}-tab-${index}`,
+			},
+			children: [{ type: 'text', value: label }],
+		})),
+	};
+}
+
+function createStaticBlockWrapper(block, uniqueId, index) {
+	const isActive = index === 0;
+	return {
+		type: 'element',
+		tagName: 'div',
+		properties: {
+			className: ['rcg-block', ...(isActive ? ['active'] : [])],
+			role: 'tabpanel',
+			'aria-labelledby': `${uniqueId}-tab-${index}`,
+			id: `${uniqueId}-block-${index}`,
+			...(isActive ? {} : { hidden: true }),
+		},
+		children: [block],
+	};
+}
+
+export default function rehypeCodeGroup(options = {}) {
+	const output = options.output === 'static-tabs' ? 'static-tabs' : 'hydrated-element';
 	return (tree) => {
+		let counter = 0;
+
 		visit(tree, 'element', (node, index, parent) => {
 			if (!parent || typeof index !== 'number') return;
 			if (node.tagName !== 'p') return;
@@ -131,33 +247,73 @@ export default function rehypeCodeGroup() {
 			let endIndex = -1;
 			for (let i = index + 1; i < parent.children.length; i++) {
 				const candidate = parent.children[i];
-				if (candidate.type !== 'element' || candidate.tagName !== 'p') continue;
-				if (getNodeText(candidate).trim() === END_DELIMITER) {
+				if (isEndDelimiterNode(candidate)) {
 					endIndex = i;
 					break;
 				}
+
+				const splitNodes = splitNodeWithAttachedEndDelimiter(candidate);
+				if (splitNodes) {
+					parent.children.splice(i, 1, ...splitNodes);
+					endIndex = splitNodes.length === 1 ? i : i + 1;
+					break;
+				}
 			}
-			if (endIndex === -1) return;
+
+			let implicitBoundaryIndex = -1;
+			if (endIndex === -1) {
+				for (let i = index + 1; i < parent.children.length; i++) {
+					const candidate = parent.children[i];
+					if (isHeadingElement(candidate) || isCodeGroupStartNode(candidate)) {
+						implicitBoundaryIndex = i;
+						break;
+					}
+				}
+				if (implicitBoundaryIndex === -1) return;
+			}
 
 			const explicitLabels = (startMatch[1] ?? '').split(',').map((label) => label.trim()).filter(Boolean);
-			const between = parent.children.slice(index + 1, endIndex);
-			const codeBlocks = between.filter((child) => !isIgnorableNode(child));
+			const sliceEnd = endIndex !== -1 ? endIndex : implicitBoundaryIndex;
+			const between = parent.children.slice(index + 1, sliceEnd);
+			const normalizedBlocks = between
+				.map((child) => stripTrailingDelimiter(child))
+				.filter(Boolean);
+			const codeBlocks = normalizedBlocks.filter(
+				(child) => !isIgnorableNode(child) && !isEndDelimiterNode(child),
+			);
 			const usedLabels = codeBlocks.map((block, blockIndex) => {
 				return explicitLabels[blockIndex] ?? inferLabelFromBlock(block, blockIndex);
 			});
 
-			const groupNode = {
-				type: 'element',
-				tagName: 'codegroup',
-				properties: {
-					className: ['rehype-code-group'],
-					'data-codegroup-tabs': JSON.stringify(usedLabels),
-					'data-codegroup-active': '0',
-				},
-				children: codeBlocks.map((block, blockIndex) => createBlockWrapper(block, blockIndex)),
-			};
+			const uniqueId = `rcg-${counter++}`;
 
-			parent.children.splice(index, endIndex - index + 1, groupNode);
+			const groupNode = output === 'static-tabs'
+				? {
+					type: 'element',
+					tagName: 'div',
+					properties: { className: ['rehype-code-group'] },
+					children: [
+						createTabs(usedLabels, uniqueId),
+						...codeBlocks.map((block, blockIndex) =>
+							createStaticBlockWrapper(block, uniqueId, blockIndex),
+						),
+					],
+				}
+				: {
+					type: 'element',
+					tagName: 'codegroup',
+					properties: {
+						className: ['rehype-code-group'],
+						'data-codegroup-tabs': JSON.stringify(usedLabels),
+						'data-codegroup-active': '0',
+					},
+					children: codeBlocks.map((block, blockIndex) => createBlockWrapper(block, blockIndex)),
+				};
+
+			const deleteCount = endIndex !== -1
+				? endIndex - index + 1
+				: implicitBoundaryIndex - index;
+			parent.children.splice(index, deleteCount, groupNode);
 
 			return [SKIP, index + 1];
 		});

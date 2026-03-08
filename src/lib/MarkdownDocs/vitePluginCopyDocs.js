@@ -52,7 +52,15 @@ export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets']
          */
         configureServer(server) {
             server.middlewares.use((req, res, next) => {
-                const url = req.url?.split('?')[0] ?? '';
+                const originalUrl = req.url ?? '';
+                const [urlPath, query = ''] = originalUrl.split('?');
+                const url = urlPath ?? '';
+
+                // Let Vite handle module requests like `/docs/file.md?import`.
+                if (query) {
+                    next();
+                    return;
+                }
 
                 // Docs markdown files
                 if (url.startsWith('/' + docsDir + '/') && url.endsWith('.md')) {

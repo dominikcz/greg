@@ -321,6 +321,15 @@ function parseIncludeSpec(raw) {
 	};
 }
 
+function looksLikeSvelteMarkup(content) {
+	const text = String(content ?? '').trim();
+	if (!text) return false;
+	const hasComponentTag = /<\/?[A-Z][A-Za-z0-9]*\b/.test(text);
+	const hasSvelteExpressionAttr = /=\s*\{/.test(text);
+	const hasSvelteBlockSyntax = /\{[#/:@][^}]+\}/.test(text);
+	return (hasComponentTag && hasSvelteExpressionAttr) || hasSvelteBlockSyntax;
+}
+
 async function buildIncludeNodes(rawSpec, currentDir, sourceRoot, docsDir) {
 	const parsed = parseIncludeSpec(rawSpec);
 	const absolutePath = resolveImportPath(parsed.filePart, currentDir, sourceRoot, docsDir);
@@ -338,6 +347,13 @@ async function buildIncludeNodes(rawSpec, currentDir, sourceRoot, docsDir) {
 
 	if (parsed.rangePart) {
 		content = selectLines(content, parsed.rangePart);
+	}
+
+	if (looksLikeSvelteMarkup(content)) {
+		return {
+			nodes: [{ type: 'html', value: content }],
+			includeDir: path.dirname(absolutePath),
+		};
 	}
 
 	const tree = unified().use(remarkParse).parse(content);

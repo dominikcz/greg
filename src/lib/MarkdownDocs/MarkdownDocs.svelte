@@ -17,6 +17,7 @@
     import Outline from "./Outline.svelte";
     import { useRouter } from "./useRouter.svelte";
     import { useSplitter } from "./useSplitter.svelte";
+    import { handleCodeGroupClick, handleCodeGroupKeydown } from "./codeGroup";
     import allFrontmatters from "virtual:greg-frontmatter";
     import MarkdownRenderer from "./MarkdownRenderer.svelte";
     import LayoutHome from "./layouts/LayoutHome.svelte";
@@ -156,6 +157,7 @@
         title?: string;
         order?: number;
         layout?: "doc" | "home" | "page";
+        renderer?: "runtime" | "mdsvex";
         hero?: Record<string, unknown>;
         features?: unknown[];
         outline?: OutlineOption | boolean;
@@ -180,12 +182,106 @@
             ? "dark"
             : "light";
     }
+
+    const THEME_KEY = "greg-theme";
+    const THEME_SOURCE_KEY = "greg-theme-source";
+
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    const storedSource = localStorage.getItem(THEME_SOURCE_KEY);
+    const initialThemeSource: "system" | "manual" =
+        storedSource === "manual" ? "manual" : "system";
+
+    let themeSource = $state<"system" | "manual">(initialThemeSource);
+
     let theme = $state<"light" | "dark">(
-        (localStorage.getItem("greg-theme") as "light" | "dark") ??
-            getSystemTheme(),
+        initialThemeSource === "manual" &&
+            (storedTheme === "light" || storedTheme === "dark")
+            ? storedTheme
+            : getSystemTheme(),
     );
+    let lastSystemPrefersDark = $state(getSystemTheme() === "dark");
+
+    function setThemeManually(next: "light" | "dark") {
+        themeSource = "manual";
+        theme = next;
+    }
+
     $effect(() => {
-        localStorage.setItem("greg-theme", theme);
+        if (themeSource === "manual") {
+            localStorage.setItem(THEME_SOURCE_KEY, "manual");
+            localStorage.setItem(THEME_KEY, theme);
+            return;
+        }
+
+        localStorage.removeItem(THEME_SOURCE_KEY);
+        localStorage.removeItem(THEME_KEY);
+    });
+
+    $effect(() => {
+        const mq = window.matchMedia("(prefers-color-scheme: dark)");
+
+        const syncFromSystemPreference = (force: boolean) => {
+            const currentPrefersDark = mq.matches;
+            const changed = currentPrefersDark !== lastSystemPrefersDark;
+
+            if (changed) {
+                lastSystemPrefersDark = currentPrefersDark;
+                const next = currentPrefersDark ? "dark" : "light";
+                themeSource = "system";
+                theme = next;
+                return;
+            }
+
+            // Keep following system only when currently in system mode.
+            if (force && themeSource === "system") {
+                theme = currentPrefersDark ? "dark" : "light";
+            }
+        };
+
+        const handleSystemPreferenceEvent = () => {
+            syncFromSystemPreference(false);
+        };
+
+        syncFromSystemPreference(true);
+
+        mq.addEventListener("change", handleSystemPreferenceEvent);
+        window.addEventListener("focus", handleSystemPreferenceEvent);
+        document.addEventListener(
+            "visibilitychange",
+            handleSystemPreferenceEvent,
+        );
+
+        return () => {
+            mq.removeEventListener("change", handleSystemPreferenceEvent);
+            window.removeEventListener("focus", handleSystemPreferenceEvent);
+            document.removeEventListener(
+                "visibilitychange",
+                handleSystemPreferenceEvent,
+            );
+        };
+    });
+
+    $effect(() => {
+        const href =
+            theme === "dark"
+                ? "/favicon-dark.svg?v=5"
+                : "/favicon-light.svg?v=5";
+
+        let el = document.querySelector(
+            'link[data-greg-favicon="true"]',
+        ) as HTMLLinkElement | null;
+
+        if (!el) {
+            el = document.createElement("link");
+            el.rel = "icon";
+            el.type = "image/svg+xml";
+            el.setAttribute("data-greg-favicon", "true");
+            document.head.appendChild(el);
+        }
+
+        if (el.href !== new URL(href, window.location.origin).href) {
+            el.href = href;
+        }
     });
 
     // -- Search ------------------------------------------------------------------
@@ -209,6 +305,51 @@
 
     // -- Router ------------------------------------------------------------------
     const router = useRouter(frontmatters, () => rootPath);
+
+    type CompiledMarkdownModule = {
+        default: any;
+    };
+
+    // Keep this list explicit: only selected pages are compiled as Svelte modules.
+    const compiledMarkdownModules = import.meta.glob(
+        ["/docs/reference/home-page.md", "/docs/test.md"],
+    ) as Record<
+        string,
+        () => Promise<CompiledMarkdownModule>
+    >;
+
+    const hasCompiledMarkdownModule = $derived.by(() => {
+        const mdPath = router.activeMarkdownPath;
+        if (!mdPath) return false;
+        if (compiledMarkdownModules[mdPath]) return true;
+        return Object.keys(compiledMarkdownModules).some(
+            (key) => key.endsWith(mdPath) || mdPath.endsWith(key),
+        );
+    });
+
+    function resolveCompiledLoader(mdPath: string) {
+        const exact = compiledMarkdownModules[mdPath];
+        if (exact) return exact;
+
+        const fallbackKey = Object.keys(compiledMarkdownModules).find(
+            (key) => key.endsWith(mdPath) || mdPath.endsWith(key),
+        );
+        return fallbackKey ? compiledMarkdownModules[fallbackKey] : undefined;
+    }
+
+    async function loadCompiledMarkdown(mdPath: string) {
+        const loader = resolveCompiledLoader(mdPath);
+        if (!loader) return null;
+        try {
+            return await loader();
+        } catch (err) {
+            console.error("[greg] Failed to load compiled markdown module", {
+                mdPath,
+                err,
+            });
+            return null;
+        }
+    }
 
     const title = $derived(router.title(flat));
 
@@ -240,6 +381,9 @@
     );
     const activeLayout = $derived<"doc" | "home" | "page">(
         activeFrontmatter?.layout ?? "doc",
+    );
+    const useCompiledRenderer = $derived(
+        activeFrontmatter?.renderer === "mdsvex" || hasCompiledMarkdownModule,
     );
 
     /** Page-level outline: reads `outline` from active page frontmatter, falls back to global setting. */
@@ -351,6 +495,8 @@
     data-theme={theme}
     onmousemove={sp.onMouseMove}
     onmouseup={sp.onMouseUp}
+    onclick={handleCodeGroupClick}
+    onkeydown={handleCodeGroupKeydown}
 >
     <DocsSiteHeader
         {rootPath}
@@ -359,7 +505,7 @@
         {nav}
         {theme}
         showSearch={searchEnabled}
-        onThemeChange={(t) => (theme = t)}
+        onThemeChange={(t) => setThemeManually(t)}
         navigate={router.navigate}
         onOpenSearch={() => (searchOpen = true)}
     />
@@ -394,55 +540,108 @@
                     features={(activeFrontmatter as any)?.features}
                 />
             {:else if router.activeMarkdownPath}
-                {#await fetchMarkdown(router.activeMarkdownPath)}
-                    <div class="spinner-wrap">
-                        <Spinner />
-                    </div>
-                {:then markdown}
-                    {#if breadcrumb}
-                        <Breadcrumb
-                            items={breadcrumbItems}
-                            navigate={router.navigate}
-                            {rootPath}
+                {#if useCompiledRenderer}
+                    {#await loadCompiledMarkdown(router.activeMarkdownPath)}
+                        <div class="spinner-wrap">
+                            <Spinner />
+                        </div>
+                    {:then compiledModule}
+                        {#if compiledModule}
+                            {#if breadcrumb}
+                                <Breadcrumb
+                                    items={breadcrumbItems}
+                                    navigate={router.navigate}
+                                    {rootPath}
+                                />
+                            {/if}
+                            {@const CompiledPage = compiledModule.default}
+                            <div class="markdown-renderer markdown-body">
+                                <CompiledPage />
+                            </div>
+                            {#if lastModified && activeFrontmatter?._mtime}
+                                {@const lmLabel =
+                                    (typeof lastModified === "object"
+                                        ? lastModified.text
+                                        : null) ?? "Last updated:"}
+                                {@const lmFmt = (typeof lastModified === "object"
+                                    ? lastModified.formatOptions
+                                    : null) ?? { dateStyle: "medium" as const }}
+                                {@const lmLocale =
+                                    (typeof lastModified === "object"
+                                        ? lastModified.locale
+                                        : null) ?? navigator.language}
+                                <p class="doc-last-modified">
+                                    {lmLabel}
+                                    {new Intl.DateTimeFormat(
+                                        lmLocale,
+                                        lmFmt,
+                                    ).format(new Date(activeFrontmatter._mtime))}
+                                </p>
+                            {/if}
+                            {#if activeLayout === "doc"}
+                                <PrevNext
+                                    prev={prevNext.prev}
+                                    next={prevNext.next}
+                                    navigate={router.navigate}
+                                />
+                            {/if}
+                        {:else}
+                            <p class="fetch-error">Could not load page.</p>
+                        {/if}
+                    {:catch}
+                        <p class="fetch-error">Could not load page.</p>
+                    {/await}
+                {:else}
+                    {#await fetchMarkdown(router.activeMarkdownPath)}
+                        <div class="spinner-wrap">
+                            <Spinner />
+                        </div>
+                    {:then markdown}
+                        {#if breadcrumb}
+                            <Breadcrumb
+                                items={breadcrumbItems}
+                                navigate={router.navigate}
+                                {rootPath}
+                            />
+                        {/if}
+                        <MarkdownRenderer
+                            {markdown}
+                            baseUrl={router.activeMarkdownPath}
+                            docsPrefix={rootPath}
+                            {mermaidTheme}
+                            {mermaidThemes}
+                            colorTheme={theme}
                         />
-                    {/if}
-                    <MarkdownRenderer
-                        {markdown}
-                        baseUrl={router.activeMarkdownPath}
-                        docsPrefix={rootPath}
-                        {mermaidTheme}
-                        {mermaidThemes}
-                        colorTheme={theme}
-                    />
-                    {#if lastModified && activeFrontmatter?._mtime}
-                        {@const lmLabel =
-                            (typeof lastModified === "object"
-                                ? lastModified.text
-                                : null) ?? "Last updated:"}
-                        {@const lmFmt = (typeof lastModified === "object"
-                            ? lastModified.formatOptions
-                            : null) ?? { dateStyle: "medium" as const }}
-                        {@const lmLocale =
-                            (typeof lastModified === "object"
-                                ? lastModified.locale
-                                : null) ?? navigator.language}
-                        <p class="doc-last-modified">
-                            {lmLabel}
-                            {new Intl.DateTimeFormat(lmLocale, lmFmt).format(
-                                new Date(activeFrontmatter._mtime),
-                            )}
-                        </p>
-                    {/if}
-                    {#if activeLayout === "doc"}
-                        <PrevNext
-                            prev={prevNext.prev}
-                            next={prevNext.next}
-                            navigate={router.navigate}
-                        />
-                    {/if}
-                {:catch}
-                    <p class="fetch-error">Could not load page.</p>
-                {/await}
+                        {#if lastModified && activeFrontmatter?._mtime}
+                            {@const lmLabel =
+                                (typeof lastModified === "object"
+                                    ? lastModified.text
+                                    : null) ?? "Last updated:"}
+                            {@const lmFmt = (typeof lastModified === "object"
+                                ? lastModified.formatOptions
+                                : null) ?? { dateStyle: "medium" as const }}
+                            {@const lmLocale =
+                                (typeof lastModified === "object"
+                                    ? lastModified.locale
+                                    : null) ?? navigator.language}
+                            <p class="doc-last-modified">
+                                {lmLabel}
+                                {new Intl.DateTimeFormat(lmLocale, lmFmt).format(
+                                    new Date(activeFrontmatter._mtime),
+                                )}
+                            </p>
+                        {/if}
+                        {#if activeLayout === "doc"}
+                            <PrevNext
+                                prev={prevNext.prev}
+                                next={prevNext.next}
+                                navigate={router.navigate}
+                            />
+                        {/if}
+                    {:catch}
+                        <p class="fetch-error">Could not load page.</p>
+                    {/await}
+                {/if}
             {:else if notFound}
                 <div class="not-found">
                     <p class="not-found-code">404</p>

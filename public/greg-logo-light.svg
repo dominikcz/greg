@@ -1,0 +1,92 @@
+<svg width="256" height="256" viewBox="0 0 256 256" aria-label="Greg logo light" version="1.1" id="prefix__svg2" xmlns="http://www.w3.org/2000/svg">
+    <style id="style1">
+        :root {
+            --logo-bg-1: #646cff;
+            --logo-bg-2: #4f55d6;
+            --logo-glow: #c9ccff;
+            --logo-shade: #2e338c;
+            --edge: #ffffff;
+            --n1: #ffffff;
+            --n2: #eef1ff;
+            --n3: #d7ddff;
+            --n4: #c2ccff;
+            color: var(--edge);
+        }
+    </style>
+
+    <defs id="prefix__defs2">
+        <linearGradient id="prefix__g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="var(--logo-bg-1)" id="prefix__stop1" />
+            <stop offset="100%" stop-color="var(--logo-bg-2)" id="prefix__stop2" />
+        </linearGradient>
+        <radialGradient id="prefix__g2" cx="0.3" cy="0.28" r="0.9">
+            <stop offset="0%" stop-color="var(--logo-glow)" stop-opacity="0.58" />
+            <stop offset="100%" stop-color="var(--logo-glow)" stop-opacity="0" />
+        </radialGradient>
+        <radialGradient id="prefix__g3" cx="0.82" cy="0.84" r="0.95">
+            <stop offset="0%" stop-color="var(--logo-shade)" stop-opacity="0.35" />
+            <stop offset="100%" stop-color="var(--logo-shade)" stop-opacity="0" />
+        </radialGradient>
+
+        <g id="prefix__graph-shape">
+            <g fill="none" stroke="var(--edge)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.9">
+                <path d="M136.24 134.567L169.654 124.963" />
+                <path d="M169.654 124.963L201.362 137.115" />
+                <path d="M201.362 137.115L186.709 175.596" />
+                <path d="M186.709 175.596L135.559 213.151" />
+                <path d="M135.559 213.151L71.407 180.315" />
+                <path d="M71.407 180.315L54.456 117.206" />
+                <path d="M54.456 117.206L81.925 68.597" />
+                <path d="M81.925 68.597L127.029 52.576" />
+                <path d="M127.029 52.576L167.378 60.164" />
+            </g>
+
+            <circle cx="136.24" cy="134.567" r="6.075" fill="var(--n1)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="169.654" cy="124.963" r="6.075" fill="var(--n2)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="201.362" cy="137.115" r="8.325" fill="var(--n3)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="186.709" cy="175.596" r="9.552" fill="var(--n4)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="135.559" cy="213.151" r="9.961" fill="var(--n1)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="71.407" cy="180.315" r="11.188" fill="var(--n2)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="54.456" cy="117.206" r="9.143" fill="var(--n3)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="81.925" cy="68.597" r="6.075" fill="var(--n4)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="127.029" cy="52.576" r="5.461" fill="var(--n1)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+            <circle cx="167.378" cy="60.164" r="4.234" fill="var(--n2)" stroke="var(--edge)" stroke-opacity="0.35" stroke-width="1.1" />
+        </g>
+    </defs>
+
+    <rect x="16" y="16" width="224" height="224" rx="48" fill="url(#prefix__g)" id="prefix__rect2" />
+    <rect x="16" y="16" width="224" height="224" rx="48" fill="url(#prefix__g2)" />
+    <rect x="16" y="16" width="224" height="224" rx="48" fill="url(#prefix__g3)" />
+
+    <g transform="translate(-7.48 -1.11)">
+        <use href="#prefix__graph-shape" transform="translate(18 -12)" opacity="0.42" />
+
+        <g fill="none" stroke="var(--edge)" stroke-width="2.2" stroke-linecap="round" stroke-opacity="0.6">
+            <path d="M136.24 134.567L154.24 122.567" />
+            <path d="M169.654 124.963L187.654 112.963" />
+            <path d="M201.362 137.115L219.362 125.115" />
+            <path d="M186.709 175.596L204.709 163.596" />
+            <path d="M135.559 213.151L153.559 201.151" />
+            <path d="M71.407 180.315L89.407 168.315" />
+            <path d="M54.456 117.206L72.456 105.206" />
+            <path d="M81.925 68.597L99.925 56.597" />
+            <path d="M127.029 52.576L145.029 40.576" />
+            <path d="M167.378 60.164L185.378 48.164" />
+        </g>
+
+        <g fill="none" stroke="var(--edge)" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.38">
+            <path d="M136.24 134.567L187.654 112.963" />
+            <path d="M169.654 124.963L219.362 125.115" />
+            <path d="M201.362 137.115L204.709 163.596" />
+            <path d="M186.709 175.596L153.559 201.151" />
+            <path d="M135.559 213.151L89.407 168.315" />
+            <path d="M71.407 180.315L72.456 105.206" />
+            <path d="M54.456 117.206L89.407 168.315" />
+            <path d="M81.925 68.597L145.029 40.576" />
+            <path d="M127.029 52.576L185.378 48.164" />
+            <path d="M167.378 60.164L154.24 122.567" />
+        </g>
+
+        <use href="#prefix__graph-shape" />
+    </g>
+</svg>
