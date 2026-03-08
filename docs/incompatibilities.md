@@ -5,7 +5,7 @@ order: 999
 
 # VitePress Incompatibilities
 
-Greg is strongly inspired by [VitePress](https://vitepress.dev) and reuses most
+Greg is strongly inspired by [VitePress](https://vitepress.dev){target="_blank"} and reuses most
 Markdown conventions. This page lists **only differences and gaps**. If a feature
 is not mentioned here, behavior should be considered equivalent.
 
@@ -68,7 +68,7 @@ nav: [
 
 Internal links are handled by the SPA router (no full-page reload). Dropdowns close when
 clicking outside. Groups are rendered as section headers with visual indentation.
-External URLs open in a new tab automatically.
+External URLs in top nav open in a new tab automatically unless `target` is set explicitly.
 
 **Greg advantage:** VitePress supports at most 2 levels inside a dropdown (group header +
 links). Greg uses a recursive `flatItems()` algorithm and renders arbitrary nesting depth,

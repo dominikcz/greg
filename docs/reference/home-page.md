@@ -40,7 +40,7 @@ optional image and call-to-action buttons.
   }}
   actions={[
     { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
-    { theme: 'alt', text: 'GitHub', link: 'https://github.com/your-org/your-repo' },
+    { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />
 
@@ -67,7 +67,7 @@ In `.svelte` files, import the component explicitly:
   }}
   actions={[
     { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
-    { theme: 'alt', text: 'GitHub', link: 'https://github.com/your-org/your-repo' },
+    { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />
 ```
@@ -82,7 +82,7 @@ In `.svelte` files, import the component explicitly:
   }}
   actions={[
     { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
-    { theme: 'alt', text: 'GitHub', link: 'https://github.com/your-org/your-repo' },
+    { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />
 

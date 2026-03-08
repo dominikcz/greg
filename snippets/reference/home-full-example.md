@@ -4,7 +4,7 @@
   tagline="Write Markdown, get beautiful docs."
   actions={[
     { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
-    { theme: 'alt', text: 'GitHub', link: 'https://github.com/your-org/greg' },
+    { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />
 

@@ -46,6 +46,27 @@ Rules:
 - `index.md` files are attached to their parent folder node.
 - The root `index.md` (`docs/index.md`) is hidden from the sidebar.
 
+### Sidebar link targets
+
+For manual sidebar entries in `greg.config.js`, links respect the `target`
+attribute:
+
+- default is `_self` (same tab)
+- use `target: '_blank'` to open a new tab
+
+```js
+sidebar: [
+  { text: 'Guide', auto: '/guide' },
+  { text: 'GitHub', link: 'https://github.com/dominikcz/greg' }, // _self
+  {
+    text: 'GitHub (new tab)',
+    link: 'https://github.com/dominikcz/greg',
+    target: '_blank',
+    rel: 'noopener noreferrer',
+  },
+]
+```
+
 ### Ordering
 
 Items within each level are sorted **alphabetically**. To control the order,
@@ -82,6 +103,9 @@ Both `.md` and `.html` extensions in links are stripped automatically:
 
 External links (starting with `http://`, `https://`, `//`, etc.) open normally
 in the browser.
+
+If a Markdown link (or HTML anchor in Markdown) has an explicit `target`, Greg
+respects it.
 
 
 ## `rootPath` prop

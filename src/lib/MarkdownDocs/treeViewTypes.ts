@@ -1,6 +1,8 @@
 export interface TreeViewItem {
     label: string;
     link: string;
+    target?: string;
+    rel?: string;
     status?: string;
     /** Optional badge displayed next to the label in the navigation tree. */
     badge?: { text: string; type?: string };

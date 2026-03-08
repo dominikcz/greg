@@ -37,20 +37,24 @@ export default {
      *   sidebar: [
      *     { text: 'Guide',     auto: '/guide' },
      *     { text: 'Reference', auto: '/reference' },
+     *     // target defaults to '_self' (same tab)
      *     { text: 'GitHub', link: 'https://github.com/…' },
+     *     // optional target/rel for external links
+     *     { text: 'GitHub (new tab)', link: 'https://github.com/…', target: '_blank', rel: 'noopener noreferrer' },
      *   ],
      */
     sidebar: [
         { text: 'Guide', auto: '/guide' },
         { text: 'Reference', auto: '/reference' },
-        { text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
+        { text: 'GitHub', link: 'https://github.com/dominikcz/greg', target: '_blank' },
         { text: 'Vitepress incompatibilities', link: '/incompatibilities' },
     ],
 
     // ── Top navigation ─────────────────────────────────────────────────────
     /**
      * VitePress-compatible top nav bar.
-     * Internal links are handled by the SPA router; external links open in a new tab.
+     * Internal links are handled by the SPA router.
+     * In nav dropdowns, external links default to `target: '_blank'` unless you set `target` explicitly.
      *
      *   nav: [
      *     { text: 'Guide',     link: '/docs/guide' },
@@ -63,8 +67,8 @@ export default {
      *         {
      *           text: 'Resources',
      *           items: [
-     *             { text: 'GitHub', link: 'https://github.com/…' },
-     *             { text: 'npm',    link: 'https://npmjs.com/…'  },
+     *             { text: 'GitHub', link: 'https://github.com/…', target: '_self' },
+     *             { text: 'npm',    link: 'https://npmjs.com/…', target: '_blank' },
      *           ],
      *         },
      *       ],

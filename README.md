@@ -2,7 +2,7 @@
 
 Svelte 5 + Vite-powered documentation engine. Write Markdown, get a beautiful documentation site — hot-reloaded in milliseconds.
 
-Inspired by [VitePress](https://vitepress.dev), built on Svelte 5.
+Inspired by [VitePress](https://vitepress.dev){target="_blank"}, built on Svelte 5.
 
 ## Quick start
 
@@ -59,7 +59,11 @@ export { default } from '@dominikcz/greg/svelte.config'
 export default {
     rootPath: '/docs',
     mainTitle: 'My Docs',
-    sidebar: 'auto',
+    sidebar: [
+        { text: 'Guide', auto: '/guide' },
+        { text: 'GitHub', link: 'https://github.com/dominikcz/greg' }, // default: _self
+        { text: 'GitHub (new tab)', link: 'https://github.com/dominikcz/greg', target: '_blank' },
+    ],
 }
 ```
 

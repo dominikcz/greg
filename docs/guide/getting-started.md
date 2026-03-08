@@ -12,7 +12,7 @@ plain Markdown files, drop them in the `docs/` folder, and Greg turns them into 
 fast, beautiful single-page documentation site — complete with sidebar navigation,
 full-text search, dark/light mode and a rich set of Markdown extensions.
 
-Greg is intentionally inspired by [VitePress](https://vitepress.dev), reusing most
+Greg is intentionally inspired by [VitePress](https://vitepress.dev){target="_blank" rel="noopener noreferrer"}, reusing most
 of its Markdown syntax and several UI conventions, but built entirely on Svelte 5
 instead of Vue.
 

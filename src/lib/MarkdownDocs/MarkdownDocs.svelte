@@ -441,7 +441,21 @@
         if (!anchor) return;
 
         const href = anchor.getAttribute("href");
-        if (!href || EXTERNAL_RE.test(href) || anchor.target) return;
+        if (!href) return;
+
+        const explicitTarget = anchor.getAttribute("target");
+        if (explicitTarget && explicitTarget !== "_self") {
+            event.preventDefault();
+            const destination = anchor.href || href;
+            if (explicitTarget === "_blank") {
+                window.open(destination, "_blank", "noopener,noreferrer");
+            } else {
+                window.open(destination, explicitTarget);
+            }
+            return;
+        }
+
+        if (EXTERNAL_RE.test(href)) return;
 
         if (href.startsWith("#")) {
             event.preventDefault();

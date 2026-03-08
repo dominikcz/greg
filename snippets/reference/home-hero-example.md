@@ -8,6 +8,6 @@
   }}
   actions={[
     { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
-    { theme: 'alt', text: 'GitHub', link: 'https://github.com/your-org/your-repo' },
+    { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />

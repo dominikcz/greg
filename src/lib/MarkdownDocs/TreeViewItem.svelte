@@ -22,6 +22,8 @@
 		navigate,
 	}: TreeViewItemProps = $props();
 
+	const EXTERNAL_RE = /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i;
+
 	// Inicjalizacja stanu rozwinięcia
 	let expanded = $state(false);
 	// Automatycznie rozwiń jeśli aktywna ścieżka jest w tej gałęzi
@@ -37,12 +39,33 @@
 		expanded = !expanded;
 	}
 
+	function shouldHandleWithRouter() {
+		if (!item.link) return false;
+		if (EXTERNAL_RE.test(item.link)) return false;
+		if (item.target && item.target !== "_self") return false;
+		return true;
+	}
+
 	function handleClick(e: MouseEvent) {
+		if (item.target === "_blank") {
+			e.preventDefault();
+			window.open(item.link, "_blank", "noopener,noreferrer");
+			return;
+		}
+
+		if (!shouldHandleWithRouter()) return;
 		e.preventDefault();
 		navigate(item.link);
 	}
 
 	function handleToggleClick(e: MouseEvent) {
+		if (item.target === "_blank") {
+			e.preventDefault();
+			window.open(item.link, "_blank", "noopener,noreferrer");
+			return;
+		}
+
+		if (!shouldHandleWithRouter()) return;
 		e.preventDefault();
 		toggle();
 		navigate(item.link);
@@ -53,6 +76,8 @@
 	{#if item.children.length}
 		<a
 			href={item.link}
+			target={item.target}
+			rel={item.rel}
 			onclick={handleToggleClick}
 			class="arrow"
 			class:active={active == item.link}
@@ -76,6 +101,8 @@
 	{:else}
 		<a
 			href={item.link}
+			target={item.target}
+			rel={item.rel}
 			class="no-arrow"
 			class:active={active == item.link}
 			onclick={handleClick}

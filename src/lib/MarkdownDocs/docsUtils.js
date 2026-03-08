@@ -234,6 +234,8 @@ export function parseSidebarConfig(items, frontmatters, base) {
                 // Label precedence: sidebar text -> frontmatter title -> folder name.
                 label: item.text ?? fallbackLabel,
                 link: item.link ?? autoBase,
+                ...(item.target ? { target: item.target } : {}),
+                ...(item.rel ? { rel: item.rel } : {}),
                 badge: normalizeBadge(item.badge),
                 children,
                 type: (item.link ? 'md' : (autoRoot?.type ?? 'folder')),
@@ -243,6 +245,8 @@ export function parseSidebarConfig(items, frontmatters, base) {
         return {
             label: item.text,
             link: item.link ?? '',
+            ...(item.target ? { target: item.target } : {}),
+            ...(item.rel ? { rel: item.rel } : {}),
             badge: normalizeBadge(item.badge),
             children,
             type: item.link ? 'md' : 'folder',
