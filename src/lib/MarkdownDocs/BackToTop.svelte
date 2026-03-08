@@ -1,9 +1,13 @@
 <script lang="ts">
+    import { ArrowUp } from "@lucide/svelte";
+
     type Props = {
         /** The scrollable element to watch and scroll to top. */
         target: HTMLElement | undefined;
+        /** Accessible label for the button. */
+        label?: string;
     };
-    let { target }: Props = $props();
+    let { target, label = "Back to top" }: Props = $props();
 
     let visible = $state(false);
 
@@ -27,8 +31,10 @@
         class="back-to-top"
         onclick={scrollToTop}
         type="button"
-        aria-label="Back to top">↑</button
+        aria-label={label}
     >
+        <ArrowUp size={18} strokeWidth={2.25} aria-hidden="true" />
+    </button>
 {/if}
 
 <style lang="scss">
