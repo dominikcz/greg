@@ -24,6 +24,7 @@
     import BackToTop from "./BackToTop.svelte";
     import Breadcrumb from "./Breadcrumb.svelte";
     import PrevNext from "./PrevNext.svelte";
+    import { EllipsisVertical } from "@lucide/svelte";
     import gregConfig from "virtual:greg-config";
 
     type CarbonAdsOptions = {
@@ -539,7 +540,11 @@
                 class="splitter"
                 bind:this={sp.splitter}
                 onmousedown={sp.onMouseDown}
-            ></div>
+            >
+                <span class="splitter-handle" aria-hidden="true">
+                    <EllipsisVertical size={18} />
+                </span>
+            </div>
         {/if}
         <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
         <main
@@ -729,15 +734,47 @@
     }
 
     .splitter {
-        background-color: var(--greg-border-color);
-        width: 1px;
+        background-color: transparent;
+        border-left: 1px solid var(--greg-border-color);
+        width: 7px;
+        height: 100%;
         cursor: col-resize;
         flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         user-select: none;
         transition: background-color 0.15s;
 
+        .splitter-handle {
+            width: 7px;
+            height: 32px;
+            color: var(--greg-splitter-handler-color);
+            background-color: var(--greg-splitter-handler-background);
+            border-radius: 0 7px 7px 0;
+            transition: color 0.15s;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+
+            :global(svg) {
+                display: block;
+                margin: 0 auto;
+                flex-shrink: 0;
+                padding: 0;
+            }
+
+        }
+
         &:hover {
-            background-color: var(--greg-accent);
+            border-color: var(--greg-splitter-active-border);
+
+            .splitter-handle {
+                background-color: var(--greg-splitter-active-handler-background);
+                color: var(--greg-splitter-active-handler-color);
+            }
         }
     }
 
@@ -750,7 +787,6 @@
         gap: 0.4rem;
         flex-shrink: 0;
         overflow-y: auto;
-        border-right: 1px solid var(--greg-border-color);
 
         &.greg-aside-outline {
             width: 280px;

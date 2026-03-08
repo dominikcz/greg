@@ -18,6 +18,12 @@
     --greg-accent-light: #ececf5;
     --greg-header-height: 3.5rem;
 
+    --greg-splitter-handler-background: #e5e5ea;
+    --greg-splitter-handler-color: #7a7a8c;
+    --greg-splitter-active-border: #646cff;
+    --greg-splitter-active-handler-background: #646cff;
+    --greg-splitter-active-handler-color: #f8f8f8;
+
     /* TOC */
     --greg-toc-background: transparent;
     --greg-toc-color: #3d3d3d;
@@ -101,6 +107,12 @@
     --greg-accent-light: rgba(255, 111, 97, 0.13);
 
     --greg-header-height: 3.5rem;
+
+    --greg-splitter-handler-background: #2e2a26;
+    --greg-splitter-handler-color: #8a7a68;
+    --greg-splitter-active-border: #ff6f61;
+    --greg-splitter-active-handler-background: #ff6f61;
+    --greg-splitter-active-handler-color: #f5e8d8;
 
     /* TOC */
     --greg-toc-color: #f5e8d8;

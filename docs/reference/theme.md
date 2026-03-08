@@ -70,6 +70,16 @@ All visual properties are controlled through CSS custom properties defined on
 | `--greg-menu-active-color`      | `#ffffff`     | Active link text       |
 | `--greg-menu-hover-background`  | `#ececf5`     | Hover background       |
 
+### Sidebar splitter
+
+| Variable                                   | Light default | Description                          |
+| ------------------------------------------ | ------------- | ------------------------------------ |
+| `--greg-splitter-handler-background`       | `#e5e5ea`     | Splitter handle background           |
+| `--greg-splitter-handler-color`            | `#7a7a8c`     | Splitter handle icon colour          |
+| `--greg-splitter-active-border`            | `#646cff`     | Splitter border colour on hover      |
+| `--greg-splitter-active-handler-background` | `#646cff`     | Splitter handle background on hover  |
+| `--greg-splitter-active-handler-color`     | `#f8f8f8`     | Splitter handle icon colour on hover |
+
 ### Code blocks
 
 | Variable                   | Light default | Description               |
@@ -112,8 +122,16 @@ All visual properties are controlled through CSS custom properties defined on
 ## Resizable sidebar
 
 The left navigation panel is **drag-to-resize**. A vertical splitter between the
-sidebar and content area accepts mouse drag events to set the sidebar width. The
-splitter snaps to the accent colour on hover.
+sidebar and content area accepts mouse drag events to set the sidebar width.
+
+The splitter includes a centered `EllipsisVertical` handle icon from
+`@lucide/svelte` to indicate draggability.
+
+Hover visuals are controlled by splitter-specific CSS variables
+(`--greg-splitter-active-border`,
+`--greg-splitter-active-handler-background`,
+`--greg-splitter-active-handler-color`), so you can style it independently of the
+global accent token.
 
 
 ## Code highlighting theme
