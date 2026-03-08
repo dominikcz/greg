@@ -37,7 +37,7 @@ export function walkDir(dir, fileList = []) {
 		const filePath = join(dir, file);
 		if (statSync(filePath).isDirectory()) {
 			walkDir(filePath, fileList);
-		} else if (file.endsWith('.md') && !file.startsWith('_')) {
+		} else if (file.endsWith('.md') && !file.startsWith('__')) {
 			fileList.push(filePath);
 		}
 	}

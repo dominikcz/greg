@@ -11,9 +11,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+function parseArgs(argv) {
+    const out = { docsDir: 'docs', rootPath: '/docs' };
+    for (let i = 0; i < argv.length; i++) {
+        const a = argv[i];
+        if (a === '--docsDir' && argv[i + 1]) out.docsDir = argv[++i];
+        if (a === '--rootPath' && argv[i + 1]) out.rootPath = argv[++i];
+    }
+    return out;
+}
+
+const { docsDir, rootPath } = parseArgs(process.argv.slice(2));
 const DIST = path.resolve('dist');
-const DOCS = path.resolve('docs');
-const ROOT_PATH = '/docs';
+const DOCS = path.resolve(docsDir);
+const ROOT_PATH = rootPath;
 
 // ── Collect routes from the docs/ folder ────────────────────────────────────
 

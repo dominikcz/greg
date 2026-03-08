@@ -27,6 +27,32 @@ dist/
 ```
 
 
+## Static route generation
+
+If your hosting does not support SPA fallback rules, you can pre-generate
+`index.html` copies for every docs route:
+
+```sh
+greg build:static
+```
+
+This runs `vite build` followed by a post-processing step that copies
+`dist/index.html` to `dist/<route>/index.html` for every known page.
+The result works on any static file server without rewrite configuration.
+
+
+## Markdown export
+
+To export resolved Markdown files (with all includes and snippets expanded):
+
+```sh
+greg build:markdown
+```
+
+The output lands in `dist/resolved-markdown/` by default.
+Pass `--docsDir` or `--outDir` to customise paths.
+
+
 ## SPA fallback — server configuration
 
 Configure your server to return `index.html` for all `404` responses.
@@ -118,14 +144,18 @@ export default defineConfig({
 });
 ```
 
-Also update `rootPath` in `App.svelte`:
-
-```svelte
-<MarkdownDocs rootPath="/my-project/docs" version="1.0.0" />
-```
-
-And the `rootPath` in `vitePluginSearchIndex`:
+Also update `rootPath` in `greg.config.js`:
 
 ```js
-vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/my-project/docs' })
+export default {
+  rootPath: '/my-project/docs',
+  // …
+}
+```
+
+And the `rootPath` in the Vite plugins (`vite.config.js`):
+
+```js
+vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/my-project/docs' }),
+vitePluginSearchServer({ docsDir: 'docs', rootPath: '/my-project/docs' }),
 ```

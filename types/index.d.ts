@@ -30,6 +30,10 @@ export type SocialLinkItem = {
 export type SidebarItem = {
     text: string;
     link?: string;
+    /** Opens the link in a new tab. */
+    target?: string;
+    /** Link rel attribute, e.g. 'noopener noreferrer'. */
+    rel?: string;
     items?: SidebarItem[];
     /** Auto-generate children from this docs sub-path. */
     auto?: string;

@@ -69,15 +69,25 @@ sidebar: [
 
 ### Ordering
 
-Items within each level are sorted **alphabetically**. To control the order,
-prefix file/folder names with numbers:
+Items within each level are sorted by the frontmatter `order` field (lower
+values appear first). Items without `order` sort after ordered ones; among
+equal-order items, folders come before leaf pages, then alphabetically by label.
 
+```yaml
+---
+title: Getting Started
+order: 1
+---
 ```
-docs/
-  01-introduction.md
-  02-guide/
-    01-getting-started.md
-    02-routing.md
+
+Folders use the `order` from their `index.md`:
+
+```yaml
+# docs/guide/index.md
+---
+title: Guide
+order: 2
+---
 ```
 
 

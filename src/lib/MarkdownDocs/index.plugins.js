@@ -6,6 +6,7 @@
  *   import {
  *     vitePluginGregConfig,
  *     vitePluginSearchIndex,
+ *     vitePluginSearchServer,
  *     vitePluginFrontmatter,
  *     vitePluginCopyDocs,
  *   } from '@dominikcz/greg/plugins';

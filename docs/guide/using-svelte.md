@@ -27,7 +27,7 @@ All Greg UI components are automatically available in every Markdown page — no
 The following components are always in scope:
 
 `Badge`, `Button`, `Image`, `Link`, `Feature`, `Features`, `Hero`,
-`SocialLink`, `SocialLinks`, `TeamMember`, `TeamMembers`,
+`SocialLink`, `SocialLinks`, `Steps`, `TeamMember`, `TeamMembers`,
 `TeamPage`, `TeamPageTitle`, `TeamPageSection`
 
 
