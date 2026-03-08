@@ -1,6 +1,6 @@
 {
   "name": "@dominikcz/greg",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "type": "module",
   "types": "./types/index.d.ts",
   "bin": {
@@ -45,12 +45,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@types/js-yaml": "^4.0.9",
-    "rehype-stringify": "^10.0.1",
-    "remark-parse": "^11.0.0",
-    "remark-rehype": "^11.1.2",
-    "sass-embedded": "^1.97.3",
     "svelte": "^5.53.7",
-    "unified": "^11.0.5",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
   },
@@ -64,9 +59,14 @@
     "rehype-autolink-headings": "^7.1.0",
     "rehype-mathjax": "^7.1.0",
     "rehype-slug": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "sass-embedded": "^1.97.3",
     "shiki": "^4.0.1",
+    "unified": "^11.0.5",
     "unist-util-visit": "^5.1.0"
   },
   "overrides": {

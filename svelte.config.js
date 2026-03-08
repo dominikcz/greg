@@ -136,5 +136,11 @@ const mdsvexOptions = {
 export default {
 	extensions: ['.svelte', '.svx', '.md'],
 	preprocess: mdsvex({ extensions: ['.svx', '.md'], ...mdsvexOptions }),
+	compilerOptions: {
+		// Use injected CSS so that component styles are included in JS output.
+		// This avoids virtual CSS module loading failures when the package
+		// is consumed from node_modules (vite-plugin-svelte race condition).
+		css: 'injected',
+	},
 };
 

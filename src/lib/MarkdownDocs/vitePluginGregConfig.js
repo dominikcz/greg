@@ -64,6 +64,22 @@ export function vitePluginGregConfig() {
                         '$components': GREG_COMPONENTS_DIR,
                     },
                 },
+                optimizeDeps: {
+                    exclude: ['@dominikcz/greg'],
+                    include: [
+                        '@dominikcz/greg > unified',
+                        '@dominikcz/greg > remark-parse',
+                        '@dominikcz/greg > remark-gfm',
+                        '@dominikcz/greg > remark-rehype',
+                        '@dominikcz/greg > rehype-stringify',
+                        '@dominikcz/greg > rehype-slug',
+                        '@dominikcz/greg > rehype-autolink-headings',
+                        '@dominikcz/greg > unist-util-visit',
+                        '@dominikcz/greg > shiki',
+                        '@dominikcz/greg > fuse.js',
+                        '@dominikcz/greg > mermaid',
+                    ],
+                },
             };
         },
 
