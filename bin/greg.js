@@ -6,6 +6,8 @@
  *   greg init                    Initialise a new documentation project
  *   greg dev                    Start the Vite development server
  *   greg build                  Build for production
+ *   greg build:static           Build for production and generate static route files
+ *   greg build:markdown         Export resolved markdown files
  *   greg preview                Preview the production build
  *   greg search-server          Start the standalone search server (production)
  *   greg --version              Print the Greg version
@@ -32,6 +34,8 @@ function help() {
     init           Initialise a new documentation project (interactive)
     dev            Start the Vite development server
     build          Build the project for production
+    build:static   Build and generate static route files
+    build:markdown Export resolved markdown files to dist/resolved-markdown
     preview        Preview the production build
     search-server  Start the standalone search API server (production)
                    Options: --index <path>  --port <number>  --host <addr>
@@ -47,7 +51,8 @@ function help() {
 `);
 }
 
-function run(cmd, extraArgs = []) {
+function run(cmd, extraArgs = [], options = {}) {
+    const { exit = true } = options;
     const result = spawnSync(cmd, extraArgs, {
         stdio: 'inherit',
         shell: true,
@@ -60,7 +65,25 @@ function run(cmd, extraArgs = []) {
                 (process.env.PATH ?? ''),
         },
     });
-    process.exit(result.status ?? 0);
+    const status = result.status ?? 0;
+    if (exit) process.exit(status);
+    return status;
+}
+
+function runNodeScript(scriptPath, extraArgs = [], options = {}) {
+    const { exit = true } = options;
+    const result = spawnSync(process.execPath, [scriptPath, ...extraArgs], {
+        stdio: 'inherit',
+        env: {
+            ...process.env,
+            PATH: resolve(__dirname, '../node_modules/.bin') +
+                (process.platform === 'win32' ? ';' : ':') +
+                (process.env.PATH ?? ''),
+        },
+    });
+    const status = result.status ?? 0;
+    if (exit) process.exit(status);
+    return status;
 }
 
 switch (command) {
@@ -74,8 +97,20 @@ switch (command) {
         run('vite', args);
         break;
     case 'build':
-        run('npm run build:static', args);
+        run('vite build', args);
         break;
+    case 'build:static': {
+        const buildStatus = run('vite build', args, { exit: false });
+        if (buildStatus !== 0) process.exit(buildStatus);
+        const staticScript = resolve(__dirname, '../scripts/generate-static.js');
+        runNodeScript(staticScript);
+        break;
+    }
+    case 'build:markdown': {
+        const markdownScript = resolve(__dirname, '../scripts/render-markdown.js');
+        runNodeScript(markdownScript, args);
+        break;
+    }
     case 'preview':
         run('vite preview', args);
         break;

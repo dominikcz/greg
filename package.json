@@ -19,6 +19,9 @@
   },
   "files": [
     "bin",
+    "scripts/build-timer.js",
+    "scripts/generate-static.js",
+    "scripts/render-markdown.js",
     "src/lib",
     "types",
     "svelte.config.js",

@@ -157,13 +157,15 @@ export default {
 
 ## CLI
 
-| Command              | Description                     |
-| -------------------- | ------------------------------- |
-| `greg init`          | Interactive project scaffolding |
-| `greg dev`           | Start Vite dev server           |
-| `greg build`         | Production build                |
-| `greg preview`       | Preview production build        |
-| `greg search-server` | Standalone search API server    |
+| Command               | Description                      |
+| --------------------- | -------------------------------- |
+| `greg init`           | Interactive project scaffolding  |
+| `greg dev`            | Start Vite dev server            |
+| `greg build`          | Production build                 |
+| `greg build:static`   | Production build + static export |
+| `greg build:markdown` | Export resolved markdown         |
+| `greg preview`        | Preview production build         |
+| `greg search-server`  | Standalone search API server     |
 
 ## Resolved Markdown Export
 
@@ -171,7 +173,7 @@ Generate a fully expanded markdown snapshot (all `<!--@include: ...-->` and `<<<
 for AI knowledge-base ingestion or server-side indexing pipelines.
 
 ```sh
-npm run build:markdown
+greg build:markdown
 ```
 
 Output is written to `dist/resolved-markdown` and mirrors the `docs/` structure.
