@@ -1,16 +1,15 @@
 ---
-title: Code blocks and groups
+title: Bloki kodu i grupy
 order: 5
 ---
 
-# Code blocks and groups
+# Bloki kodu i grupy
 
-For syntax highlighting details and line focus/diff markers, see
-[Syntax highlighting](./syntax-highlighting).
+Szczegóły dot. podświetlania oraz markerów focus/diff znajdziesz w [Podświetlanie składni](./syntax-highlighting).
 
-## Code block title
+## Tytuł bloku kodu
 
-Add a `[Title]` annotation in the language line:
+Dodaj adnotację `[Title]` w linii języka:
 
 ````md
 ```js [example.js]
@@ -24,9 +23,9 @@ Output:
 export const answer = 42;
 ```
 
-## Code groups
+## Grupy kodu
 
-Group multiple code blocks into a tabbed interface:
+Połącz wiele bloków w zakładki:
 
 ````md
 ::: code-group
@@ -64,17 +63,17 @@ yarn install
 
 :::
 
-Explicit label override:
+Nadpisanie etykiet:
 
 ````md
-::: code-group labels=[Option A, Option B]
+::: code-group labels=[Opcja A, Opcja B]
 
 ```js
-// option A
+// opcja A
 ```
 
 ```ts
-// option B
+// opcja B
 ```
 
 :::
@@ -82,14 +81,14 @@ Explicit label override:
 
 Output:
 
-::: code-group labels=[Option A, Option B]
+::: code-group labels=[Opcja A, Opcja B]
 
 ```js
-// option A
+// opcja A
 ```
 
 ```ts
-// option B
+// opcja B
 ```
 
 :::

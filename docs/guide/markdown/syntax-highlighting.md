@@ -17,19 +17,19 @@ Output:
 Supported languages include `javascript`, `typescript`, `bash`, `json`, `html`,
 `css`, `yaml`, `markdown`, `svelte`, `txt`.
 
-## VitePress-style code highlighting features
+## Code highlighting features
 
-Greg supports VitePress-style code highlighting directives in both build-time
-Shiki output and runtime rendering.
+Greg supports code highlighting directives in both build-time Shiki output and
+runtime rendering.
 
-| Feature                              | VitePress | Greg |
-| ------------------------------------ | --------- | ---- |
-| Language fence (` ```ts `)           | ✅         | ✅    |
-| Title in meta (` ```ts [file.ts] `)  | ✅         | ✅    |
-| Code groups (`::: code-group`)       | ✅         | ✅    |
-| Highlight lines (` ```ts{2,4} `)     | ✅         | ✅    |
-| Focused lines (`// [!code focus]`)   | ✅         | ✅    |
-| Diff markers (`// [!code ++]`, `--`) | ✅         | ✅    |
+| Feature                              | Supported |
+| ------------------------------------ | --------- |
+| Language fence (` ```ts `)           | ✅         |
+| Title in meta (` ```ts [file.ts] `)  | ✅         |
+| Code groups (`::: code-group`)       | ✅         |
+| Highlight lines (` ```ts{2,4} `)     | ✅         |
+| Focused lines (`// [!code focus]`)   | ✅         |
+| Diff markers (`// [!code ++]`, `--`) | ✅         |
 
 Language + title (supported):
 
@@ -71,5 +71,5 @@ Output:
 
 <!--@include: /__partials/markdown/examples/focus.md-->
 
-See [VitePress incompatibilities](/incompatibilities) for areas outside code
-highlighting.
+See [Incompatibilities](/incompatibilities) for areas outside code
+highlighting and platform-level differences.

@@ -26,7 +26,7 @@ const _cache = new Map();
 // ── File helpers ──────────────────────────────────────────────────────────────
 
 /**
- * Recursively collect all *.md files, skipping partials that start with `_`.
+ * Recursively collect all *.md files, skipping partial files/folders that start with `__`.
  * @param {string} dir
  * @param {string[]} [fileList]
  * @returns {string[]}
@@ -34,6 +34,7 @@ const _cache = new Map();
 export function walkDir(dir, fileList = []) {
 	if (!existsSync(dir)) return fileList;
 	for (const file of readdirSync(dir)) {
+		if (file.startsWith('__')) continue;
 		const filePath = join(dir, file);
 		if (statSync(filePath).isDirectory()) {
 			walkDir(filePath, fileList);

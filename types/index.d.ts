@@ -61,6 +61,38 @@ export type LocaleThemeConfig = {
     lightModeSwitchTitle?: string;
     /** VitePress-compatible dark mode toggle title. */
     darkModeSwitchTitle?: string;
+    /** VitePress-style search localization map. */
+    search?: {
+        locales?: Record<
+            string,
+            {
+                button?: {
+                    buttonText?: string;
+                    buttonAriaLabel?: string;
+                };
+                modal?: {
+                    noResultsText?: string;
+                    footer?: {
+                        selectText?: string;
+                        navigateText?: string;
+                        closeText?: string;
+                    };
+                    searchBox?: {
+                        placeholder?: string;
+                    };
+                    startScreen?: {
+                        noRecentSearchesText?: string;
+                    };
+                    errorScreen?: {
+                        titleText?: string;
+                    };
+                    loadingScreen?: {
+                        loadingText?: string;
+                    };
+                };
+            }
+        >;
+    };
     /** VitePress-compatible labels above prev/next links. */
     docFooter?: {
         prev?: string | false;

@@ -394,6 +394,19 @@
             darkModeSwitchLabel: globalDarkModeSwitchLabel,
             lightModeSwitchTitle: globalLightModeSwitchTitle,
             darkModeSwitchTitle: globalDarkModeSwitchTitle,
+            searchButtonLabel: "Search...",
+            searchModalLabel: "Search",
+            searchPlaceholder: "Search docs...",
+            searchLoadingText: "Loading index...",
+            searchErrorText: "Failed to load search index.",
+            searchSearchingText: "Searching...",
+            searchNoResultsText: "No results for",
+            searchStartText:
+                "Start typing to search across all documentation.",
+            searchResultsAriaLabel: "Search results",
+            searchNavigateText: "navigate",
+            searchSelectText: "open",
+            searchCloseText: "close",
             docFooter: globalDocFooter,
             externalLinkIcon: globalExternalLinkIcon,
             siteTitle: globalSiteTitle,
@@ -419,6 +432,19 @@
             darkModeSwitchLabel: globalDarkModeSwitchLabel,
             lightModeSwitchTitle: globalLightModeSwitchTitle,
             darkModeSwitchTitle: globalDarkModeSwitchTitle,
+            searchButtonLabel: "Search...",
+            searchModalLabel: "Search",
+            searchPlaceholder: "Search docs...",
+            searchLoadingText: "Loading index...",
+            searchErrorText: "Failed to load search index.",
+            searchSearchingText: "Searching...",
+            searchNoResultsText: "No results for",
+            searchStartText:
+                "Start typing to search across all documentation.",
+            searchResultsAriaLabel: "Search results",
+            searchNavigateText: "navigate",
+            searchSelectText: "open",
+            searchCloseText: "close",
             docFooter: globalDocFooter,
             externalLinkIcon: globalExternalLinkIcon,
             siteTitle: globalSiteTitle,
@@ -494,6 +520,23 @@
             preservePath: i18nRouting,
         }),
     );
+    const hasRootLocale = $derived(
+        localeContext.entries.some((entry) => entry.key === "/"),
+    );
+    const baseDocsRoot = $derived(normalizeRootPath(configuredRootPath));
+    const defaultLocaleRoot = $derived(
+        localeContext.entries[0]?.rootPath ?? baseDocsRoot,
+    );
+
+    // If every locale is namespaced (e.g. /en/, /pl/), redirect `/` and the
+    // base docs root (e.g. /docs) to the first configured locale root.
+    $effect(() => {
+        if (hasRootLocale) return;
+        if (router.active !== "/" && router.active !== baseDocsRoot) return;
+        if (router.active === defaultLocaleRoot) return;
+        router.navigate(defaultLocaleRoot);
+    });
+
     const langMenuLabel = $derived(
         localeContext.langMenuLabel ?? "Change language",
     );
@@ -514,6 +557,43 @@
     );
     const darkModeSwitchTitle = $derived(
         localeContext.darkModeSwitchTitle ?? "Switch to dark theme",
+    );
+    const searchButtonLabel = $derived(
+        localeContext.searchButtonLabel ?? "Search...",
+    );
+    const searchModalLabel = $derived(
+        localeContext.searchModalLabel ?? "Search",
+    );
+    const searchPlaceholder = $derived(
+        localeContext.searchPlaceholder ?? "Search docs...",
+    );
+    const searchLoadingText = $derived(
+        localeContext.searchLoadingText ?? "Loading index...",
+    );
+    const searchErrorText = $derived(
+        localeContext.searchErrorText ?? "Failed to load search index.",
+    );
+    const searchSearchingText = $derived(
+        localeContext.searchSearchingText ?? "Searching...",
+    );
+    const searchNoResultsText = $derived(
+        localeContext.searchNoResultsText ?? "No results for",
+    );
+    const searchStartText = $derived(
+        localeContext.searchStartText ??
+            "Start typing to search across all documentation.",
+    );
+    const searchResultsAriaLabel = $derived(
+        localeContext.searchResultsAriaLabel ?? "Search results",
+    );
+    const searchNavigateText = $derived(
+        localeContext.searchNavigateText ?? "navigate",
+    );
+    const searchSelectText = $derived(
+        localeContext.searchSelectText ?? "open",
+    );
+    const searchCloseText = $derived(
+        localeContext.searchCloseText ?? "close",
     );
     const docFooterPrevLabel = $derived(
         localeContext.docFooter?.prev ?? "Previous",
@@ -617,7 +697,11 @@
 
     // Keep this list explicit: only selected pages are compiled as Svelte modules.
     const compiledMarkdownModules = import.meta.glob(
-        ["/docs/reference/home-page.md", "/docs/test.md"],
+        [
+            "/docs/reference/home-page.md",
+            "/docs/pl/reference/home-page.md",
+            "/docs/test.md",
+        ],
     ) as Record<
         string,
         () => Promise<CompiledMarkdownModule>
@@ -839,6 +923,7 @@
         {darkModeSwitchLabel}
         {lightModeSwitchTitle}
         {darkModeSwitchTitle}
+        {searchButtonLabel}
         showSearch={searchEnabled}
         onThemeChange={(t) => setThemeManually(t)}
         navigate={router.navigate}
@@ -1077,6 +1162,17 @@
             localeRootPath={currentRootPath}
             allLocaleRootPaths={localeContext.allRootPaths}
             baseRootPath={normalizeRootPath(configuredRootPath)}
+            {searchModalLabel}
+            {searchPlaceholder}
+            {searchLoadingText}
+            {searchErrorText}
+            {searchSearchingText}
+            {searchNoResultsText}
+            {searchStartText}
+            {searchResultsAriaLabel}
+            {searchNavigateText}
+            {searchSelectText}
+            {searchCloseText}
             {searchProvider}
         />
     {/if}

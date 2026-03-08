@@ -5,8 +5,7 @@ order: 2
 
 # Markdown Extensions
 
-Greg extends standard Markdown with a rich set of features, mostly compatible with
-[VitePress](https://vitepress.dev/guide/markdown) syntax.
+Greg extends standard Markdown with a rich set of authoring features.
 
 ## Topics
 

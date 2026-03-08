@@ -26,6 +26,7 @@
 		darkModeSwitchLabel?: string;
 		lightModeSwitchTitle?: string;
 		darkModeSwitchTitle?: string;
+		searchButtonLabel?: string;
 		showSearch?: boolean;
 		onThemeChange: (t: "light" | "dark") => void;
 		navigate: (path: string) => void;
@@ -69,6 +70,7 @@
 		darkModeSwitchLabel = "Appearance",
 		lightModeSwitchTitle = "Switch to light theme",
 		darkModeSwitchTitle = "Switch to dark theme",
+		searchButtonLabel = "Search...",
 		showSearch = true,
 		onThemeChange,
 		navigate,
@@ -337,7 +339,7 @@
 						y2="16.65"
 					/>
 				</svg>
-				<span class="search-trigger-label">Search…</span>
+				<span class="search-trigger-label">{searchButtonLabel}</span>
 				<span class="search-trigger-hint"><kbd>Ctrl</kbd><kbd>K</kbd></span>
 			</button>
 		{/if}

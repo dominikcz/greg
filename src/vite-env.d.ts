@@ -50,6 +50,37 @@ declare module 'virtual:greg-config' {
         darkModeSwitchLabel?: string;
         lightModeSwitchTitle?: string;
         darkModeSwitchTitle?: string;
+        search?: {
+            locales?: Record<
+                string,
+                {
+                    button?: {
+                        buttonText?: string;
+                        buttonAriaLabel?: string;
+                    };
+                    modal?: {
+                        noResultsText?: string;
+                        footer?: {
+                            selectText?: string;
+                            navigateText?: string;
+                            closeText?: string;
+                        };
+                        searchBox?: {
+                            placeholder?: string;
+                        };
+                        startScreen?: {
+                            noRecentSearchesText?: string;
+                        };
+                        errorScreen?: {
+                            titleText?: string;
+                        };
+                        loadingScreen?: {
+                            loadingText?: string;
+                        };
+                    };
+                }
+            >;
+        };
         docFooter?: {
             prev?: string | false;
             next?: string | false;

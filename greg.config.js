@@ -19,40 +19,166 @@ export default {
      * - '/'    -> '/docs'
      * - '/pl/' -> '/docs/pl'
      */
-    // locales: {
-    //     '/': {
-    //         lang: 'en-US',
-    //         title: 'Greg',
-    //         themeConfig: {
-    //             nav: [
-    //                 { text: 'Guide', link: '/docs/guide' },
-    //                 { text: 'Reference', link: '/docs/reference' },
-    //             ],
-    //             sidebar: [
-    //                 { text: 'Guide', auto: '/guide' },
-    //                 { text: 'Reference', auto: '/reference' },
-    //             ],
-    //             outline: [2, 3],
-    //             lastUpdatedText: 'Last updated:',
-    //         },
-    //     },
-    //     '/pl/': {
-    //         lang: 'pl-PL',
-    //         title: 'Greg PL',
-    //         themeConfig: {
-    //             nav: [
-    //                 { text: 'Przewodnik', link: '/docs/pl/guide' },
-    //                 { text: 'Referencja', link: '/docs/pl/reference' },
-    //             ],
-    //             sidebar: [
-    //                 { text: 'Przewodnik', auto: '/pl/guide' },
-    //                 { text: 'Referencja', auto: '/pl/reference' },
-    //             ],
-    //             outline: { level: [2, 3], label: 'Na tej stronie' },
-    //             lastUpdatedText: 'Zaktualizowano:',
-    //         },
-    //     },
-    // },
+    locales: {
+        '/': {
+            lang: 'en-US',
+            label: 'English',
+            title: 'Greg',
+            themeConfig: {
+                nav: [
+                    { text: 'Guide', link: '/guide' },
+                    { text: 'Reference', link: '/reference' },
+                    {
+                        text: 'More',
+                        items: [
+                            { text: 'VitePress incompatibilities', link: '/incompatibilities' },
+                            {
+                                text: 'Links',
+                                items: [
+                                    { text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
+                                    {
+                                        text: 'Packages',
+                                        items: [
+                                            { text: 'npm', link: 'https://npmjs.com/package/@dominikcz/greg' },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+                sidebar: [
+                    { text: 'Guide', auto: '/guide' },
+                    { text: 'Reference', auto: '/reference' },
+                    { text: 'GitHub', link: 'https://github.com/dominikcz/greg', target: '_blank' },
+                    { text: 'VitePress incompatibilities', link: '/incompatibilities' },
+                ],
+                outline: [2, 3],
+                lastUpdatedText: 'Last updated:',
+                langMenuLabel: 'Change language',
+                sidebarMenuLabel: 'Menu',
+                skipToContentLabel: 'Skip to content',
+                returnToTopLabel: 'Back to top',
+                darkModeSwitchLabel: 'Appearance',
+                lightModeSwitchTitle: 'Switch to light theme',
+                darkModeSwitchTitle: 'Switch to dark theme',
+                search: {
+                    locales: {
+                        '/': {
+                            button: {
+                                buttonText: 'Search...',
+                                buttonAriaLabel: 'Search',
+                            },
+                            modal: {
+                                searchBox: {
+                                    placeholder: 'Search docs...',
+                                },
+                                loadingScreen: {
+                                    loadingText: 'Loading index...',
+                                },
+                                errorScreen: {
+                                    titleText: 'Failed to load search index.',
+                                },
+                                noResultsText: 'No results for',
+                                startScreen: {
+                                    noRecentSearchesText: 'Start typing to search across all documentation.',
+                                },
+                                footer: {
+                                    navigateText: 'navigate',
+                                    selectText: 'open',
+                                    closeText: 'close',
+                                },
+                            },
+                        },
+                    },
+                },
+                docFooter: { prev: 'Previous page', next: 'Next page' },
+                lastUpdated: {
+                    text: 'Last updated:',
+                    formatOptions: { dateStyle: 'long', timeStyle: 'short' },
+                },
+            },
+        },
+        '/pl/': {
+            lang: 'pl-PL',
+            label: 'Polski',
+            title: 'Greg',
+            themeConfig: {
+                nav: [
+                    { text: 'Przewodnik', link: '/guide' },
+                    { text: 'Referencje', link: '/reference' },
+                    {
+                        text: 'Więcej',
+                        items: [
+                            { text: 'Niezgodności z VitePress', link: '/incompatibilities' },
+                            {
+                                text: 'Linki',
+                                items: [
+                                    { text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
+                                    {
+                                        text: 'Pakiety',
+                                        items: [
+                                            { text: 'npm', link: 'https://npmjs.com/package/@dominikcz/greg' },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                ],
+                sidebar: [
+                    { text: 'Przewodnik', auto: '/guide' },
+                    { text: 'Referencje', auto: '/reference' },
+                    { text: 'GitHub', link: 'https://github.com/dominikcz/greg', target: '_blank' },
+                    { text: 'Niezgodności z VitePress', link: '/incompatibilities' },
+                ],
+                outline: { level: [2, 3], label: 'Na tej stronie' },
+                lastUpdatedText: 'Ostatnia aktualizacja:',
+                langMenuLabel: 'Zmień język',
+                sidebarMenuLabel: 'Menu',
+                skipToContentLabel: 'Przejdź do treści',
+                returnToTopLabel: 'Wróć do góry',
+                darkModeSwitchLabel: 'Wygląd',
+                lightModeSwitchTitle: 'Przełącz na jasny motyw',
+                darkModeSwitchTitle: 'Przełącz na ciemny motyw',
+                search: {
+                    locales: {
+                        '/pl/': {
+                            button: {
+                                buttonText: 'Szukaj...',
+                                buttonAriaLabel: 'Wyszukiwarka',
+                            },
+                            modal: {
+                                searchBox: {
+                                    placeholder: 'Szukaj w dokumentacji...',
+                                },
+                                loadingScreen: {
+                                    loadingText: 'Wczytywanie indeksu...',
+                                },
+                                errorScreen: {
+                                    titleText: 'Nie udało się wczytać indeksu wyszukiwania.',
+                                },
+                                noResultsText: 'Brak wyników dla',
+                                startScreen: {
+                                    noRecentSearchesText: 'Zacznij pisać, aby przeszukać całą dokumentację.',
+                                },
+                                footer: {
+                                    navigateText: 'nawiguj',
+                                    selectText: 'otwórz',
+                                    closeText: 'zamknij',
+                                },
+                            },
+                        },
+                    },
+                },
+                docFooter: { prev: 'Poprzednia strona', next: 'Następna strona' },
+                lastUpdated: {
+                    text: 'Ostatnia aktualizacja:',
+                    formatOptions: { dateStyle: 'long', timeStyle: 'short' },
+                },
+            },
+        },
+    },
 
     /** Version badge shown in the header (empty string = hidden). */
     // version: '1.0.0',
@@ -101,12 +227,12 @@ export default {
      * In nav dropdowns, external links default to `target: '_blank'` unless you set `target` explicitly.
      *
      *   nav: [
-     *     { text: 'Guide',     link: '/docs/guide' },
-     *     { text: 'Reference', link: '/docs/reference' },
+    *     { text: 'Guide',     link: '/guide' },
+    *     { text: 'Reference', link: '/reference' },
      *     {
      *       text: 'More',
      *       items: [
-     *         { text: 'Changelog', link: '/docs/changelog' },
+    *         { text: 'Changelog', link: '/changelog' },
      *         // grouped section inside the dropdown:
      *         {
      *           text: 'Resources',
@@ -120,12 +246,12 @@ export default {
      *   ],
      */
     nav: [
-        { text: 'Guide', link: '/docs/guide' },
-        { text: 'Reference', link: '/docs/reference' },
+        { text: 'Guide', link: '/guide' },
+        { text: 'Reference', link: '/reference' },
         {
             text: 'More',
             items: [
-                { text: 'VitePress incompatibilities', link: '/docs/incompatibilities' },
+                { text: 'VitePress incompatibilities', link: '/incompatibilities' },
                 {
                     text: 'Links',
                     items: [

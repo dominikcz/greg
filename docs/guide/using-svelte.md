@@ -46,8 +46,8 @@ Current time: **{now}**
 ```
 
 > **Note:** mdsvex does not support `<script module>`. Use a plain `<script>`.
-> The `setup` attribute from Vue/VitePress syntax is stripped automatically if
-> present, so copy-pasting VitePress examples still works.
+> The `setup` attribute is stripped automatically if present, so copied snippets
+> using that attribute still work.
 
 
 ## Template syntax

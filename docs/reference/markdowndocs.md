@@ -24,7 +24,7 @@ Mount it in `src/App.svelte`:
 - **Type:** `Record<string, LocaleConfig>`
 - **Location:** `greg.config.js` (not a direct `<MarkdownDocs>` prop)
 
-VitePress-compatible localization is supported through `greg.config.js`:
+Localization is supported through `greg.config.js`:
 
 - locale keys like `'/'`, `'/pl/'`
 - locale-specific `lang`, `title`

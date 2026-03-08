@@ -45,6 +45,17 @@
         allLocaleRootPaths?: string[];
         baseRootPath?: string;
         searchProvider?: SearchProviderFn;
+        searchModalLabel?: string;
+        searchPlaceholder?: string;
+        searchLoadingText?: string;
+        searchErrorText?: string;
+        searchSearchingText?: string;
+        searchNoResultsText?: string;
+        searchStartText?: string;
+        searchResultsAriaLabel?: string;
+        searchNavigateText?: string;
+        searchSelectText?: string;
+        searchCloseText?: string;
     };
 
     let {
@@ -55,6 +66,17 @@
         allLocaleRootPaths = [],
         baseRootPath = "/docs",
         searchProvider,
+        searchModalLabel = "Search",
+        searchPlaceholder = "Search docs...",
+        searchLoadingText = "Loading index...",
+        searchErrorText = "Failed to load search index.",
+        searchSearchingText = "Searching...",
+        searchNoResultsText = "No results for",
+        searchStartText = "Start typing to search across all documentation.",
+        searchResultsAriaLabel = "Search results",
+        searchNavigateText = "navigate",
+        searchSelectText = "open",
+        searchCloseText = "close",
     }: Props = $props();
 
     function normalizePath(path: string): string {
@@ -397,7 +419,7 @@
         onkeydown={handleKeydown}
         role="dialog"
         aria-modal="true"
-        aria-label="Search"
+        aria-label={searchModalLabel}
         tabindex="-1"
     >
         <div class="search-modal">
@@ -425,7 +447,7 @@
                     onkeydown={handleKeydown}
                     type="search"
                     class="search-field-input"
-                    placeholder="Search docs…"
+                    placeholder={searchPlaceholder}
                     autocomplete="off"
                     spellcheck="false"
                 />
@@ -440,26 +462,26 @@
 
             <!-- Body -->
             {#if mode === "local" && !indexReady && !indexError}
-                <div class="search-status">Loading index…</div>
+                <div class="search-status">{searchLoadingText}</div>
             {:else if mode === "local" && indexError}
                 <div class="search-status search-error">
-                    Failed to load search index.
+                    {searchErrorText}
                 </div>
             {:else if isSearching}
                 <div class="search-status">
                     <span class="search-spinner" aria-hidden="true"></span>
-                    Searching…
+                    {searchSearchingText}
                 </div>
             {:else if query.trim() && results.length === 0}
                 <div class="search-status">
-                    No results for <strong>"{query}"</strong>
+                    {searchNoResultsText} <strong>"{query}"</strong>
                 </div>
             {:else if results.length > 0}
                 <ul
                     bind:this={listEl}
                     class="search-results"
                     role="listbox"
-                    aria-label="Search results"
+                    aria-label={searchResultsAriaLabel}
                 >
                     {#each results as result, i}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -513,13 +535,13 @@
                     {/each}
                 </ul>
                 <div class="search-footer">
-                    <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
-                    <span><kbd>↵</kbd> open</span>
-                    <span><kbd>Esc</kbd> close</span>
+                    <span><kbd>↑</kbd><kbd>↓</kbd> {searchNavigateText}</span>
+                    <span><kbd>↵</kbd> {searchSelectText}</span>
+                    <span><kbd>Esc</kbd> {searchCloseText}</span>
                 </div>
             {:else if !query.trim()}
                 <div class="search-status search-hint">
-                    Start typing to search across all documentation.
+                    {searchStartText}
                 </div>
             {/if}
         </div>

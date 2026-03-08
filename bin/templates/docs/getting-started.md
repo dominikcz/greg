@@ -6,8 +6,8 @@ Welcome to **{{TITLE}}**!
 
 Greg is optimized for large documentation projects: preprocessed metadata,
 predictable routing/sidebar generation, and search that scales to bigger docs.
-It aims for VitePress-like config compatibility, while some runtime API and
-platform features intentionally differ.
+It keeps configuration predictable, while some runtime API and platform
+features intentionally differ.
 
 ## Writing docs
 

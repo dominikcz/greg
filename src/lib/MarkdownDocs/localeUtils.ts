@@ -62,6 +62,50 @@ export type LocaleThemeConfig = {
         formatOptions?: Intl.DateTimeFormatOptions & { forceLocale?: boolean };
     };
     externalLinkIcon?: boolean;
+    search?: {
+        locales?: Record<
+            string,
+            {
+                button?: {
+                    buttonText?: string;
+                    buttonAriaLabel?: string;
+                };
+                modal?: {
+                    displayDetails?: string;
+                    resetButtonTitle?: string;
+                    backButtonTitle?: string;
+                    noResultsText?: string;
+                    footer?: {
+                        selectText?: string;
+                        navigateText?: string;
+                        closeText?: string;
+                    };
+                    searchBox?: {
+                        placeholder?: string;
+                        resetButtonTitle?: string;
+                        resetButtonAriaLabel?: string;
+                        cancelButtonText?: string;
+                        cancelButtonAriaLabel?: string;
+                    };
+                    startScreen?: {
+                        recentSearchesTitle?: string;
+                        noRecentSearchesText?: string;
+                        saveRecentSearchButtonTitle?: string;
+                        removeRecentSearchButtonTitle?: string;
+                        favoriteSearchesTitle?: string;
+                        removeFavoriteSearchButtonTitle?: string;
+                    };
+                    errorScreen?: {
+                        titleText?: string;
+                        helpText?: string;
+                    };
+                    loadingScreen?: {
+                        loadingText?: string;
+                    };
+                };
+            }
+        >;
+    };
 };
 
 export type LocaleConfig = {
@@ -115,7 +159,142 @@ type ResolveDefaults = {
         formatOptions?: Intl.DateTimeFormatOptions & { forceLocale?: boolean };
     };
     externalLinkIcon?: boolean;
+    searchButtonLabel?: string;
+    searchModalLabel?: string;
+    searchPlaceholder?: string;
+    searchLoadingText?: string;
+    searchErrorText?: string;
+    searchSearchingText?: string;
+    searchNoResultsText?: string;
+    searchStartText?: string;
+    searchResultsAriaLabel?: string;
+    searchNavigateText?: string;
+    searchSelectText?: string;
+    searchCloseText?: string;
 };
+
+const EXTERNAL_LINK_RE = /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i;
+
+function splitPathAndSuffix(raw: string): { path: string; suffix: string } {
+    const value = String(raw || "").trim();
+    const hashIndex = value.indexOf("#");
+    const queryIndex = value.indexOf("?");
+    const firstSuffixIndex =
+        hashIndex === -1
+            ? queryIndex
+            : queryIndex === -1
+              ? hashIndex
+              : Math.min(hashIndex, queryIndex);
+
+    if (firstSuffixIndex === -1) {
+        return { path: value, suffix: "" };
+    }
+
+    return {
+        path: value.slice(0, firstSuffixIndex),
+        suffix: value.slice(firstSuffixIndex),
+    };
+}
+
+function resolveThemeLink(
+    rawLink: string,
+    args: {
+        baseRootPath: string;
+        localeRootPath: string;
+        localeSegment: string;
+    },
+): string {
+    const value = String(rawLink || "").trim();
+    if (!value) return value;
+    if (EXTERNAL_LINK_RE.test(value)) return value;
+    if (value.startsWith("#") || value.startsWith("?")) return value;
+
+    const { path, suffix } = splitPathAndSuffix(value);
+    if (!path) return suffix || value;
+
+    const baseRootPath = normalizeRootPath(args.baseRootPath);
+    const localeRootPath = normalizeRootPath(args.localeRootPath);
+    const localeSegment = args.localeSegment
+        ? normalizeRootPath(args.localeSegment)
+        : "";
+
+    if (path === "/") return `${localeRootPath}${suffix}`;
+
+    if (path.startsWith(baseRootPath + "/") || path === baseRootPath) {
+        return `${normalizeRootPath(path)}${suffix}`;
+    }
+
+    if (
+        localeSegment &&
+        (path === localeSegment || path.startsWith(localeSegment + "/"))
+    ) {
+        return `${normalizeRootPath(baseRootPath + path)}${suffix}`;
+    }
+
+    if (path.startsWith("/")) {
+        return `${normalizeRootPath(localeRootPath + path)}${suffix}`;
+    }
+
+    return `${normalizeRootPath(`${localeRootPath}/${path}`)}${suffix}`;
+}
+
+function normalizeTopNavLinks(
+    nav: TopNavItem[],
+    args: {
+        baseRootPath: string;
+        localeRootPath: string;
+        localeSegment: string;
+    },
+): TopNavItem[] {
+    return (nav ?? []).map((item) => ({
+        ...item,
+        link:
+            typeof item.link === "string"
+                ? resolveThemeLink(item.link, args)
+                : item.link,
+        items: item.items ? normalizeTopNavLinks(item.items, args) : item.items,
+    }));
+}
+
+function normalizeSidebarLinks(
+    sidebar: SidebarItem[],
+    args: {
+        baseRootPath: string;
+        localeRootPath: string;
+        localeSegment: string;
+    },
+): SidebarItem[] {
+    return (sidebar ?? []).map((item) => ({
+        ...item,
+        link:
+            typeof item.link === "string"
+                ? resolveThemeLink(item.link, args)
+                : item.link,
+        items: item.items
+            ? normalizeSidebarLinks(item.items, args)
+            : item.items,
+    }));
+}
+
+function resolveSearchLocaleConfig(
+    themeConfig: LocaleThemeConfig,
+    localeKey: string,
+) {
+    const localesMap = themeConfig.search?.locales ?? {};
+    const normalized = normalizeLocaleKey(localeKey);
+    const trimmed = normalized.replace(/^\/+|\/+$/g, "");
+    const candidateKeys =
+        normalized === "/"
+            ? ["/", "root"]
+            : [normalized, normalized.replace(/\/$/, ""), trimmed];
+
+    for (const key of candidateKeys) {
+        const value = localesMap[key];
+        if (value) return value;
+    }
+
+    return undefined;
+}
 
 export function normalizeRootPath(path: string): string {
     const value = String(path || "").trim();
@@ -160,6 +339,7 @@ export function resolveLocaleForPath(
     defaults: ResolveDefaults,
 ) {
     const cleanPath = normalizeRootPath(activePath || "/");
+    const normalizedBaseRootPath = normalizeRootPath(baseRootPath);
     const entries = getLocaleEntries(baseRootPath, locales);
     const matched =
         [...entries]
@@ -171,6 +351,22 @@ export function resolveLocaleForPath(
             ) ?? entries[0];
 
     const themeConfig = matched.config.themeConfig ?? {};
+    const normalizedNav = normalizeTopNavLinks(themeConfig.nav ?? defaults.nav, {
+        baseRootPath: normalizedBaseRootPath,
+        localeRootPath: matched.rootPath,
+        localeSegment: matched.segment,
+    });
+    const normalizedSidebar = Array.isArray(themeConfig.sidebar ?? defaults.sidebar)
+        ? normalizeSidebarLinks(
+              (themeConfig.sidebar ?? defaults.sidebar) as SidebarItem[],
+              {
+                  baseRootPath: normalizedBaseRootPath,
+                  localeRootPath: matched.rootPath,
+                  localeSegment: matched.segment,
+              },
+          )
+        : (themeConfig.sidebar ?? defaults.sidebar);
+    const searchLocale = resolveSearchLocaleConfig(themeConfig, matched.key);
     return {
         key: matched.key,
         lang: matched.config.lang,
@@ -178,8 +374,8 @@ export function resolveLocaleForPath(
         rootPath: matched.rootPath,
         allRootPaths: entries.map((entry) => entry.rootPath),
         mainTitle: matched.config.title ?? defaults.mainTitle,
-        nav: themeConfig.nav ?? defaults.nav,
-        sidebar: themeConfig.sidebar ?? defaults.sidebar,
+        nav: normalizedNav,
+        sidebar: normalizedSidebar,
         outline: themeConfig.outline ?? defaults.outline,
         lastUpdatedText: themeConfig.lastUpdatedText,
         langMenuLabel: themeConfig.langMenuLabel ?? defaults.langMenuLabel,
@@ -205,6 +401,40 @@ export function resolveLocaleForPath(
         lastUpdated: themeConfig.lastUpdated ?? defaults.lastUpdated,
         externalLinkIcon:
             themeConfig.externalLinkIcon ?? defaults.externalLinkIcon,
+        searchButtonLabel:
+            searchLocale?.button?.buttonText ??
+            defaults.searchButtonLabel,
+        searchModalLabel:
+            searchLocale?.button?.buttonAriaLabel ??
+            defaults.searchModalLabel,
+        searchPlaceholder:
+            searchLocale?.modal?.searchBox?.placeholder ??
+            defaults.searchPlaceholder,
+        searchLoadingText:
+            searchLocale?.modal?.loadingScreen?.loadingText ??
+            defaults.searchLoadingText,
+        searchErrorText:
+            searchLocale?.modal?.errorScreen?.titleText ??
+            defaults.searchErrorText,
+        searchSearchingText:
+            defaults.searchSearchingText,
+        searchNoResultsText:
+            searchLocale?.modal?.noResultsText ??
+            defaults.searchNoResultsText,
+        searchStartText:
+            searchLocale?.modal?.startScreen?.noRecentSearchesText ??
+            defaults.searchStartText,
+        searchResultsAriaLabel:
+            defaults.searchResultsAriaLabel,
+        searchNavigateText:
+            searchLocale?.modal?.footer?.navigateText ??
+            defaults.searchNavigateText,
+        searchSelectText:
+            searchLocale?.modal?.footer?.selectText ??
+            defaults.searchSelectText,
+        searchCloseText:
+            searchLocale?.modal?.footer?.closeText ??
+            defaults.searchCloseText,
         entries,
     };
 }

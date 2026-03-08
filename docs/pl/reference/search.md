@@ -1,0 +1,141 @@
+---
+title: Wyszukiwanie
+---
+
+# Wyszukiwanie
+
+Greg zawiera wbudowane wyszukiwanie pełnotekstowe oparte na [Fuse.js](https://fusejs.io/).
+Nie wymaga zewnętrznej usługi ani klucza API.
+
+## Tryby wyszukiwania
+
+Tryb wyszukiwania konfigurujesz w `greg.config.js`:
+
+```js
+search: {
+  provider: 'server', // 'server' | 'local' | 'none'
+  // serverUrl: '/api/search'
+}
+```
+
+| Provider | Jak to działa                                                         | Polecane dla                 |
+| -------- | ---------------------------------------------------------------------- | --------------------------- |
+| `server` | Przeglądarka pyta `GET /api/search?q=...` i otrzymuje gotowe wyniki   | Dużych zestawów dokumentacji |
+| `local`  | Przeglądarka pobiera `/search-index.json` i uruchamia Fuse.js lokalnie | Małych zestawów dokumentacji |
+| `none`   | Wbudowane UI wyszukiwania (przycisk + modal + skróty) jest wyłączone  | Stron bez wbudowanego search |
+
+`server` to zwykle najlepszy domyślny wybór dla większych zbiorów dokumentacji.
+
+## Jak działa indeksowanie
+
+W czasie **builda** `vitePluginSearchIndex` przechodzi po wszystkich plikach `.md`
+w folderze docs, usuwa składnię Markdown, dzieli strony na sekcje (po nagłówkach)
+i zapisuje `/search-index.json` do katalogu wyjściowego Vite.
+
+W czasie **działania**:
+
+- w trybie `local` modal pobiera `/search-index.json` i szuka po stronie przeglądarki,
+- w trybie `server` modal odpytuje endpoint ustawiony w `serverUrl`.
+
+## Wymagane pluginy Vite
+
+Użyj obu pluginów w `vite.config.js`:
+
+```js
+import { vitePluginSearchIndex, vitePluginSearchServer } from '@dominikcz/greg/plugins';
+
+export default defineConfig({
+  plugins: [
+    svelte(),
+    vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
+    vitePluginSearchServer({ docsDir: 'docs', rootPath: '/docs' }),
+  ],
+});
+```
+
+`vitePluginSearchServer` automatycznie wystawia `/api/search` zarówno w `dev`,
+jak i w `preview`.
+
+## Serwer wyszukiwania w produkcji
+
+Najpierw zbuduj stronę:
+
+```bash
+npm run build
+```
+
+Następnie uruchom osobny serwer wyszukiwania:
+
+```bash
+greg search-server --index dist/search-index.json --port 3100
+```
+
+Ustaw `serverUrl` na ten endpoint, np.:
+
+```js
+search: {
+  provider: 'server',
+  serverUrl: 'http://localhost:3100/api/search'
+}
+```
+
+W produkcji zwykle wystawisz ten serwer za reverse proxy, żeby frontend nadal
+korzystał z `/api/search`.
+
+## Własny silnik wyszukiwania
+
+Jeśli chcesz użyć Algolii, Meilisearch, Typesense albo własnego backendu:
+
+- ustaw `provider: 'none'` w `greg.config.js`,
+- przekaz prop `searchProvider` do `<MarkdownDocs>`.
+
+Po przekazaniu `searchProvider` Greg ponownie włączy przycisk i modal
+wyszukiwania, a zapytania będą przechodzić przez Twoją funkcję.
+
+Sygnatura `searchProvider`:
+
+```ts
+(query: string, limit?: number) => Promise<SearchResult[]>
+```
+
+## Otwieranie wyszukiwarki
+
+| Metoda                                     | Akcja        |
+| ------------------------------------------ | ------------ |
+| Kliknięcie przycisku **Szukaj...** w headerze | Otwiera modal |
+| `Ctrl + K`                                 | Otwiera modal |
+| `Cmd + K` (macOS)                          | Otwiera modal |
+
+## Nawigacja klawiaturą w modalu
+
+| Klawisz   | Akcja                          |
+| --------- | ------------------------------ |
+| `↑` / `↓` | Wybierz poprzedni / następny wynik |
+| `Enter`   | Przejdź do zaznaczonego wyniku |
+| `Esc`     | Zamknij modal                  |
+
+## Ranking wyników
+
+Wyniki są oceniane przez Fuse.js na podstawie wag dla pól:
+
+| Pole             | Waga |
+| ---------------- | ---- |
+| Tytuł strony     | 3x   |
+| Nagłówek sekcji  | 2x   |
+| Treść sekcji     | 1x   |
+
+Używany jest fuzzy threshold `0.4` (ciaśniejszy niż domyślny), dzięki czemu do
+wyników trafiają głównie rzeczywiste dopasowania. `ignoreLocation: true`
+oznacza, że dopasowanie może wystąpić w dowolnym miejscu tekstu, nie tylko na
+początku.
+
+## Wykluczanie stron z indeksu
+
+Pliki, których nazwa zaczyna się od `__` (podwójne podkreślenie), są automatycznie
+pomijane zarówno w routingu, jak i w indeksie wyszukiwania.
+
+## Ograniczenia
+
+- W trybie `local` duże indeksy mogą znacząco zwiększyć rozmiar payloadu i zużycie pamięci w przeglądarce.
+- W trybie `server` endpoint wyszukiwania musi być osiągalny z klienta (`serverUrl` musi być poprawny dla danego środowiska).
+- Zawartość bloków kodu jest usuwana z indeksu (nie jest przeszukiwalna).

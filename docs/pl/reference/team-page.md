@@ -1,23 +1,21 @@
-﻿---
+---
 title: Team Page
 ---
 
 # Team Page
 
-Greg ships Svelte team-page components.
-There are two ways to display team members: embedded in a doc page, or as a
-dedicated full-page layout.
+Greg dostarcza komponenty Svelte do tworzenia strony zespołu.
 
-## Authoring styles
+## Sposoby użycia
 
-Team components are available in both authoring contexts:
+Komponenty zespołu działają:
 
-- Markdown docs pages (`.md`) via component tags
-- Direct `.svelte` usage via imported components
+- w stronach `.md` przez tagi komponentów,
+- w `.svelte` przez import.
 
-## Show team members inside a page
+## Lista członków zespołu na stronie
 
-Use `<TeamMembers>` anywhere in a Markdown page:
+Użyj `<TeamMembers>` w dowolnej stronie Markdown:
 
 ::: code-group labels=[markdown, output]
 
@@ -27,7 +25,7 @@ Use `<TeamMembers>` anywhere in a Markdown page:
 
 :::
 
-### Direct component usage (`.svelte`)
+### Bezpośrednie użycie komponentu (`.svelte`)
 
 ::: code-group labels=[svelte, output]
 
@@ -53,21 +51,21 @@ Use `<TeamMembers>` anywhere in a Markdown page:
 
 :::
 
-### `<TeamMembers>` props
+### Właściwości `<TeamMembers>`
 
 ```ts
 interface Props {
   members: TeamMemberData[];
-  size?: 'small' | 'medium';   // default: 'medium'
+  size?: 'small' | 'medium';   // domyślnie: 'medium'
 }
 ```
 
-`small` is better for inline use inside regular doc pages; `medium` suits a
-dedicated team page.
+`small` lepiej sprawdza się przy osadzeniu listy w zwykłej stronie dokumentacji,
+natomiast `medium` pasuje do dedykowanej strony zespołu.
 
-## Create a full team page
+## Pełna strona zespołu
 
-Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
+Stwórz plik np. `docs/team.md` i użyj komponentów layoutu:
 
 ::: code-group labels=[markdown, output]
 
@@ -77,7 +75,7 @@ Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
 
 :::
 
-### Direct component usage (`.svelte`)
+### Bezpośrednie użycie komponentu (`.svelte`)
 
 ::: code-group labels=[svelte, output]
 
@@ -86,10 +84,10 @@ Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
   import TeamMembers from '$components/TeamMembers.svelte';
 </script>
 
-<h3>Our Team</h3>
-<p>The people behind Greg.</p>
+<h3>Nasz zespół</h3>
+<p>Ludzie stojący za Gregiem.</p>
 
-<h4>Core Team</h4>
+<h4>Zespół core</h4>
 <TeamMembers
   size="medium"
   members={[
@@ -114,21 +112,21 @@ Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
 
 :::
 
-## Component reference
+## Referencja komponentów
 
-### `<TeamMember>` props
+### `<TeamMember>`
 
 ```ts
 interface TeamMemberData {
-  avatar: string;         // image URL
+  avatar: string;         // URL avatara
   name: string;
   title?: string;
   org?: string;
   orgLink?: string;
-  desc?: string;          // HTML allowed
+  desc?: string;          // HTML dozwolone
   links?: SocialLinkItem[];
-  sponsor?: string;       // sponsor page URL
-  actionText?: string;    // button label, default 'Sponsor'
+  sponsor?: string;       // URL strony sponsora
+  actionText?: string;    // etykieta przycisku, domyślnie 'Sponsor'
 }
 
 interface Props {
@@ -137,7 +135,7 @@ interface Props {
 }
 ```
 
-### `<TeamMembers>` props
+### `<TeamMembers>`
 
 ```ts
 interface Props {
@@ -148,30 +146,28 @@ interface Props {
 
 ### `<TeamPage>`
 
-Wrapper that provides correct vertical spacing between sections. Accepts only
-`children` (Svelte snippet).
+Kontener zachowujący poprawne odstępy pionowe między sekcjami.
+Przyjmuje wyłącznie `children` (fragment Svelte).
 
 ### `<TeamPageTitle>`
 
-Section title block at the top of a `<TeamPage>`. Accepts `title` and `lead`
-props or their snippet variants.
+Blok tytułowy strony zespołu (`title`, `lead` lub warianty fragmentów).
 
 ### `<TeamPageSection>`
 
-A section within a `<TeamPage>`. Accepts `title` / `lead` props and children.
+Sekcja w obrębie `<TeamPage>`.
+Przyjmuje właściwości `title` / `lead` oraz `children`.
 
-## Social icons
+## Ikony społecznościowe
 
-The `icon` property of a `SocialLinkItem` can be:
+`icon` w `SocialLinkItem` może być:
 
-- A **string** name of a built-in icon. Supported values: `github`, `twitter`,
-  `x`, `linkedin`, `discord`, `facebook`, `instagram`, `mastodon`, `npm`,
-  `slack`, `youtube`.
-- An **object** `{ svg: string }` with custom SVG markup.
+- stringiem wbudowanej ikony (`github`, `twitter`, `x`, `linkedin`, `discord`, `facebook`, `instagram`, `mastodon`, `npm`, `slack`, `youtube`),
+- obiektem `{ svg: string }` z własnym SVG.
 
 ```md
 links: [
-  { icon: 'github',  link: 'https://github.com/...' },
+  { icon: 'github', link: 'https://github.com/...' },
   { icon: { svg: '<svg ...>...</svg>' }, link: 'https://...' },
 ]
 ```
