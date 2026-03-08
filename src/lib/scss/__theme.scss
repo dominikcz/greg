@@ -1,0 +1,238 @@
+@mixin greg-light-vars {
+    /* Light theme (default) */
+    --greg-background: #ffffff;
+    --greg-main-background: #ffffff;
+    --greg-menu-background: #f8f8f8;
+    --greg-header-background: #ffffff;
+    --greg-color: #1a1a2e;
+    --greg-menu-color: #3d3d3d;
+    --greg-menu-section-color: #7a7a8c;
+    --greg-menu-active-background-params: 100, 108, 255;
+    --greg-menu-active-background: #646cff;
+    --greg-menu-active-color: #ffffff;
+    --greg-menu-hover-background: #ececf5;
+    --greg-code-background: #f0f0f4;
+    --greg-code-color: #1a1a2e;
+    --greg-border-color: #e5e5ea;
+    --greg-accent: #646cff;
+    --greg-accent-light: #ececf5;
+    --greg-header-height: 3.5rem;
+
+    --greg-splitter-handler-background: #e5e5ea;
+    --greg-splitter-handler-color: #7a7a8c;
+    --greg-splitter-active-border: #646cff;
+    --greg-splitter-active-handler-background: #646cff;
+    --greg-splitter-active-handler-color: #f8f8f8;
+
+    /* TOC */
+    --greg-toc-background: transparent;
+    --greg-toc-color: #3d3d3d;
+    --greg-toc-link-color: #4a4a6a;
+    --greg-toc-link-hover: #646cff;
+
+    /* ิ๖วิ๖ว Semantic status colors (light) ิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖ว */
+    --greg-info-border: rgba(100, 108, 255, 0.45);
+    --greg-info-text: #646cff;
+    --greg-info-bg: rgba(100, 108, 255, 0.08);
+
+    --greg-tip-border: rgba(66, 184, 131, 0.45);
+    --greg-tip-text: #2d9e68;
+    --greg-tip-bg: rgba(66, 184, 131, 0.08);
+
+    --greg-warning-border: rgba(201, 126, 10, 0.45);
+    --greg-warning-text: #7d4e00;
+    --greg-warning-bg: rgba(201, 126, 10, 0.08);
+
+    --greg-danger-border: rgba(224, 82, 82, 0.45);
+    --greg-danger-text: #c81d1d;
+    --greg-danger-bg: rgba(224, 82, 82, 0.08);
+
+    --greg-success-border: rgba(26, 127, 55, 0.45);
+    --greg-success-text: #1a7f37;
+    --greg-success-bg: rgba(26, 127, 55, 0.08);
+
+    --greg-sponsor-color: #db6da0;
+    --greg-sponsor-bg: rgba(219, 109, 160, 0.08);
+
+    --greg-code-inline-color: #e4004a;
+
+    /* ิ๖วิ๖ว Mermaid diagram CSS-variable tokens (light) ิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖ว */
+    --mmd-canvas:       #ffffff;
+    --mmd-node-bg:      #ffffff;
+    --mmd-text:         rgba(0, 0, 0, 0.87);
+    --mmd-text-sub:     rgba(0, 0, 0, 0.60);
+    --mmd-line:         #757575;
+    --mmd-border:       #e0e0e0;
+    --mmd-actor-line:   #bdbdbd;
+    --mmd-accent-1:     #6200ee;
+    --mmd-accent-2:     #03dac6;
+    --mmd-accent-3:     #b00020;
+    --mmd-accent-4:     #018786;
+    --mmd-accent-5:     #3700b3;
+    --mmd-accent-6:     #cf6679;
+    --mmd-shadow-sm:    drop-shadow(0 1px 3px rgba(0,0,0,.12)) drop-shadow(0 1px 2px rgba(0,0,0,.24));
+    --mmd-shadow-md:    drop-shadow(0 2px 4px rgba(0,0,0,.14)) drop-shadow(0 4px 5px rgba(0,0,0,.12));
+    --mmd-shadow-acc1:  drop-shadow(0 2px 4px rgba(98,0,238,.3))  drop-shadow(0 4px 8px rgba(98,0,238,.2));
+}
+
+:root {
+    @include greg-light-vars;
+}
+
+@mixin greg-dark-vars {
+    /* Dark theme ิว๖ warm ember palette */
+    --greg-background: #1c1c1c;
+    --greg-main-background: #1c1c1c;
+    --greg-menu-background: #141414;
+    --greg-header-background: #141414;
+
+    /* tekst */
+    --greg-color: rgba(226, 228, 233, 0.82);
+    --greg-menu-color: #d9c9b5;
+    --greg-menu-section-color: #8a7a68;
+
+    /* aktywny element */
+    --greg-menu-active-background-params: 255, 111, 97;
+    --greg-menu-active-background: #ff6f61;
+    --greg-menu-active-color: #1c1c1c;
+    --greg-menu-hover-background: rgba(255, 111, 97, 0.12);
+
+    /* kod */
+    --greg-code-background: #0f0f0f;
+    --greg-code-color: #f5e8d8;
+
+    /* obramowania i akcenty */
+    --greg-border-color: #2e2a26;
+    --greg-accent: #ff6f61;
+    --greg-accent-light: rgba(255, 111, 97, 0.13);
+
+    --greg-header-height: 3.5rem;
+
+    --greg-splitter-handler-background: #2e2a26;
+    --greg-splitter-handler-color: #8a7a68;
+    --greg-splitter-active-border: #ff6f61;
+    --greg-splitter-active-handler-background: #ff6f61;
+    --greg-splitter-active-handler-color: #f5e8d8;
+
+    /* TOC */
+    --greg-toc-color: #f5e8d8;
+    --greg-toc-link-color: #d9c9b5;
+    --greg-toc-link-hover: #ff6f61;
+
+    /* ิ๖วิ๖ว Semantic status colors (dark) ิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖ว */
+    --greg-info-border: rgba(255, 111, 97, 0.45);
+    --greg-info-text: #ff6f61;
+    --greg-info-bg: rgba(255, 111, 97, 0.08);
+
+    --greg-tip-border: rgba(168, 201, 127, 0.45);
+    --greg-tip-text: #a8c97f;
+    --greg-tip-bg: rgba(168, 201, 127, 0.08);
+
+    --greg-warning-border: rgba(233, 169, 61, 0.45);
+    --greg-warning-text: #f5c842;
+    --greg-warning-bg: rgba(233, 169, 61, 0.08);
+
+    --greg-danger-border: rgba(224, 82, 82, 0.45);
+    --greg-danger-text: #ff7a7a;
+    --greg-danger-bg: rgba(224, 82, 82, 0.10);
+
+    --greg-success-border: rgba(168, 201, 127, 0.45);
+    --greg-success-text: #a8c97f;
+    --greg-success-bg: rgba(168, 201, 127, 0.08);
+
+    --greg-sponsor-color: #e2829b;
+    --greg-sponsor-bg: rgba(226, 130, 155, 0.10);
+
+    --greg-code-inline-color: #daa520;
+
+    /* ิ๖วิ๖ว Mermaid diagram CSS-variable tokens (dark) ิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖วิ๖ว */
+    --mmd-canvas:       #1e1e2e;
+    --mmd-node-bg:      #2d2d44;
+    --mmd-text:         rgba(255, 255, 255, 0.87);
+    --mmd-text-sub:     rgba(255, 255, 255, 0.60);
+    --mmd-line:         #9090b8;
+    --mmd-border:       #3e3e5a;
+    --mmd-actor-line:   #5a5a7a;
+    --mmd-accent-1:     #bb86fc;
+    --mmd-accent-2:     #03dac6;
+    --mmd-accent-3:     #cf6679;
+    --mmd-accent-4:     #03dac6;
+    --mmd-accent-5:     #7c4dff;
+    --mmd-accent-6:     #ef9a9a;
+    --mmd-shadow-sm:    drop-shadow(0 2px 6px rgba(0,0,0,.40)) drop-shadow(0 1px 3px rgba(0,0,0,.50));
+    --mmd-shadow-md:    drop-shadow(0 3px 8px rgba(0,0,0,.45)) drop-shadow(0 5px 10px rgba(0,0,0,.35));
+    --mmd-shadow-acc1:  drop-shadow(0 2px 6px rgba(187,134,252,.35)) drop-shadow(0 4px 10px rgba(187,134,252,.2));
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        @include greg-dark-vars;
+    }
+}
+
+.greg[data-theme="dark"] {
+    @include greg-dark-vars;
+}
+
+.greg[data-theme="light"] {
+    @include greg-light-vars;
+}
+
+@mixin greg-dark-markdown-vars {
+    --focus-outlineColor: #ff6f61;
+    --fgColor-default: #f5e8d8;
+    --fgColor-muted: #8a7a68;
+    --fgColor-accent: #ff6f61;
+    --fgColor-success: #a8c97f;
+    --fgColor-attention: #daa520;
+    --fgColor-danger: #ff4500;
+    --fgColor-done: #d4956a;
+    --bgColor-default: var(--greg-background);
+    --bgColor-muted: #242424;
+    --bgColor-neutral-muted: var(--greg-code-background);
+    --bgColor-attention-muted: rgba(218, 165, 32, 0.15);
+    --borderColor-default: #4a4540;
+    --borderColor-muted: #3a3530aa;
+    --borderColor-neutral-muted: #2e2a2699;
+    --borderColor-accent-emphasis: #ff6f61;
+    --borderColor-success-emphasis: #a8c97f;
+    --borderColor-attention-emphasis: #daa520;
+    --borderColor-danger-emphasis: #ff4500;
+    --borderColor-done-emphasis: #d4956a;
+    --greg-code-block-bg: #24292e;
+    --greg-code-line-highlight-color: color-mix(in srgb, #9198a1 28%, transparent);
+
+    /* Code diff markers (dark): tuned for high contrast like VitePress */
+    --greg-code-line-diff-add-symbol-color: #3fb950;
+    --greg-code-line-diff-remove-symbol-color: #f85149;
+}
+
+@mixin greg-light-markdown-vars {
+    --focus-outlineColor: #646cff;
+    --fgColor-default: #1a1a2e;
+    --fgColor-muted: #6e7681;
+    --fgColor-accent: #646cff;
+    --fgColor-success: #1a7f37;
+    --fgColor-attention: #9a6700;
+    --fgColor-danger: #cf222e;
+    --fgColor-done: #6f42c1;
+    --bgColor-default: var(--greg-background);
+    --bgColor-muted: #f5f5f5;
+    --bgColor-neutral-muted: var(--greg-code-background);
+    --bgColor-attention-muted: #fff8c5;
+    --borderColor-default: #d0d7de;
+    --borderColor-muted: #d0d7deb3;
+    --borderColor-neutral-muted: #d0d7deb3;
+    --borderColor-accent-emphasis: #646cff;
+    --borderColor-success-emphasis: #1a7f37;
+    --borderColor-attention-emphasis: #9a6700;
+    --borderColor-danger-emphasis: #cf222e;
+    --borderColor-done-emphasis: #6f42c1;
+    --greg-code-block-bg: #f8f8f8;
+    --greg-code-line-highlight-color: color-mix(in srgb, #59636e 18%, transparent);
+
+    /* Code diff markers (light): tuned for high contrast like VitePress */
+    --greg-code-line-diff-add-symbol-color: #1a7f37;
+    --greg-code-line-diff-remove-symbol-color: #cf222e;
+}
+

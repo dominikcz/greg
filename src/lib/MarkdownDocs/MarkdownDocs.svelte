@@ -11,7 +11,7 @@
         getBreadcrumbItems,
         parseSidebarConfig,
     } from "./docsUtils";
-    import "./../scss/markdownDocs.scss";
+    import "./../scss/greg.scss";
     import { setPortalsContext } from "./../portal";
     import CarbonAds from "../components/CarbonAds.svelte";
     import Outline from "./Outline.svelte";

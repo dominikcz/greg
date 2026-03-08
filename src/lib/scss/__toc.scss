@@ -1,0 +1,55 @@
+/* ── TOC ─────────────────────────────────────────── */
+.markdown-body .table-of-contents {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+    color: var(--greg-toc-color);
+
+    ul,
+    ol {
+        margin: 0 !important;
+        padding-inline-start: 1.25rem !important;
+    }
+
+    >ul,
+    >ol {
+        padding-inline-start: 0 !important;
+    }
+
+    li {
+        margin: 0.2rem 0;
+        line-height: 1.6;
+    }
+
+    a {
+        color: var(--greg-toc-link-color);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.15s;
+
+        &:hover {
+            color: var(--greg-toc-link-hover);
+        }
+    }
+
+    // Nested lists (h3, h4...) - indented and smaller
+    ul ul,
+    ol ol,
+    ul ol,
+    ol ul {
+        padding-inline-start: 1rem !important;
+        margin-top: 0.1rem;
+
+        a {
+            font-weight: 400;
+            font-size: 0.825rem;
+            color: var(--greg-toc-h3-color, var(--greg-toc-link-color));
+
+            &:hover {
+                color: var(--greg-toc-link-hover);
+            }
+        }
+    }
+}
+
+

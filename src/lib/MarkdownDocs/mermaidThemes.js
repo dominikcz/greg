@@ -5,7 +5,7 @@
  * Each entry maps to a `MermaidConfig` object accepted by `mermaid.initialize()`.
  *
  * Colours inside `themeCSS` use CSS custom-property tokens (--mmd-*)
- * defined in markdownDocs.scss, so diagrams react to Greg's light/dark
+ * defined in greg.scss, so diagrams react to Greg's light/dark
  * mode via the CSS cascade — no JS re-render required for colour changes.
  *
  * `themeVariables` are baked into the SVG at render-time.

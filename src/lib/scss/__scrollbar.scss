@@ -1,0 +1,60 @@
+/* ── Scrollbar ───────────────────────────────────── */
+html,
+body,
+.greg {
+    scrollbar-width: thin;
+    scrollbar-color: var(--greg-accent) transparent;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.greg::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.greg::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+.greg::-webkit-scrollbar-thumb {
+    background-color: var(--greg-accent);
+    border-radius: 999px;
+    opacity: 0.6;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+.greg::-webkit-scrollbar-thumb:hover {
+    opacity: 1;
+}
+
+.markdown-body,
+.markdown-body * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--greg-accent) transparent;
+}
+
+.markdown-body *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.markdown-body *::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.markdown-body *::-webkit-scrollbar-thumb {
+    background-color: var(--greg-accent);
+    border-radius: 999px;
+    opacity: 0.6;
+}
+
+.markdown-body *::-webkit-scrollbar-thumb:hover {
+    opacity: 1;
+}
+

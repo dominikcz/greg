@@ -1,0 +1,99 @@
+/* ── Custom Containers ───────────────────────────── */
+.custom-block {
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    border: 1px solid transparent;
+
+    .custom-block-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin: 0 0 0.4rem 0;
+        padding: 0;
+        text-transform: uppercase;
+    }
+
+    p:last-child {
+        margin-bottom: 0;
+    }
+
+    // ── info ──
+    &.info {
+        background: var(--greg-info-bg);
+        border-color: var(--greg-info-border);
+
+        .custom-block-title {
+            color: var(--greg-info-text);
+        }
+    }
+
+    // ── tip ──
+    &.tip {
+        background: var(--greg-tip-bg);
+        border-color: var(--greg-tip-border);
+
+        .custom-block-title {
+            color: var(--greg-tip-text);
+        }
+    }
+
+    // ── warning ──
+    &.warning {
+        background: var(--greg-warning-bg);
+        border-color: var(--greg-warning-border);
+
+        .custom-block-title {
+            color: var(--greg-warning-text);
+        }
+    }
+
+    // ── danger ──
+    &.danger {
+        background: var(--greg-danger-bg);
+        border-color: var(--greg-danger-border);
+
+        .custom-block-title {
+            color: var(--greg-danger-text);
+        }
+    }
+
+    // ── details ──
+    &.details {
+        background: var(--greg-code-background);
+        border-color: var(--greg-border-color);
+
+        summary.custom-block-title {
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+            color: var(--greg-color);
+            margin: 0;
+            user-select: none;
+
+            &::before {
+                content: '>';
+                font-size: 0.8em;
+                transition: transform 0.2s ease;
+                color: var(--greg-accent);
+                flex-shrink: 0;
+            }
+        }
+
+        &[open]>summary.custom-block-title::before {
+            transform: rotate(90deg);
+        }
+
+        // Content inside open details
+        &>*:not(summary) {
+            margin-top: 0.75rem;
+        }
+    }
+}
+
