@@ -33,6 +33,7 @@
     "dev": "vite",
     "build": "node scripts/build-timer.js vite build",
     "build:static": "node scripts/build-timer.js \"vite build && node scripts/generate-static.js\"",
+    "build:markdown": "node scripts/render-markdown.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

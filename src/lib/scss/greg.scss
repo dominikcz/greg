@@ -1,9 +1,9 @@
 /* Domain-oriented stylesheet entry for MarkdownDocs. */
-@import "./__theme";
-@import "./__markdown";
-@import "./__steps";
-@import "./__code";
-@import "./__scrollbar";
-@import "./__toc";
-@import "./__containers";
-@import "./__utilities";
+@use "./__theme.scss";
+@use "./__markdown.scss";
+@use "./__steps.scss";
+@use "./__code.scss";
+@use "./__scrollbar.scss";
+@use "./__toc.scss";
+@use "./__containers.scss";
+@use "./__utilities.scss";

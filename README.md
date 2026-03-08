@@ -165,6 +165,17 @@ export default {
 | `greg preview`       | Preview production build        |
 | `greg search-server` | Standalone search API server    |
 
+## Resolved Markdown Export
+
+Generate a fully expanded markdown snapshot (all `<!--@include: ...-->` and `<<< ...` resolved)
+for AI knowledge-base ingestion or server-side indexing pipelines.
+
+```sh
+npm run build:markdown
+```
+
+Output is written to `dist/resolved-markdown` and mirrors the `docs/` structure.
+
 ## TypeScript
 
 Greg ships types at `@dominikcz/greg`. `greg.config.ts` is supported — it is transpiled via esbuild at build time.
