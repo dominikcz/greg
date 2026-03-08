@@ -10,6 +10,12 @@ Inspired by [VitePress](https://vitepress.dev){target="_blank"}, built on Svelte
 npx @dominikcz/greg init
 ```
 
+For unattended/default setup (no prompts):
+
+```sh
+npx @dominikcz/greg init --defaults
+```
+
 The interactive wizard will ask for docs path, site title, TypeScript preference, and the type of initial documentation (empty, sample, or generated fake docs). It can also install all required dependencies for you.
 
 At the end you only need:
@@ -22,6 +28,14 @@ npm run dev
 
 ```sh
 npm install --save-dev @dominikcz/greg @sveltejs/vite-plugin-svelte svelte vite
+```
+
+If your `package.json` does not already define module type, set:
+
+```json
+{
+    "type": "module"
+}
 ```
 
 **`vite.config.js`**

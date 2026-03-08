@@ -243,7 +243,9 @@ function createDocumentationStructure(cfg) {
     const stats = { totalFiles: 0, totalSize: 0, totalFolders: 0 };
     const existingFolderNames = new Set();
 
-    for (let i = 0; i < numFolders; i++) {
+    // If filesLimit is provided, treat numFolders as a minimum starting point
+    // and keep adding top-level folders until the file limit is reached.
+    for (let i = 0; i < numFolders || (filesLimit != null && stats.totalFiles < filesLimit); i++) {
         const folderName = generateFoldername(maxFilenameLength, existingFolderNames);
         const folderPath = join(output, folderName);
         process.stdout.write(`📁 ${folderName}/\n`);

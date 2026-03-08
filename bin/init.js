@@ -16,6 +16,8 @@ import { fileURLToPath } from 'node:url';
 import { fork, spawnSync } from 'node:child_process';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const cliArgs = new Set(process.argv.slice(2));
+const useDefaultsMode = cliArgs.has('--defaults') || cliArgs.has('--yes');
 
 // ── ANSI helpers (used for file-creation log lines) ───────────────────────────
 const g = (s) => `\x1b[32m${s}\x1b[0m`;  // green
@@ -61,23 +63,120 @@ function detectPm() {
     return 'npm';
 }
 
+function toFileSpec(absPath) {
+    return `file:${absPath.replace(/\\/g, '/')}`;
+}
+
+function toProjectRelativeFileSpec(absPath) {
+    const rel = absPath.replace(/\\/g, '/').split('/').pop();
+    return `file:./${rel}`;
+}
+
+function findNearbyTarball(version) {
+    const filename = `dominikcz-greg-${version}.tgz`;
+    const candidates = [
+        join(cwd, filename),
+        join(cwd, '..', 'greg', filename),
+        join(cwd, '..', '..', 'greg', filename),
+        join(cwd, '..', filename),
+    ];
+
+    const existing = candidates
+        .filter(candidate => existsSync(candidate))
+        .map(candidate => ({
+            path: candidate,
+            mtime: statSync(candidate).mtimeMs,
+        }))
+        .sort((a, b) => b.mtime - a.mtime);
+
+    return existing[0]?.path ?? null;
+}
+
+function buildLocalTarballSpec(packageRoot) {
+    const packed = spawnSync('npm', ['pack', '--silent'], {
+        cwd: packageRoot,
+        stdio: 'pipe',
+        shell: true,
+        encoding: 'utf8',
+    });
+    if (packed.status !== 0) return null;
+
+    const lines = String(packed.stdout ?? '').split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+    const tarballName = lines[lines.length - 1];
+    if (!tarballName) return null;
+
+    const sourcePath = join(packageRoot, tarballName);
+    const targetPath = join(cwd, tarballName);
+    if (!existsSync(sourcePath)) return null;
+
+    writeFileSync(targetPath, readFileSync(sourcePath));
+    return toProjectRelativeFileSpec(targetPath);
+}
+
+function isTransientCacheSpec(spec) {
+    const value = String(spec ?? '').toLowerCase().replace(/\\/g, '/');
+    return value.includes('/_npx/') || value.includes('/npm-cache/');
+}
+
+function resolveGregDependencySpec(version) {
+    const packageRoot = join(__dirname, '..');
+    const npmView = spawnSync('npm', ['view', `@dominikcz/greg@${version}`, 'version'], {
+        stdio: 'pipe',
+        shell: true,
+    });
+
+    if (npmView.status === 0) {
+        return { spec: `^${version}`, source: 'registry' };
+    }
+
+    // Prefer a nearby local .tgz created by the developer (for local testing).
+    const nearbyTarball = findNearbyTarball(version);
+    if (nearbyTarball) {
+        const targetPath = join(cwd, `dominikcz-greg-${version}.tgz`);
+        if (nearbyTarball !== targetPath) {
+            writeFileSync(targetPath, readFileSync(nearbyTarball));
+        }
+        return { spec: toProjectRelativeFileSpec(targetPath), source: 'local-tarball' };
+    }
+
+    // Prefer a project-local tgz whenever the current version is unpublished.
+    // This avoids pinning dependencies to transient npm cache locations.
+    const tarballSpec = buildLocalTarballSpec(packageRoot);
+    if (tarballSpec) {
+        return { spec: tarballSpec, source: 'local-tarball' };
+    }
+
+    return { spec: toFileSpec(packageRoot), source: 'local' };
+}
+
 // ── main ──────────────────────────────────────────────────────────────────────
 async function main() {
     p.intro(`${b(c(' Greg '))}  Documentation Setup`);
 
-    const docsPath   = orCancel(await p.text({ message: 'Docs path', initialValue: './docs' }));
-    const title      = orCancel(await p.text({ message: 'Site title', initialValue: 'My Docs' }));
-    const desc       = orCancel(await p.text({ message: 'Site description', initialValue: 'Documentation' }));
-    const useTS      = orCancel(await p.confirm({ message: 'Use TypeScript for configuration?', initialValue: true }));
-    const addScripts = orCancel(await p.confirm({ message: 'Add greg scripts to package.json?', initialValue: true }));
-    const docsType   = orCancel(await p.select({
-        message: 'Documentation contents',
-        options: [
-            { value: '1', label: 'Empty project',                hint: 'blank docs folder with a starter page' },
-            { value: '2', label: 'Sample documentation',         hint: 'starter template with examples' },
-            { value: '3', label: 'Generated fake documentation', hint: 'random Markdown files via fakeDocsGenerator' },
-        ],
-    }));
+    let docsPath = './docs';
+    let title = 'My Docs';
+    let desc = 'Documentation';
+    let useTS = true;
+    let addScripts = true;
+    let docsType = '1';
+
+    if (!useDefaultsMode) {
+        docsPath     = orCancel(await p.text({ message: 'Docs path', initialValue: './docs' }));
+        title        = orCancel(await p.text({ message: 'Site title', initialValue: 'My Docs' }));
+        desc         = orCancel(await p.text({ message: 'Site description', initialValue: 'Documentation' }));
+        useTS        = orCancel(await p.confirm({ message: 'Use TypeScript for configuration?', initialValue: true }));
+        addScripts   = orCancel(await p.confirm({ message: 'Add greg scripts to package.json?', initialValue: true }));
+        docsType     = orCancel(await p.select({
+            message: 'Documentation contents',
+            options: [
+                { value: '1', label: 'Empty project',                hint: 'blank docs folder with a starter page' },
+                { value: '2', label: 'Sample documentation',         hint: 'starter template with examples' },
+                { value: '3', label: 'Generated fake documentation', hint: 'random Markdown files via fakeDocsGenerator' },
+            ],
+        }));
+    } else {
+        p.log.info('Using default init options (non-interactive mode).');
+    }
 
     let fakeFilesLimit = 10000;
     if (docsType === '3') {
@@ -134,6 +233,7 @@ async function main() {
     // @dominikcz/greg is written to devDependencies directly (never via npm install)
     // so that local `npm link` and future registry installs both work correctly.
     const { version: gregVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
+    const { spec: gregDependencySpec, source: gregDependencySource } = resolveGregDependencySpec(gregVersion);
     {
         const pkgPath = join(cwd, 'package.json');
         if (existsSync(pkgPath)) {
@@ -146,9 +246,15 @@ async function main() {
                         if (!pkg.scripts[k]) { pkg.scripts[k] = v; changed = true; }
                     }
                 }
+                // Greg scaffold uses ESM config files (vite/svelte/greg), so add
+                // package type when missing to avoid Node typeless-module warnings.
+                if (!pkg.type) {
+                    pkg.type = 'module';
+                    changed = true;
+                }
                 pkg.devDependencies ??= {};
-                if (!pkg.devDependencies['@dominikcz/greg']) {
-                    pkg.devDependencies['@dominikcz/greg'] = `^${gregVersion}`;
+                if (!pkg.devDependencies['@dominikcz/greg'] || isTransientCacheSpec(pkg.devDependencies['@dominikcz/greg'])) {
+                    pkg.devDependencies['@dominikcz/greg'] = gregDependencySpec;
                     changed = true;
                 }
                 if (changed) {
@@ -166,7 +272,7 @@ async function main() {
                 version: '0.0.1',
                 type: 'module',
                 ...(addScripts ? { scripts: { dev: 'greg dev', build: 'greg build', preview: 'greg preview' } } : {}),
-                devDependencies: { '@dominikcz/greg': `^${gregVersion}` },
+                devDependencies: { '@dominikcz/greg': gregDependencySpec },
             };
             writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
             console.log(`  ${g('+')} package.json`);
@@ -186,9 +292,17 @@ async function main() {
         ? ['install', '--save-dev', ...peerDepsArr]
         : ['add', '-D', ...peerDepsArr];
 
-    const installNow = orCancel(await p.confirm({ message: 'Install dependencies now?', initialValue: true }));
+    const installNow = useDefaultsMode
+        ? true
+        : orCancel(await p.confirm({ message: 'Install dependencies now?', initialValue: true }));
 
     if (installNow) {
+        if (gregDependencySource === 'local') {
+            p.log.warn('@dominikcz/greg is not available on npm for this version; using local package source.');
+        }
+        if (gregDependencySource === 'local-tarball') {
+            p.log.warn('@dominikcz/greg is not available on npm for this version; pinned to local tarball in project root.');
+        }
         p.log.step(`Running ${pm} ${installArgs[0]}…`);
         const result = spawnSync(pm, installArgs, { cwd, stdio: 'inherit', shell: true });
         if (result.status !== 0) {
