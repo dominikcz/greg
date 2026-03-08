@@ -143,9 +143,14 @@ function parseTeamMembersProps(el: HTMLElement) {
     const {
         ["data-hydrate"]: _dataHydrate,
         ["data-members"]: _members,
+        ["members"]: _membersLegacy,
         ...plainProps
     } = props;
-    const members = parseJsonAttribute(el, "data-members", [] as any[]);
+    const members = parseJsonAttribute(
+        el,
+        "data-members",
+        parseJsonAttribute(el, "members", [] as any[]),
+    );
     return {
         ...plainProps,
         members,

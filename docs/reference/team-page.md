@@ -29,14 +29,24 @@ Use `<TeamMembers>` anywhere in a Markdown page:
 
 ### Direct component usage (`.svelte`)
 
-::: code-group labels=[markdown, output]
+::: code-group labels=[svelte, output]
 
 ```svelte
 <script>
   import TeamMembers from '$components/TeamMembers.svelte';
 </script>
 
-<<< @/snippets/reference/team-members-medium-example.md
+<TeamMembers
+  size="medium"
+  members={[
+    {
+      avatar: 'https://github.com/octocat.png',
+      name: 'Monalisa Octocat',
+      title: 'Lead Developer',
+      links: [{ icon: 'github', link: 'https://github.com/octocat' }],
+    },
+  ]}
+/>
 ```
 
 <!--@include: @/snippets/reference/team-members-medium-example.md-->
@@ -69,17 +79,35 @@ Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
 
 ### Direct component usage (`.svelte`)
 
-::: code-group labels=[markdown, output]
+::: code-group labels=[svelte, output]
 
 ```svelte
 <script>
-  import TeamPage from '$components/TeamPage.svelte';
-  import TeamPageTitle from '$components/TeamPageTitle.svelte';
-  import TeamPageSection from '$components/TeamPageSection.svelte';
   import TeamMembers from '$components/TeamMembers.svelte';
 </script>
 
-<<< @/snippets/reference/team-full-example.md
+<h3>Our Team</h3>
+<p>The people behind Greg.</p>
+
+<h4>Core Team</h4>
+<TeamMembers
+  size="medium"
+  members={[
+    {
+      avatar: 'https://github.com/janedoe.png',
+      name: 'Jane Doe',
+      title: 'Creator',
+      org: 'Acme Corp',
+      orgLink: 'https://acme.com',
+      desc: 'Open source enthusiast.',
+      links: [
+        { icon: 'github', link: 'https://github.com/janedoe' },
+        { icon: 'twitter', link: 'https://twitter.com/janedoe' },
+      ],
+      sponsor: 'https://github.com/sponsors/janedoe',
+    },
+  ]}
+/>
 ```
 
 <!--@include: @/snippets/reference/team-full-example.md-->
