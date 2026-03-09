@@ -10,7 +10,8 @@ Greg obsluguje build wielu wersji dokumentacji w dwoch strategiach zrodel:
 - `branches` (domyslnie): czyta dokumentacje z branchy/refow Git
 - `folders`: czyta dokumentacje z lokalnych katalogow wersji
 
-Obie strategie daja ten sam koncowy efekt (`dist/versions/<version>` + `versions.json`).
+Obie strategie daja ten sam koncowy efekt (`dist/__versions/<version>` + `versions.json`).
+Po buildzie Greg synchronizuje tez wersje domyslna do `dist/`, dzieki czemu root output nadaje sie bezposrednio do hostowania.
 Roznia sie tym, skad Greg pobiera zrodla i jak latwo odtworzyc build 1:1.
 
 `branches` jest podejsciem opartym o commity: kazda wersja jest mapowana na ref Git, a potem na SHA.
@@ -89,8 +90,9 @@ Jak dziala wersjonowanie w tym trybie:
 1. Dla kazdego wpisu `branches[]` Greg rozwiazuje `branch` do commit SHA.
 2. Greg tworzy albo reuse'uje snapshot docs dla tego SHA w `.greg/version-cache/sources/...`.
 3. Greg uruchamia build dla snapshotu (albo reuse'uje gotowy cache builda tego samego SHA).
-4. Greg kopiuje finalny output do `dist/versions/<version>`.
-5. Po zbudowaniu wszystkich wersji Greg zapisuje `dist/versions/versions.json`.
+4. Greg kopiuje finalny output do `dist/__versions/<version>`.
+5. Po zbudowaniu wszystkich wersji Greg zapisuje `dist/__versions/versions.json`.
+6. Greg synchronizuje output wersji domyslnej do `dist/`.
 
 Wazne: Greg nie przelacza branchy w Twoim working tree. Czyta pliki bezposrednio z obiektow Git.
 
@@ -127,8 +129,9 @@ Jak dziala wersjonowanie w tym trybie:
 
 1. Dla kazdego wpisu `folders[]` Greg rozwiazuje `dir` do sciezki absolutnej.
 2. Greg uruchamia pelny build Vite z tym katalogiem jako zrodlem docs.
-3. Tymczasowy output builda jest kopiowany do `dist/versions/<version>`.
-4. Po przetworzeniu wszystkich wersji Greg zapisuje `dist/versions/versions.json`.
+3. Tymczasowy output builda jest kopiowany do `dist/__versions/<version>`.
+4. Po przetworzeniu wszystkich wersji Greg zapisuje `dist/__versions/versions.json`.
+5. Greg synchronizuje output wersji domyslnej do `dist/`.
 
 Wazne: w trybie `folders` kazda skonfigurowana wersja budowana jest od nowa z biezacych plikow lokalnych.
 
@@ -153,22 +156,25 @@ greg build --single
 
 Wynik:
 
-- zbudowane strony w `dist/versions/<version>`
-- manifest w `dist/versions/versions.json`
+- zbudowane strony w `dist/__versions/<version>`
+- manifest w `dist/__versions/versions.json`
+- wersja domyslna skopiowana do `dist/` pod bezposredni hosting
 
 Co dokladnie dzieje sie, gdy Greg uruchamia build wielu wersji (`greg build` z versioning):
 
 1. Greg laduje `greg.config.js` lub `greg.config.ts` i waliduje schemat `versioning`.
 2. Greg wybiera strategie (`versioning.strategy`, domyslnie `branches`).
-3. Greg przygotowuje katalogi robocze: katalog wyjsciowy (domyslnie `dist/versions`), katalog tymczasowy (`.greg/version-build`) oraz katalog cache branchy (`.greg/version-cache`).
+3. Greg przygotowuje katalogi robocze: katalog wyjsciowy (domyslnie `dist/__versions`), katalog tymczasowy (`.greg/version-build`) oraz katalog cache branchy (`.greg/version-cache`).
 4. Greg buduje kazda skonfigurowana wersje zgodnie ze strategia.
 5. Greg sprawdza unikalnosc `version` i poprawna mape aliasow (`alias -> version`).
 6. Greg ustala `default` (wartosc z configu albo pierwsza zbudowana wersja).
 7. Greg zapisuje manifest `versions.json` i wypisuje sciezki wynikowe.
+8. Greg kopiuje build wersji domyslnej do root hostingu (`dist/` domyslnie).
 
 Co to polecenie zmienia na dysku:
 
-- zapisuje/aktualizuje pliki w `dist/versions`
+- zapisuje/aktualizuje pliki w `dist/__versions`
+- zapisuje/aktualizuje pliki w `dist` (synchronizacja wersji domyslnej)
 - zapisuje/aktualizuje dane robocze w `.greg/`
 - nie modyfikuje zrodlowych plikow dokumentacji
 - nie przelacza aktualnie checkoutowanego brancha Git
@@ -250,8 +256,8 @@ Dzieki temu dokumentacja nadal dziala poprawnie nawet przy pojedynczej wersji.
 {
   "default": "latest",
   "versions": [
-    { "version": "2.1", "title": "2.1", "path": "/versions/2.1/" },
-    { "version": "2.0", "title": "2.0", "path": "/versions/2.0/" }
+    { "version": "2.1", "title": "2.1", "path": "/__versions/2.1/" },
+    { "version": "2.0", "title": "2.0", "path": "/__versions/2.0/" }
   ],
   "aliases": {
     "latest": "2.1",
@@ -261,6 +267,7 @@ Dzieki temu dokumentacja nadal dziala poprawnie nawet przy pojedynczej wersji.
 ```
 
 `aliases` to mapa (`alias -> version`), wiec cele aliasow sa jednoznaczne.
+
 
 
 

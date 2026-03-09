@@ -159,11 +159,13 @@ export type FolderVersionSource = {
 export type GregVersioningConfig = {
     /** Version source strategy. Default: 'branches'. */
     strategy?: 'branches' | 'folders';
-    /** Base output directory for built versions. Default: 'dist/versions'. */
+    /** Base output directory for built versions. Default: 'dist/__versions'. */
     outDir?: string;
+    /** Hosting root for synced default version output. Default: parent directory of `outDir`. */
+    hostOutDir?: string;
     /** Default version or alias used by consumers. */
     default?: string;
-    /** Optional URL prefix for version pages in manifest. Default: '/versions'. */
+    /** Optional URL prefix for version pages in manifest. Default: '/__versions'. */
     pathPrefix?: string;
     /** Alias map, e.g. { latest: '2.1', stable: '2.0' }. */
     aliases?: Record<string, string>;

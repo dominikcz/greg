@@ -6,14 +6,20 @@
  * - branches (default): extract docs snapshots from git refs
  * - folders: read docs directly from configured directories
  *
- * Produces output under `dist/versions/<version>` by default and writes
- * `dist/versions/versions.json` manifest.
+ * Produces output under `dist/__versions/<version>` by default and writes
+ * `dist/__versions/versions.json` manifest.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import {
+    DEFAULT_OUTPUT_ROOT,
+    DEFAULT_PATH_PREFIX,
+    DEFAULT_VERSIONS_DIR_NAME,
+    LEGACY_VERSIONS_DIR_NAME,
+} from '../src/lib/MarkdownDocs/versioningDefaults.js';
 
 const PROJECT_ROOT = process.cwd();
 
@@ -50,9 +56,9 @@ function normalizeRootPath(value, fallback = '/docs') {
     return '/' + (cleaned || 'docs');
 }
 
-function normalizePathPrefix(value, fallback = '/versions') {
+function normalizePathPrefix(value, fallback = DEFAULT_PATH_PREFIX) {
     const cleaned = String(value || fallback).trim().replace(/^\/+|\/+$/g, '');
-    return '/' + (cleaned || 'versions');
+    return '/' + (cleaned || DEFAULT_VERSIONS_DIR_NAME);
 }
 
 function sanitizeSegment(value, fallback = 'item') {
@@ -72,6 +78,11 @@ function removeDir(dirPath) {
 function copyDir(src, dst) {
     removeDir(dst);
     ensureDir(path.dirname(dst));
+    fs.cpSync(src, dst, { recursive: true, force: true });
+}
+
+function overlayDir(src, dst) {
+    ensureDir(dst);
     fs.cpSync(src, dst, { recursive: true, force: true });
 }
 
@@ -372,6 +383,12 @@ function buildAliasMap(aliasConfig, versions) {
     return aliases;
 }
 
+function resolveDefaultVersionId(manifest) {
+    const selected = String(manifest.default || '').trim();
+    if (!selected) return null;
+    return manifest.aliases[selected] || selected;
+}
+
 async function main() {
     const args = parseArgs(process.argv.slice(2));
     const config = await loadGregConfig();
@@ -380,13 +397,25 @@ async function main() {
     const strategy = args.strategy || versioning.strategy || 'branches';
     validateVersioningConfig(versioning, strategy);
     const globalRootPath = normalizeRootPath(config.rootPath, '/docs');
-    const versionPathPrefix = normalizePathPrefix(versioning.pathPrefix, '/versions');
-    const outputRoot = path.resolve(PROJECT_ROOT, versioning.outDir || 'dist/versions');
+    const versionPathPrefix = normalizePathPrefix(versioning.pathPrefix, DEFAULT_PATH_PREFIX);
+    const outputRoot = path.resolve(PROJECT_ROOT, versioning.outDir || DEFAULT_OUTPUT_ROOT);
+    const usingDefaultOutDir = !versioning.outDir;
+    const legacyOutputRoot = path.resolve(PROJECT_ROOT, path.dirname(outputRoot), LEGACY_VERSIONS_DIR_NAME);
+    const outputBaseName = path.basename(outputRoot).toLowerCase();
+    const defaultHostingRoot = (outputBaseName === LEGACY_VERSIONS_DIR_NAME || outputBaseName === DEFAULT_VERSIONS_DIR_NAME)
+        ? path.dirname(outputRoot)
+        : outputRoot;
+    const hostingRoot = path.resolve(PROJECT_ROOT, versioning.hostOutDir || defaultHostingRoot);
     const workRoot = path.resolve(PROJECT_ROOT, '.greg/version-build');
     const branchCacheDir = path.resolve(PROJECT_ROOT, versioning.branchCacheDir || '.greg/version-cache');
 
     if (args.cleanCache) removeDir(branchCacheDir);
     if (args.cleanOutput) removeDir(outputRoot);
+
+    if (usingDefaultOutDir && fs.existsSync(legacyOutputRoot) && legacyOutputRoot !== outputRoot) {
+        removeDir(legacyOutputRoot);
+        console.log(`[greg] versions: removed legacy output -> ${path.relative(PROJECT_ROOT, legacyOutputRoot)}`);
+    }
 
     ensureDir(outputRoot);
     ensureDir(workRoot);
@@ -493,6 +522,16 @@ async function main() {
 
     const manifestPath = path.join(outputRoot, 'versions.json');
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+
+    const defaultVersionId = resolveDefaultVersionId(manifest);
+    if (defaultVersionId) {
+        const defaultSourceDir = path.join(outputRoot, defaultVersionId);
+        if (!fs.existsSync(defaultSourceDir)) {
+            throw new Error(`Default version output not found: ${defaultSourceDir}`);
+        }
+        overlayDir(defaultSourceDir, hostingRoot);
+        console.log(`[greg] versions: default '${defaultVersionId}' synced to ${path.relative(PROJECT_ROOT, hostingRoot)}`);
+    }
 
     console.log(`[greg] versions: done -> ${path.relative(PROJECT_ROOT, outputRoot)}`);
     console.log(`[greg] versions: manifest -> ${path.relative(PROJECT_ROOT, manifestPath)}`);

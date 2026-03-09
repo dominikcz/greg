@@ -263,7 +263,8 @@ After configuration is in place, run:
 greg build
 ```
 
-Output is generated to `dist/versions/<version>` and a manifest is written to `dist/versions/versions.json`.
+Output is generated to `dist/__versions/<version>` and a manifest is written to `dist/__versions/versions.json`.
+After that, Greg syncs the default version to `dist/` so the root output is directly hostable.
 
 Optional UI labels/messages can be configured under `versioning.ui`:
 
@@ -315,8 +316,8 @@ Example manifest:
 {
     "default": "latest",
     "versions": [
-        { "version": "2.1", "title": "2.1", "path": "/versions/2.1/" },
-        { "version": "2.0", "title": "2.0", "path": "/versions/2.0/" }
+        { "version": "2.1", "title": "2.1", "path": "/__versions/2.1/" },
+        { "version": "2.0", "title": "2.0", "path": "/__versions/2.0/" }
     ],
     "aliases": {
         "latest": "2.1",
@@ -371,5 +372,6 @@ export default {
 - [ ] edit mode
 - [ ] comments
 - [ ] code cleanup
+
 
 

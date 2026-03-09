@@ -34,6 +34,10 @@
         normalizeLocaleKey,
         resolveLocaleForPath,
     } from "./localeUtils";
+    import {
+        DEFAULT_PATH_PREFIX,
+        DEFAULT_VERSIONS_DIR_NAME,
+    } from "./versioningDefaults.js";
 
     type CarbonAdsOptions = {
         code: string;
@@ -261,10 +265,10 @@
     }
 
     function normalizeVersionPrefix(value: string | undefined): string {
-        const cleaned = String(value || "/versions")
+        const cleaned = String(value || DEFAULT_PATH_PREFIX)
             .trim()
             .replace(/^\/+|\/+$/g, "");
-        return "/" + (cleaned || "versions");
+        return "/" + (cleaned || DEFAULT_VERSIONS_DIR_NAME);
     }
 
     function findActiveVersion(pathname: string, prefix: string): string | null {

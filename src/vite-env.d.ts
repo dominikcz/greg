@@ -129,6 +129,7 @@ declare module 'virtual:greg-config' {
     type GregVersioningConfig = {
         strategy?: 'branches' | 'folders';
         outDir?: string;
+        hostOutDir?: string;
         default?: string;
         pathPrefix?: string;
         aliases?: Record<string, string>;

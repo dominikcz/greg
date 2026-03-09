@@ -1,0 +1,6 @@
+export const DEFAULT_OUTPUT_BASE_DIR = 'dist';
+export const DEFAULT_VERSIONS_DIR_NAME = '__versions';
+export const LEGACY_VERSIONS_DIR_NAME = 'versions';
+
+export const DEFAULT_OUTPUT_ROOT = `${DEFAULT_OUTPUT_BASE_DIR}/${DEFAULT_VERSIONS_DIR_NAME}`;
+export const DEFAULT_PATH_PREFIX = `/${DEFAULT_VERSIONS_DIR_NAME}`;
