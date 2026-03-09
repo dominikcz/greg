@@ -12,11 +12,14 @@
  */
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 
 // ── Per-process cache ─────────────────────────────────────────────────────────
 /** @type {Map<string, Promise<SearchEntry[]>>} */
 const _cache = new Map();
+const INCLUDE_RE = /^<!--\s*@include:\s*([^\s]+)\s*-->$/;
+const BRACES_RE = /\{([^}]*)\}\s*$/;
+const REGION_RE = /^(.*?)#([^#{]+)$/;
 
 /**
  * @typedef {{ heading: string; anchor: string; content: string }} SearchSection
@@ -72,6 +75,205 @@ export function cleanMarkdown(text) {
 		.replace(/\|/g, ' ')
 		.replace(/\n{3,}/g, '\n\n')
 		.trim();
+}
+
+function parseBraces(value) {
+	const match = String(value).match(BRACES_RE);
+	if (!match) return { text: String(value).trim(), braces: '' };
+	return { text: String(value).slice(0, match.index).trim(), braces: match[1].trim() };
+}
+
+function parseRegion(value) {
+	const match = String(value).match(REGION_RE);
+	if (!match) return { filePart: String(value).trim(), regionOrAnchor: '' };
+	return { filePart: match[1].trim(), regionOrAnchor: match[2].trim() };
+}
+
+function parseRange(value) {
+	const text = String(value ?? '').trim();
+	if (!text) return null;
+	if (/^\d+$/.test(text)) {
+		const n = Number(text);
+		return { start: n, end: n };
+	}
+	const dashMatch = text.match(/^(\d+)\s*-\s*(\d+)$/);
+	if (dashMatch) {
+		return { start: Number(dashMatch[1]), end: Number(dashMatch[2]) };
+	}
+	const commaMatch = text.match(/^(\d*)\s*,\s*(\d*)$/);
+	if (!commaMatch) return null;
+	const start = commaMatch[1] ? Number(commaMatch[1]) : null;
+	const end = commaMatch[2] ? Number(commaMatch[2]) : null;
+	return { start, end };
+}
+
+function selectLines(content, rangeText) {
+	const range = parseRange(rangeText);
+	if (!range) return content;
+	const lines = content.split(/\r?\n/);
+	const start = range.start ?? 1;
+	const end = range.end ?? lines.length;
+	const from = Math.max(1, start);
+	const to = Math.max(from, Math.min(end, lines.length));
+	return lines.slice(from - 1, to).join('\n');
+}
+
+function escapeRegExp(value) {
+	return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function selectRegion(content, regionName) {
+	if (!regionName) return content;
+	const lines = content.split(/\r?\n/);
+	const escapedName = escapeRegExp(regionName);
+	const startRe = new RegExp(`#region\\s+${escapedName}\\s*$`, 'i');
+	const endRe = new RegExp(`#endregion\\s+${escapedName}\\s*$`, 'i');
+
+	let start = -1;
+	let end = -1;
+	for (let i = 0; i < lines.length; i++) {
+		if (start === -1 && startRe.test(lines[i])) {
+			start = i;
+			continue;
+		}
+		if (start !== -1 && endRe.test(lines[i])) {
+			end = i;
+			break;
+		}
+	}
+
+	if (start === -1 || end === -1 || end <= start) return content;
+	return lines.slice(start + 1, end).join('\n');
+}
+
+function getHeadingId(rawHeadingText) {
+	const customIdMatch = rawHeadingText.match(/\s*\{#([^}]+)\}\s*$/);
+	if (customIdMatch?.[1]) return customIdMatch[1].trim().toLowerCase();
+	return rawHeadingText
+		.replace(/\s*\{#([^}]+)\}\s*$/, '')
+		.toLowerCase()
+		.replace(/<[^>]+>/g, '')
+		.replace(/[^\w\s-]/g, '')
+		.trim()
+		.replace(/\s+/g, '-');
+}
+
+function selectMarkdownSectionByAnchor(content, anchor) {
+	if (!anchor) return content;
+	const lines = content.split(/\r?\n/);
+	const headingRe = /^(#{1,6})\s+(.+)$/;
+	const wanted = anchor.toLowerCase();
+
+	let startIndex = -1;
+	let startDepth = 0;
+	for (let i = 0; i < lines.length; i++) {
+		const match = lines[i].match(headingRe);
+		if (!match) continue;
+		const depth = match[1].length;
+		const id = getHeadingId(match[2]);
+		if (id === wanted) {
+			startIndex = i;
+			startDepth = depth;
+			break;
+		}
+	}
+
+	if (startIndex === -1) return content;
+
+	let endIndex = lines.length;
+	for (let i = startIndex + 1; i < lines.length; i++) {
+		const match = lines[i].match(headingRe);
+		if (!match) continue;
+		const depth = match[1].length;
+		if (depth <= startDepth) {
+			endIndex = i;
+			break;
+		}
+	}
+
+	return lines.slice(startIndex, endIndex).join('\n');
+}
+
+function stripFrontmatter(content) {
+	return String(content).replace(/^---[\r\n][\s\S]*?[\r\n]---[\r\n]?/, '');
+}
+
+function resolveImportPath(specPath, currentDir, sourceRoot, docsDir) {
+	if (specPath === '@') return sourceRoot;
+	if (specPath.startsWith('@/')) return resolve(sourceRoot, specPath.slice(2));
+	if (specPath.startsWith('@')) return resolve(sourceRoot, specPath.slice(1));
+	if (specPath.startsWith('/')) return resolve(docsDir, specPath.slice(1));
+	return resolve(currentDir, specPath);
+}
+
+function parseIncludeSpec(raw) {
+	const withBraces = parseBraces(raw);
+	const withRegion = parseRegion(withBraces.text);
+	return {
+		filePart: withRegion.filePart,
+		regionOrAnchor: withRegion.regionOrAnchor,
+		rangePart: withBraces.braces,
+	};
+}
+
+function resolveIncludeContent(rawSpec, currentDir, docsDir, sourceRoot, stack) {
+	const parsed = parseIncludeSpec(rawSpec);
+	const includePath = resolveImportPath(parsed.filePart, currentDir, sourceRoot, docsDir);
+
+	if (stack.includes(includePath) || !existsSync(includePath)) return '';
+
+	let content = readFileSync(includePath, 'utf-8');
+	if (parsed.regionOrAnchor) {
+		const byRegion = selectRegion(content, parsed.regionOrAnchor);
+		content = byRegion === content
+			? selectMarkdownSectionByAnchor(content, parsed.regionOrAnchor)
+			: byRegion;
+	}
+	if (parsed.rangePart) content = selectLines(content, parsed.rangePart);
+
+	if (includePath.endsWith('.md')) {
+		content = stripFrontmatter(content);
+		content = resolveMarkdownIncludes(content, dirname(includePath), docsDir, sourceRoot, [...stack, includePath]);
+	}
+
+	return content;
+}
+
+function resolveMarkdownIncludes(content, currentDir, docsDir, sourceRoot, stack) {
+	const lines = String(content).split(/\r?\n/);
+	const out = [];
+	let activeFence = null;
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+
+		const fenceMatch = trimmed.match(/^(```+|~~~+)/);
+		if (fenceMatch) {
+			const fence = fenceMatch[1][0];
+			if (!activeFence) {
+				activeFence = fence;
+			} else if (activeFence === fence) {
+				activeFence = null;
+			}
+			out.push(line);
+			continue;
+		}
+
+		if (activeFence) {
+			out.push(line);
+			continue;
+		}
+
+		const includeMatch = trimmed.match(INCLUDE_RE);
+		if (includeMatch?.[1]) {
+			out.push(resolveIncludeContent(includeMatch[1].trim(), currentDir, docsDir, sourceRoot, stack));
+			continue;
+		}
+
+		out.push(line);
+	}
+
+	return out.join('\n');
 }
 
 /**
@@ -130,10 +332,12 @@ export function buildSearchIndex(docsDir, rootPath) {
 	const promise = (async () => {
 		const files = walkDir(docsDir);
 		const index = [];
+		const sourceRoot = resolve(docsDir, '..');
 
 		for (const filePath of files) {
 			let content;
 			try { content = readFileSync(filePath, 'utf-8'); } catch { continue; }
+			content = resolveMarkdownIncludes(content, dirname(filePath), docsDir, sourceRoot, [filePath]);
 
 			const relPath = relative(docsDir, filePath)
 				.replace(/\\/g, '/')
