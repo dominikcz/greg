@@ -132,6 +132,69 @@ export type LocaleConfig = {
     [key: string]: unknown;
 };
 
+export type BranchVersionSource = {
+    /** Version identifier used in output paths, e.g. 'latest' or '1.2'. */
+    version: string;
+    /** Git branch or ref name to read docs from. */
+    branch: string;
+    /** Optional display title in version selectors/UIs. */
+    title?: string;
+    /** Relative path to docs directory in that branch. Default: 'docs'. */
+    docsDir?: string;
+    /** Route prefix used while building this version. Default: '/docs'. */
+    rootPath?: string;
+};
+
+export type FolderVersionSource = {
+    /** Version identifier used in output paths, e.g. 'latest' or '1.2'. */
+    version: string;
+    /** Relative or absolute directory path containing markdown docs sources. */
+    dir: string;
+    /** Optional display title in version selectors/UIs. */
+    title?: string;
+    /** Route prefix used while building this version. Default: '/docs'. */
+    rootPath?: string;
+};
+
+export type GregVersioningConfig = {
+    /** Version source strategy. Default: 'branches'. */
+    strategy?: 'branches' | 'folders';
+    /** Base output directory for built versions. Default: 'dist/versions'. */
+    outDir?: string;
+    /** Default version or alias used by consumers. */
+    default?: string;
+    /** Optional URL prefix for version pages in manifest. Default: '/versions'. */
+    pathPrefix?: string;
+    /** Alias map, e.g. { latest: '2.1', stable: '2.0' }. */
+    aliases?: Record<string, string>;
+    /** Optional UI labels/messages for version selector and outdated notice. */
+    ui?: {
+        /** Label shown next to the versions dropdown. */
+        versionMenuLabel?: string;
+        /** Header fallback text shown when versions.json cannot be loaded. */
+        manifestUnavailableText?: string;
+        /** Outdated notice text. Use placeholders: {current}, {default}. */
+        outdatedVersionMessage?: string;
+        /** Button label in outdated notice. */
+        outdatedVersionActionLabel?: string;
+    };
+    /** Branch-based version sources. */
+    branches?: BranchVersionSource[];
+    /** Folder-based version sources. */
+    folders?: FolderVersionSource[];
+    /**
+     * For folder strategy: discover versions under this directory when `folders`
+     * is omitted. Each direct child folder is treated as one version id.
+     * Default: 'versions'.
+     */
+    foldersDir?: string;
+    /**
+     * For branch strategy: cache directory for extracted docs snapshots.
+     * Default: '.greg/version-cache'.
+     */
+    branchCacheDir?: string;
+};
+
 export type GregConfig = {
     /** URL prefix of the docs folder (e.g. '/docs'). Default: '/docs'. */
     rootPath?: string;
@@ -226,5 +289,7 @@ export type GregConfig = {
      *   SidebarItem[] – manual tree, optionally with auto sub-sections
      */
     sidebar?: 'auto' | SidebarItem[];
+    /** Multi-version docs build configuration. */
+    versioning?: GregVersioningConfig;
     [key: string]: unknown;
 };

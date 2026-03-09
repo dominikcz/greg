@@ -183,6 +183,29 @@ export default {
     /** Version badge shown in the header (empty string = hidden). */
     // version: '1.0.0',
 
+    /**
+     * Multi-version docs build config (`greg build:versions`).
+     * Default strategy is 'branches' for better rebuild performance.
+     */
+    // versioning: {
+    //     strategy: 'branches',
+    //     default: 'latest',
+    //     aliases: {
+    //         latest: '2.1',
+    //         stable: '2.0',
+    //     },
+    //     ui: {
+    //         versionMenuLabel: 'Wersja',
+    //         manifestUnavailableText: 'Przelacznik wersji niedostepny',
+    //         outdatedVersionMessage: 'Czytasz starsza wersje ({current}). Zalecana wersja to {default}.',
+    //         outdatedVersionActionLabel: 'Przejdz do najnowszej',
+    //     },
+    //     branches: [
+    //         { version: '2.1', branch: 'main', title: '2.1' },
+    //         { version: '2.0', branch: 'release/2.0', title: '2.0' },
+    //     ],
+    // },
+
     /** Site title shown in the header. */
     mainTitle: 'Greg',
 

@@ -113,6 +113,36 @@ declare module 'virtual:greg-config' {
         target?: string;
         items?: NavItem[];
     };
+    type BranchVersionSource = {
+        version: string;
+        branch: string;
+        title?: string;
+        docsDir?: string;
+        rootPath?: string;
+    };
+    type FolderVersionSource = {
+        version: string;
+        dir: string;
+        title?: string;
+        rootPath?: string;
+    };
+    type GregVersioningConfig = {
+        strategy?: 'branches' | 'folders';
+        outDir?: string;
+        default?: string;
+        pathPrefix?: string;
+        aliases?: Record<string, string>;
+        ui?: {
+            versionMenuLabel?: string;
+            manifestUnavailableText?: string;
+            outdatedVersionMessage?: string;
+            outdatedVersionActionLabel?: string;
+        };
+        branches?: BranchVersionSource[];
+        folders?: FolderVersionSource[];
+        foldersDir?: string;
+        branchCacheDir?: string;
+    };
     type GregConfig = {
         rootPath?: string;
         version?: string;
@@ -149,6 +179,7 @@ declare module 'virtual:greg-config' {
         externalLinkIcon?: boolean;
         locales?: Record<string, LocaleConfig>;
         sidebar?: 'auto' | SidebarItem[];
+        versioning?: GregVersioningConfig;
         [key: string]: unknown;
     };
     const config: GregConfig;

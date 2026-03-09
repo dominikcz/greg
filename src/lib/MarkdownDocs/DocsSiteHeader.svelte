@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { Languages, Sun, Moon } from "@lucide/svelte";
 	import SocialLink from "../components/SocialLink.svelte";
+	import DocsVersionSwitcher from "./DocsVersionSwitcher.svelte";
+
+	type VersionOption = {
+		version: string;
+		title: string;
+	};
 
 	type NavItem = {
 		text: string;
@@ -28,6 +34,11 @@
 		darkModeSwitchTitle?: string;
 		searchButtonLabel?: string;
 		showSearch?: boolean;
+		versionOptions?: VersionOption[];
+		activeVersion?: string | null;
+		versionMenuLabel?: string;
+		versionStatusText?: string;
+		onVersionChange?: (version: string) => void;
 		onThemeChange: (t: "light" | "dark") => void;
 		navigate: (path: string) => void;
 		onOpenSearch: () => void;
@@ -72,6 +83,11 @@
 		darkModeSwitchTitle = "Switch to dark theme",
 		searchButtonLabel = "Search...",
 		showSearch = true,
+		versionOptions = [],
+		activeVersion = null,
+		versionMenuLabel = "Version",
+		versionStatusText = "",
+		onVersionChange = () => {},
 		onThemeChange,
 		navigate,
 		onOpenSearch,
@@ -268,6 +284,16 @@
 		{/each}
 	</nav>
 	<div class="header-right">
+		{#if versionOptions.length > 0}
+			<DocsVersionSwitcher
+				versions={versionOptions}
+				{activeVersion}
+				label={versionMenuLabel}
+				onChange={onVersionChange}
+			/>
+		{:else if versionStatusText}
+			<span class="version-status" role="status" aria-live="polite">{versionStatusText}</span>
+		{/if}
 		{#if socialLinks.length}
 			<div class="header-social-links" aria-label="Social links">
 				{#each socialLinks as social (social.link)}
@@ -551,6 +577,17 @@
 		color: var(--greg-menu-section-color);
 		background: var(--greg-menu-background);
 		flex-shrink: 0;
+	}
+
+	.version-status {
+		font-size: 0.75rem;
+		line-height: 1;
+		color: var(--greg-menu-section-color);
+		padding: 0.22rem 0.45rem;
+		border: 1px dashed var(--greg-border-color);
+		border-radius: 6px;
+		background: var(--greg-menu-background);
+		white-space: nowrap;
 	}
 
 	.locale-select {

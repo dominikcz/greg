@@ -24,6 +24,7 @@
     import BackToTop from "./BackToTop.svelte";
     import Breadcrumb from "./Breadcrumb.svelte";
     import PrevNext from "./PrevNext.svelte";
+    import VersionOutdatedNotice from "./VersionOutdatedNotice.svelte";
     import { EllipsisVertical } from "@lucide/svelte";
     import gregConfig from "virtual:greg-config";
     import {
@@ -157,6 +158,25 @@
         searchProvider?: (query: string, limit?: number) => Promise<any[]>;
     };
 
+    type VersionManifestEntry = {
+        version: string;
+        title?: string;
+        path?: string;
+    };
+
+    type VersionManifest = {
+        default?: string | null;
+        versions?: VersionManifestEntry[];
+        aliases?: Record<string, string>;
+    };
+
+    type VersioningUiConfig = {
+        versionMenuLabel?: string;
+        manifestUnavailableText?: string;
+        outdatedVersionMessage?: string;
+        outdatedVersionActionLabel?: string;
+    };
+
     let {
         children,
         rootPath: configuredRootPath = (gregConfig as any).rootPath ?? "/docs",
@@ -210,6 +230,117 @@
         string,
         LocaleConfig
     >;
+    const versioningConfig = ((gregConfig as any).versioning ?? null) as
+        | { ui?: VersioningUiConfig; pathPrefix?: string }
+        | null;
+    const versioningUi = (versioningConfig?.ui ?? {}) as VersioningUiConfig;
+
+    function normalizeVersionPrefix(value: string | undefined): string {
+        const cleaned = String(value || "/versions")
+            .trim()
+            .replace(/^\/+|\/+$/g, "");
+        return "/" + (cleaned || "versions");
+    }
+
+    function findActiveVersion(pathname: string, prefix: string): string | null {
+        if (pathname === prefix || !pathname.startsWith(prefix + "/")) return null;
+        const rest = pathname.slice(prefix.length + 1);
+        const segment = rest.split("/")[0];
+        return segment || null;
+    }
+
+    let versionManifest = $state<VersionManifest | null>(null);
+    let manifestVersionOptions = $state<{ version: string; title: string; path: string }[]>([]);
+    let versionManifestLoadError = $state(false);
+    const versionPathPrefix = normalizeVersionPrefix(versioningConfig?.pathPrefix);
+    const versionMenuLabel = String(versioningUi.versionMenuLabel || "Version");
+    const manifestUnavailableText = String(
+        versioningUi.manifestUnavailableText || "Version selector unavailable",
+    );
+    const outdatedVersionActionLabel = String(
+        versioningUi.outdatedVersionActionLabel || "Go to latest",
+    );
+
+    function formatOutdatedMessage(currentTitle: string, defaultTitle: string): string {
+        const template = String(versioningUi.outdatedVersionMessage || "").trim();
+        if (!template) {
+            return `You are viewing an older documentation version (${currentTitle}). ${defaultTitle} is currently recommended.`;
+        }
+        return template
+            .replaceAll("{current}", currentTitle)
+            .replaceAll("{default}", defaultTitle);
+    }
+
+    $effect(() => {
+        let cancelled = false;
+        const manifestUrl = `${versionPathPrefix}/versions.json`;
+
+        fetch(manifestUrl)
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Unable to load ${manifestUrl}: ${res.status}`);
+                }
+                return res.json() as Promise<VersionManifest>;
+            })
+            .then((data) => {
+                if (cancelled) return;
+                versionManifest = data;
+                versionManifestLoadError = false;
+                const versions = Array.isArray(data.versions) ? data.versions : [];
+                manifestVersionOptions = versions
+                    .map((entry) => {
+                        const version = String(entry.version || "").trim();
+                        if (!version) return null;
+                        const title = String(entry.title || version);
+                        const rawPath = String(entry.path || `${versionPathPrefix}/${version}/`);
+                        const path = normalizeRootPath(rawPath);
+                        return { version, title, path };
+                    })
+                    .filter((entry): entry is { version: string; title: string; path: string } => Boolean(entry));
+            })
+            .catch(() => {
+                if (cancelled) return;
+                versionManifest = null;
+                manifestVersionOptions = [];
+                versionManifestLoadError = true;
+                console.warn(`[greg] Could not load ${manifestUrl}.`);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    });
+
+    function navigateToVersion(version: string) {
+        const next = manifestVersionOptions.find((entry) => entry.version === version);
+        if (!next) return;
+
+        const currentPath = normalizeRootPath(window.location.pathname);
+        const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
+        const search = window.location.search || "";
+        const hash = window.location.hash || "";
+
+        let targetPath = next.path;
+
+        if (currentVersion) {
+            const currentPrefix = `${versionPathPrefix}/${currentVersion}`;
+            const suffix =
+                currentPath === currentPrefix
+                    ? ""
+                    : currentPath.startsWith(currentPrefix + "/")
+                      ? currentPath.slice(currentPrefix.length)
+                      : "";
+            targetPath = normalizeRootPath(next.path + suffix);
+        } else if (
+            currentPath === currentRootPath ||
+            currentPath.startsWith(currentRootPath + "/")
+        ) {
+            const suffix = currentPath.slice(currentRootPath.length);
+            targetPath = normalizeRootPath(next.path + currentRootPath + suffix);
+        }
+
+        window.location.assign(`${targetPath}${search}${hash}`);
+    }
 
     // -- Outline -----------------------------------------------------------------
     function normalizeOutline(
@@ -457,6 +588,32 @@
         }),
     );
     const currentRootPath = $derived(localeContext.rootPath);
+    const activeDocsVersion = $derived(
+        findActiveVersion(router.active, versionPathPrefix),
+    );
+    const resolvedDefaultVersion = $derived.by(() => {
+        if (!versionManifest) return null;
+        const raw = String(versionManifest.default || "").trim();
+        if (!raw) return null;
+        const aliasTarget = versionManifest.aliases?.[raw];
+        return String(aliasTarget || raw).trim() || null;
+    });
+    const defaultVersionEntry = $derived(
+        manifestVersionOptions.find((entry) => entry.version === resolvedDefaultVersion) ?? null,
+    );
+    const activeVersionEntry = $derived(
+        manifestVersionOptions.find((entry) => entry.version === activeDocsVersion) ?? null,
+    );
+    const showOutdatedVersionNotice = $derived(
+        Boolean(
+            activeDocsVersion &&
+                resolvedDefaultVersion &&
+                activeDocsVersion !== resolvedDefaultVersion,
+        ),
+    );
+    const versionStatusText = $derived(
+        versionManifestLoadError && versioningConfig ? manifestUnavailableText : "",
+    );
     const mainTitle = $derived(localeContext.mainTitle);
     const nav = $derived(localeContext.nav);
     const sidebar = $derived(localeContext.sidebar);
@@ -927,10 +1084,25 @@
         {darkModeSwitchTitle}
         {searchButtonLabel}
         showSearch={searchEnabled}
+        versionOptions={manifestVersionOptions}
+        activeVersion={activeDocsVersion}
+        {versionMenuLabel}
+        {versionStatusText}
+        onVersionChange={navigateToVersion}
         onThemeChange={(t) => setThemeManually(t)}
         navigate={router.navigate}
         onOpenSearch={() => (searchOpen = true)}
     />
+
+    {#if showOutdatedVersionNotice && defaultVersionEntry && activeVersionEntry}
+        <VersionOutdatedNotice
+            currentTitle={activeVersionEntry.title}
+            defaultTitle={defaultVersionEntry.title}
+            message={formatOutdatedMessage(activeVersionEntry.title, defaultVersionEntry.title)}
+            actionLabel={outdatedVersionActionLabel}
+            onGoToDefault={() => navigateToVersion(defaultVersionEntry.version)}
+        />
+    {/if}
 
     <div class="greg-body" class:aside-left={asideMode === "left"}>
         {#if showSidebar}

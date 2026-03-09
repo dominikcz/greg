@@ -283,6 +283,73 @@ function resolveVersionId(entry, context) {
     return value;
 }
 
+function assertNoKeys(obj, forbiddenKeys, context) {
+    if (!obj || typeof obj !== 'object') return;
+    for (const key of forbiddenKeys) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            throw new Error(`Unsupported key '${context}.${key}'. Remove it and use the current versioning schema.`);
+        }
+    }
+}
+
+function validateEntry(entry, context, mode) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+        throw new Error(`${context} must be an object.`);
+    }
+
+    assertNoKeys(entry, ['id', 'label', 'current'], context);
+
+    const version = String(entry.version ?? '').trim();
+    if (!version) {
+        throw new Error(`${context}.version is required.`);
+    }
+
+    if (mode === 'branches') {
+        const branch = String(entry.branch ?? '').trim();
+        if (!branch) {
+            throw new Error(`${context}.branch is required for branch strategy.`);
+        }
+    }
+
+    if (mode === 'folders') {
+        const dir = String(entry.dir ?? '').trim();
+        if (!dir) {
+            throw new Error(`${context}.dir is required for folder strategy.`);
+        }
+    }
+}
+
+function validateVersioningConfig(versioning, strategy) {
+    if (!versioning || typeof versioning !== 'object' || Array.isArray(versioning)) {
+        throw new Error('versioning config must be an object.');
+    }
+
+    assertNoKeys(versioning, ['current'], 'versioning');
+
+    if (versioning.default != null && !String(versioning.default).trim()) {
+        throw new Error('versioning.default cannot be empty.');
+    }
+
+    if (versioning.aliases != null) {
+        if (typeof versioning.aliases !== 'object' || Array.isArray(versioning.aliases)) {
+            throw new Error('versioning.aliases must be an object map of alias -> version.');
+        }
+        for (const [alias, target] of Object.entries(versioning.aliases)) {
+            if (!String(alias).trim() || !String(target ?? '').trim()) {
+                throw new Error('versioning.aliases cannot contain empty alias names or targets.');
+            }
+        }
+    }
+
+    if (strategy === 'branches' && Array.isArray(versioning.branches)) {
+        versioning.branches.forEach((entry, index) => validateEntry(entry, `versioning.branches[${index}]`, 'branches'));
+    }
+
+    if (strategy === 'folders' && Array.isArray(versioning.folders)) {
+        versioning.folders.forEach((entry, index) => validateEntry(entry, `versioning.folders[${index}]`, 'folders'));
+    }
+}
+
 function buildAliasMap(aliasConfig, versions) {
     if (!aliasConfig || typeof aliasConfig !== 'object' || Array.isArray(aliasConfig)) {
         return {};
@@ -311,6 +378,7 @@ async function main() {
     const versioning = config.versioning ?? {};
 
     const strategy = args.strategy || versioning.strategy || 'branches';
+    validateVersioningConfig(versioning, strategy);
     const globalRootPath = normalizeRootPath(config.rootPath, '/docs');
     const versionPathPrefix = normalizePathPrefix(versioning.pathPrefix, '/versions');
     const outputRoot = path.resolve(PROJECT_ROOT, versioning.outDir || 'dist/versions');

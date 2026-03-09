@@ -243,6 +243,22 @@ export default {
 
 Output is generated to `dist/versions/<version>` and a manifest is written to `dist/versions/versions.json`.
 
+Optional UI labels/messages can be configured under `versioning.ui`:
+
+```js
+versioning: {
+    // ...
+    ui: {
+        versionMenuLabel: 'Version',
+        manifestUnavailableText: 'Version selector unavailable',
+        outdatedVersionMessage: 'You are viewing an older version ({current}). Recommended: {default}.',
+        outdatedVersionActionLabel: 'Go to latest'
+    }
+}
+```
+
+If `versions.json` cannot be loaded, Greg now shows a subtle fallback text in the header instead of the selector.
+
 Example manifest:
 
 ```json
