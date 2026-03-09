@@ -45,6 +45,12 @@ Use `<TeamMembers>` anywhere in a Markdown page:
       title: 'Lead Developer',
       links: [{ icon: 'github', link: 'https://github.com/octocat' }],
     },
+    {
+      avatar: 'https://github.com/hubot.png',
+      name: 'Hubot',
+      title: 'Automation Bot',
+      links: [{ icon: 'github', link: 'https://github.com/hubot' }],
+    },
   ]}
 />
 ```
@@ -105,6 +111,12 @@ Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
         { icon: 'twitter', link: 'https://twitter.com/janedoe' },
       ],
       sponsor: 'https://github.com/sponsors/janedoe',
+    },
+    {
+      avatar: 'https://github.com/octocat.png',
+      name: 'Monalisa Octocat',
+      title: 'Lead Developer',
+      links: [{ icon: 'github', link: 'https://github.com/octocat' }],
     },
   ]}
 />

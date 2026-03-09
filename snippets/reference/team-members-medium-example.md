@@ -7,5 +7,11 @@
       title: 'Lead Developer',
       links: [{ icon: 'github', link: 'https://github.com/octocat' }],
     },
+    {
+      avatar: 'https://github.com/hubot.png',
+      name: 'Hubot',
+      title: 'Automation Bot',
+      links: [{ icon: 'github', link: 'https://github.com/hubot' }],
+    },
   ]}
 />

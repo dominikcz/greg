@@ -18,5 +18,11 @@
       ],
       sponsor: 'https://github.com/sponsors/janedoe',
     },
+    {
+      avatar: 'https://github.com/octocat.png',
+      name: 'Monalisa Octocat',
+      title: 'Lead Developer',
+      links: [{ icon: 'github', link: 'https://github.com/octocat' }],
+    },
   ]}
 />
