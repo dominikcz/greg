@@ -184,27 +184,37 @@ export default {
     // version: '1.0.0',
 
     /**
-     * Multi-version docs build config (`greg build:versions`).
+     * Multi-version docs build config (used by `greg build`).
      * Default strategy is 'branches' for better rebuild performance.
      */
-    // versioning: {
-    //     strategy: 'branches',
-    //     default: 'latest',
-    //     aliases: {
-    //         latest: '2.1',
-    //         stable: '2.0',
-    //     },
-    //     ui: {
-    //         versionMenuLabel: 'Wersja',
-    //         manifestUnavailableText: 'Przelacznik wersji niedostepny',
-    //         outdatedVersionMessage: 'Czytasz starsza wersje ({current}). Zalecana wersja to {default}.',
-    //         outdatedVersionActionLabel: 'Przejdz do najnowszej',
-    //     },
-    //     branches: [
-    //         { version: '2.1', branch: 'main', title: '2.1' },
-    //         { version: '2.0', branch: 'release/2.0', title: '2.0' },
-    //     ],
-    // },
+    versioning: {
+        strategy: 'branches',
+        default: 'latest',
+        aliases: {
+            latest: '1',
+            stable: '0.9',
+        },
+        ui: {
+            versionMenuLabel: 'Version',
+            manifestUnavailableText: 'Version selector unavailable',
+            outdatedVersionMessage: 'You are viewing an older version ({current}). Recommended: {default}.',
+            outdatedVersionActionLabel: 'Go to latest',
+        },
+        locales: {
+            '/pl/': {
+                ui: {
+                    versionMenuLabel: 'Wersja',
+                    manifestUnavailableText: 'Przelacznik wersji niedostepny',
+                    outdatedVersionMessage: 'Czytasz starsza wersje ({current}). Zalecana wersja to {default}.',
+                    outdatedVersionActionLabel: 'Przejdz do najnowszej',
+                },
+            },
+        },
+        branches: [
+            { version: '1', branch: 'main', title: 'current' },
+            { version: '0.9', branch: 'v0.9', title: '0.9' },
+        ],
+    },
 
     /** Site title shown in the header. */
     mainTitle: 'Greg',

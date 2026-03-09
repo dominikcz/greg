@@ -3,7 +3,7 @@ title: Localization
 order: 3
 ---
 
-# Localization
+## Localization
 
 Greg supports locale configuration via `locales` in
 `greg.config.js`. Each locale can define its own labels, navigation, sidebar,
@@ -191,6 +191,37 @@ export default {
 ```
 
 This keeps one global search backend configuration and per-locale UI copy.
+
+## Versioning localization
+
+Versioning UI text (version switcher and outdated notice) is configured in
+`versioning.ui`, and can be overridden per locale using `versioning.locales`.
+
+```js
+versioning: {
+  ui: {
+    versionMenuLabel: 'Version',
+    outdatedVersionActionLabel: 'Go to latest'
+  },
+  locales: {
+    '/pl/': {
+      ui: {
+        versionMenuLabel: 'Wersja',
+        outdatedVersionActionLabel: 'Przejdz do najnowszej'
+      }
+    }
+  }
+}
+```
+
+Resolution order:
+
+1. `versioning.locales[active-locale].ui`
+2. `versioning.ui`
+3. built-in defaults
+
+If `versions.json` is unavailable, Greg shows the locale-resolved
+`manifestUnavailableText` in the header.
 
 ## Recommended workflow
 

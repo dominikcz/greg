@@ -138,6 +138,17 @@ declare module 'virtual:greg-config' {
             outdatedVersionMessage?: string;
             outdatedVersionActionLabel?: string;
         };
+        locales?: Record<
+            string,
+            {
+                ui?: {
+                    versionMenuLabel?: string;
+                    manifestUnavailableText?: string;
+                    outdatedVersionMessage?: string;
+                    outdatedVersionActionLabel?: string;
+                };
+            }
+        >;
         branches?: BranchVersionSource[];
         folders?: FolderVersionSource[];
         foldersDir?: string;

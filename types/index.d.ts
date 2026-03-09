@@ -178,6 +178,18 @@ export type GregVersioningConfig = {
         /** Button label in outdated notice. */
         outdatedVersionActionLabel?: string;
     };
+    /** Locale-specific versioning UI overrides, keyed by locale path (e.g. '/', '/pl/'). */
+    locales?: Record<
+        string,
+        {
+            ui?: {
+                versionMenuLabel?: string;
+                manifestUnavailableText?: string;
+                outdatedVersionMessage?: string;
+                outdatedVersionActionLabel?: string;
+            };
+        }
+    >;
     /** Branch-based version sources. */
     branches?: BranchVersionSource[];
     /** Folder-based version sources. */

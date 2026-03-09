@@ -19,7 +19,6 @@
   },
   "files": [
     "bin",
-    "scripts/build-timer.js",
     "scripts/generate-static.js",
     "scripts/build-versions.js",
     "scripts/render-markdown.js",
@@ -34,12 +33,11 @@
     "fakeDocsGenerator"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "node scripts/build-timer.js vite build",
-    "build:static": "node scripts/build-timer.js \"vite build && node scripts/generate-static.js\"",
-    "build:versions": "node scripts/build-versions.js",
-    "build:markdown": "node scripts/render-markdown.js",
-    "preview": "vite preview",
+    "dev": "greg dev",
+    "build": "greg build",
+    "build:static": "greg build:static",
+    "build:markdown": "greg build:markdown",
+    "preview": "greg preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "fakedocs": "node fakeDocsGenerator/generate_docs.js"

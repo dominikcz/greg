@@ -17,6 +17,14 @@ export default {
     //         outdatedVersionMessage: 'You are viewing an older version ({current}). Recommended: {default}.',
     //         outdatedVersionActionLabel: 'Go to latest',
     //     },
+    //     locales: {
+    //         '/': {
+    //             ui: { versionMenuLabel: 'Version' },
+    //         },
+    //         '/pl/': {
+    //             ui: { versionMenuLabel: 'Wersja' },
+    //         },
+    //     },
     //     branches: [
     //         { version: '2.1', branch: 'main', title: '2.1' },
     //         { version: '2.0', branch: 'release/2.0', title: '2.0' },

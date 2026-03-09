@@ -31,6 +31,7 @@
         type LocaleConfig,
         getLocaleSwitchItems,
         normalizeRootPath,
+        normalizeLocaleKey,
         resolveLocaleForPath,
     } from "./localeUtils";
 
@@ -177,6 +178,10 @@
         outdatedVersionActionLabel?: string;
     };
 
+    type VersioningLocaleConfig = {
+        ui?: VersioningUiConfig;
+    };
+
     let {
         children,
         rootPath: configuredRootPath = (gregConfig as any).rootPath ?? "/docs",
@@ -231,9 +236,29 @@
         LocaleConfig
     >;
     const versioningConfig = ((gregConfig as any).versioning ?? null) as
-        | { ui?: VersioningUiConfig; pathPrefix?: string }
+        | {
+              ui?: VersioningUiConfig;
+              locales?: Record<string, VersioningLocaleConfig>;
+              pathPrefix?: string;
+          }
         | null;
-    const versioningUi = (versioningConfig?.ui ?? {}) as VersioningUiConfig;
+    const globalVersioningUi = (versioningConfig?.ui ?? {}) as VersioningUiConfig;
+
+    function getLocalizedVersioningUi(
+        localesMap: Record<string, VersioningLocaleConfig> | undefined,
+        localeKey: string,
+    ): VersioningUiConfig {
+        if (!localesMap) return {};
+        const normalized = normalizeLocaleKey(localeKey);
+        const noTrailing = normalized.replace(/\/$/, "");
+        const trimmed = normalized.replace(/^\/+|\/+$/g, "");
+        const candidates = [normalized, noTrailing, trimmed].filter(Boolean);
+        for (const key of candidates) {
+            const found = localesMap[key];
+            if (found?.ui) return found.ui;
+        }
+        return {};
+    }
 
     function normalizeVersionPrefix(value: string | undefined): string {
         const cleaned = String(value || "/versions")
@@ -253,16 +278,11 @@
     let manifestVersionOptions = $state<{ version: string; title: string; path: string }[]>([]);
     let versionManifestLoadError = $state(false);
     const versionPathPrefix = normalizeVersionPrefix(versioningConfig?.pathPrefix);
-    const versionMenuLabel = String(versioningUi.versionMenuLabel || "Version");
-    const manifestUnavailableText = String(
-        versioningUi.manifestUnavailableText || "Version selector unavailable",
-    );
-    const outdatedVersionActionLabel = String(
-        versioningUi.outdatedVersionActionLabel || "Go to latest",
-    );
-
-    function formatOutdatedMessage(currentTitle: string, defaultTitle: string): string {
-        const template = String(versioningUi.outdatedVersionMessage || "").trim();
+    function formatOutdatedMessage(
+        currentTitle: string,
+        defaultTitle: string,
+        template: string,
+    ): string {
         if (!template) {
             return `You are viewing an older documentation version (${currentTitle}). ${defaultTitle} is currently recommended.`;
         }
@@ -588,6 +608,28 @@
         }),
     );
     const currentRootPath = $derived(localeContext.rootPath);
+    const localizedVersioningUi = $derived(
+        getLocalizedVersioningUi(versioningConfig?.locales, localeContext.key),
+    );
+    const resolvedVersioningUi = $derived({
+        ...globalVersioningUi,
+        ...localizedVersioningUi,
+    });
+    const versionMenuLabel = $derived(
+        String(resolvedVersioningUi.versionMenuLabel || "Version"),
+    );
+    const manifestUnavailableText = $derived(
+        String(
+            resolvedVersioningUi.manifestUnavailableText ||
+                "Version selector unavailable",
+        ),
+    );
+    const outdatedVersionActionLabel = $derived(
+        String(resolvedVersioningUi.outdatedVersionActionLabel || "Go to latest"),
+    );
+    const outdatedVersionMessageTemplate = $derived(
+        String(resolvedVersioningUi.outdatedVersionMessage || "").trim(),
+    );
     const activeDocsVersion = $derived(
         findActiveVersion(router.active, versionPathPrefix),
     );
@@ -1098,7 +1140,11 @@
         <VersionOutdatedNotice
             currentTitle={activeVersionEntry.title}
             defaultTitle={defaultVersionEntry.title}
-            message={formatOutdatedMessage(activeVersionEntry.title, defaultVersionEntry.title)}
+            message={formatOutdatedMessage(
+                activeVersionEntry.title,
+                defaultVersionEntry.title,
+                outdatedVersionMessageTemplate,
+            )}
             actionLabel={outdatedVersionActionLabel}
             onGoToDefault={() => navigateToVersion(defaultVersionEntry.version)}
         />

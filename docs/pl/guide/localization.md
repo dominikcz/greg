@@ -3,7 +3,7 @@ title: Lokalizacja
 order: 3
 ---
 
-# Lokalizacja
+## Lokalizacja
 
 Greg obsługuje konfigurację locale przez `locales` w
 `greg.config.js`. Każdy język może mieć własne etykiety, nawigację, sidebar
@@ -194,6 +194,38 @@ export default {
 
 Dzięki temu masz jedną konfigurację backendu search i tłumaczenia osobno dla
 każdego języka.
+
+## Lokalizacja wersjonowania
+
+Teksty UI wersjonowania (przelacznik wersji i baner starszej wersji)
+konfigurujesz globalnie w `versioning.ui`, a per-locale nadpisujesz przez
+`versioning.locales`.
+
+```js
+versioning: {
+  ui: {
+    versionMenuLabel: 'Version',
+    outdatedVersionActionLabel: 'Go to latest'
+  },
+  locales: {
+    '/pl/': {
+      ui: {
+        versionMenuLabel: 'Wersja',
+        outdatedVersionActionLabel: 'Przejdz do najnowszej'
+      }
+    }
+  }
+}
+```
+
+Priorytet rozwiazywania tekstow:
+
+1. `versioning.locales[active-locale].ui`
+2. `versioning.ui`
+3. wartosci domyslne wbudowane w Greg
+
+Jesli `versions.json` nie jest dostepny, Greg pokazuje w headerze lokalizowany
+`manifestUnavailableText`.
 
 ## Rekomendowany workflow
 

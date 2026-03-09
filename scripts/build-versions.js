@@ -197,7 +197,7 @@ function runViteBuild(args) {
             (process.env.PATH ?? ''),
     };
 
-    console.log(`[greg:versions] vite build -> ${path.relative(PROJECT_ROOT, outDir)}`);
+    console.log(`[greg] versions: vite build -> ${path.relative(PROJECT_ROOT, outDir)}`);
     runCommand('vite', ['build', '--outDir', outDir, ...passthrough], {
         stdio: 'inherit',
         shell: true,
@@ -413,7 +413,7 @@ async function main() {
             removeDir(tempOut);
             ensureDir(tempOut);
 
-            console.log(`[greg:versions] building '${entry.version}' from folder ${path.relative(PROJECT_ROOT, entry.docsDir)}`);
+            console.log(`[greg] versions: building '${entry.version}' from folder ${path.relative(PROJECT_ROOT, entry.docsDir)}`);
             runViteBuild({
                 docsDir: entry.docsDir,
                 rootPath: entry.rootPath,
@@ -449,7 +449,7 @@ async function main() {
             const hasBuildCache = fs.existsSync(path.join(buildCache, 'index.html'));
 
             if (!hasBuildCache) {
-                console.log(`[greg:versions] building '${entry.version}' from ${entry.branch} (${sha.slice(0, 8)})`);
+                console.log(`[greg] versions: building '${entry.version}' from ${entry.branch} (${sha.slice(0, 8)})`);
                 runViteBuild({
                     docsDir: snapshot.docsDir,
                     rootPath: entry.rootPath,
@@ -457,7 +457,7 @@ async function main() {
                     passthrough: args.passthrough,
                 });
             } else {
-                console.log(`[greg:versions] cache hit '${entry.version}' from ${entry.branch} (${sha.slice(0, 8)})`);
+                console.log(`[greg] versions: cache hit '${entry.version}' from ${entry.branch} (${sha.slice(0, 8)})`);
             }
 
             const targetOut = path.join(outputRoot, entry.version);
@@ -494,11 +494,11 @@ async function main() {
     const manifestPath = path.join(outputRoot, 'versions.json');
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
 
-    console.log(`[greg:versions] done -> ${path.relative(PROJECT_ROOT, outputRoot)}`);
-    console.log(`[greg:versions] manifest -> ${path.relative(PROJECT_ROOT, manifestPath)}`);
+    console.log(`[greg] versions: done -> ${path.relative(PROJECT_ROOT, outputRoot)}`);
+    console.log(`[greg] versions: manifest -> ${path.relative(PROJECT_ROOT, manifestPath)}`);
 }
 
 main().catch((error) => {
-    console.error('[greg:versions] Failed:', error.message || error);
+    console.error('[greg] versions failed:', error.message || error);
     process.exit(1);
 });

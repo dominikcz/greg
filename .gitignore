@@ -26,3 +26,4 @@ dist-ssr
 docs-vitepress
 docs/fake-docs
 *.tgz
+.greg/

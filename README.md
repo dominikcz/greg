@@ -171,91 +171,141 @@ export default {
 
 ## CLI
 
-| Command               | Description                      |
-| --------------------- | -------------------------------- |
-| `greg init`           | Interactive project scaffolding  |
-| `greg dev`            | Start Vite dev server            |
-| `greg build`          | Production build                 |
-| `greg build:static`   | Production build + static export |
-| `greg build:markdown` | Export resolved markdown         |
-| `greg build:versions` | Build all configured versions    |
-| `greg preview`        | Preview production build         |
-| `greg search-server`  | Standalone search API server     |
+| Command               | Description                           |
+| --------------------- | ------------------------------------- |
+| `greg init`           | Interactive project scaffolding       |
+| `greg dev`            | Start Vite dev server                 |
+| `greg build`          | Production build (auto versioning)    |
+| `greg build:static`   | Production build + static export      |
+| `greg build:markdown` | Export resolved markdown              |
+| `greg preview`        | Preview production build              |
+| `greg search-server`  | Standalone search API server          |
 
 ## Multi-version Docs
 
-Greg supports two version-source strategies via `greg.config.*`:
+Greg supports two source strategies configured under `greg.config.* > versioning`:
 
 - `branches` (default): reads docs from configured git branches/refs and caches snapshots/builds per commit SHA
 - `folders`: reads docs directly from version folders in the working tree
 
-Source mapping (`branch`/`dir` to a version id) is defined in config entries under
-`versioning.branches` or `versioning.folders`. Strategy is selected via
-`versioning.strategy` (or overridden by `--strategy`).
+### Rules
 
-Run:
+1. Put all versioning config in `greg.config.js` (or `greg.config.ts`) under `versioning`.
+2. Choose one strategy in `versioning.strategy`.
+3. Map each built version id to its source:
+     - branch mode: `versioning.branches[]` with `version` + `branch`
+     - folder mode: `versioning.folders[]` with `version` + `dir`
+4. Set `versioning.default` and optional `versioning.aliases` for selector behavior.
 
-```sh
-greg build:versions
-```
+### Branch Mode Guide
 
-Branch-based example (default strategy):
+Use this when each docs version should come from a Git branch/ref.
 
-```js
-/** @type {import('@dominikcz/greg').GregConfig} */
+What to configure:
+
+1. `versioning.strategy = 'branches'`
+2. `versioning.branches[]` entries with `version`, `branch`, optional `docsDir`, `title`
+3. `versioning.default` and optional `versioning.aliases`
+
+Example `versioning` value:
+
+```js [greg.config.js]
 export default {
-    rootPath: '/docs',
     versioning: {
         strategy: 'branches',
         default: 'latest',
         aliases: {
             latest: '2.1',
-            stable: '2.0',
+            stable: '2.0'
         },
         branches: [
             { version: '2.1', branch: 'main', title: '2.1' },
-            { version: '2.0', branch: 'release/2.0', title: '2.0' },
-        ],
-    },
+            { version: '2.0', branch: 'release/2.0', title: '2.0' }
+        ]
+    }
 }
 ```
 
-Folder-based example:
+### Folder Mode Guide
 
-```js
-/** @type {import('@dominikcz/greg').GregConfig} */
+Use this when each docs version should come from a directory in the working tree.
+
+What to configure:
+
+1. `versioning.strategy = 'folders'`
+2. `versioning.folders[]` entries with `version`, `dir`, optional `rootPath`, `title`
+3. `versioning.default` and optional `versioning.aliases`
+
+Example `versioning` value:
+
+```js [greg.config.js]
 export default {
-    rootPath: '/docs',
     versioning: {
         strategy: 'folders',
         default: 'latest',
         aliases: {
             latest: '2.1',
-            stable: '2.0',
+            stable: '2.0'
         },
         folders: [
             { version: '2.1', dir: './docs', title: '2.1' },
-            { version: '2.0', dir: './versions/2.0/docs', title: '2.0' },
-        ],
-    },
+            { version: '2.0', dir: './versions/2.0/docs', title: '2.0' }
+        ]
+    }
 }
+```
+
+### Commands
+
+After configuration is in place, run:
+
+```sh
+greg build
 ```
 
 Output is generated to `dist/versions/<version>` and a manifest is written to `dist/versions/versions.json`.
 
 Optional UI labels/messages can be configured under `versioning.ui`:
 
-```js
-versioning: {
-    // ...
-    ui: {
-        versionMenuLabel: 'Version',
-        manifestUnavailableText: 'Version selector unavailable',
-        outdatedVersionMessage: 'You are viewing an older version ({current}). Recommended: {default}.',
-        outdatedVersionActionLabel: 'Go to latest'
+```js [greg.config.js]
+export default {
+    versioning: {
+        ui: {
+            versionMenuLabel: 'Version',
+            manifestUnavailableText: 'Version selector unavailable',
+            outdatedVersionMessage: 'You are viewing an older version ({current}). Recommended: {default}.',
+            outdatedVersionActionLabel: 'Go to latest'
+        }
     }
 }
 ```
+
+To override those labels per locale, use `versioning.locales`:
+
+```js [greg.config.js]
+export default {
+    versioning: {
+        locales: {
+            '/': {
+                ui: {
+                    versionMenuLabel: 'Version'
+                }
+            },
+            '/pl/': {
+                ui: {
+                    versionMenuLabel: 'Wersja'
+                }
+            }
+        }
+    }
+}
+```
+
+Resolution order for versioning UI text is:
+
+1. `versioning.locales[active-locale].ui`
+2. `versioning.ui`
+3. built-in default text
 
 If `versions.json` cannot be loaded, Greg now shows a subtle fallback text in the header instead of the selector.
 
@@ -321,3 +371,5 @@ export default {
 - [ ] edit mode
 - [ ] comments
 - [ ] code cleanup
+
+
