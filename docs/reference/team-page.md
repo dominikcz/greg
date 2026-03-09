@@ -40,13 +40,13 @@ Use `<TeamMembers>` anywhere in a Markdown page:
   size="medium"
   members={[
     {
-      avatar: 'https://github.com/octocat.png',
+      avatar: 'https://avatars.githubusercontent.com/u/583231?s=96',
       name: 'Monalisa Octocat',
       title: 'Lead Developer',
       links: [{ icon: 'github', link: 'https://github.com/octocat' }],
     },
     {
-      avatar: 'https://github.com/hubot.png',
+      avatar: 'https://avatars.githubusercontent.com/u/480938?s=96',
       name: 'Hubot',
       title: 'Automation Bot',
       links: [{ icon: 'github', link: 'https://github.com/hubot' }],
@@ -100,7 +100,7 @@ Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
   size="medium"
   members={[
     {
-      avatar: 'https://github.com/janedoe.png',
+      avatar: 'https://avatars.githubusercontent.com/u/10137?s=96',
       name: 'Jane Doe',
       title: 'Creator',
       org: 'Acme Corp',
@@ -113,7 +113,7 @@ Create a `.md` file (e.g. `docs/team.md`) and use the layout components:
       sponsor: 'https://github.com/sponsors/janedoe',
     },
     {
-      avatar: 'https://github.com/octocat.png',
+      avatar: 'https://avatars.githubusercontent.com/u/583231?s=96',
       name: 'Monalisa Octocat',
       title: 'Lead Developer',
       links: [{ icon: 'github', link: 'https://github.com/octocat' }],
