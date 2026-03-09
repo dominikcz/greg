@@ -8,13 +8,16 @@ import {
     vitePluginCopyDocs,
 } from '@dominikcz/greg/plugins'
 
+const docsDir = process.env.GREG_DOCS_DIR || '{{DOCS_DIR}}'
+const rootPath = process.env.GREG_ROOT_PATH || '{{ROOT_PATH}}'
+
 export default defineConfig({
     plugins: [
         svelte(),
         vitePluginGregConfig(),
-        vitePluginSearchIndex({ docsDir: '{{DOCS_DIR}}', rootPath: '{{ROOT_PATH}}' }),
-        vitePluginSearchServer({ docsDir: '{{DOCS_DIR}}', rootPath: '{{ROOT_PATH}}' }),
-        vitePluginFrontmatter({ docsDir: '{{DOCS_DIR}}' }),
-        vitePluginCopyDocs({ docsDir: '{{DOCS_DIR}}' }),
+        vitePluginSearchIndex({ docsDir, rootPath }),
+        vitePluginSearchServer({ docsDir, rootPath }),
+        vitePluginFrontmatter({ docsDir, rootPath }),
+        vitePluginCopyDocs({ docsDir, rootPath }),
     ],
 })

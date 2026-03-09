@@ -10,6 +10,9 @@ import { vitePluginSearchServer } from './src/lib/MarkdownDocs/vitePluginSearchS
 
 console.log('Version:', pkg.version);
 
+const docsDir = process.env.GREG_DOCS_DIR || 'docs';
+const rootPath = process.env.GREG_ROOT_PATH || '/docs';
+
 // https://vite.dev/config/
 export default defineConfig({
   resolve: {
@@ -20,10 +23,10 @@ export default defineConfig({
   plugins: [
     svelte(),
     vitePluginGregConfig(),
-    vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
-    vitePluginSearchServer({ docsDir: 'docs', rootPath: '/docs' }),
-    vitePluginFrontmatter({ docsDir: 'docs' }),
-    vitePluginCopyDocs({ docsDir: 'docs' }),
+    vitePluginSearchIndex({ docsDir, rootPath }),
+    vitePluginSearchServer({ docsDir, rootPath }),
+    vitePluginFrontmatter({ docsDir, rootPath }),
+    vitePluginCopyDocs({ docsDir, rootPath }),
   ],
   define: {
     __NAME__: `"${pkg.name}"`,

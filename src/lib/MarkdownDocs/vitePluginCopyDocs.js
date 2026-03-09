@@ -16,7 +16,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets'] } = {}) {
+function trimSlashes(value) {
+    return String(value || '').replace(/^\/+|\/+$/g, '');
+}
+
+export function vitePluginCopyDocs({ docsDir = 'docs', rootPath = '/docs', staticDirs = ['snippets'] } = {}) {
     let root = process.cwd();
     let outDir = 'dist';
 
@@ -38,6 +42,15 @@ export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets']
         }
     }
 
+    function toPosix(value) {
+        return String(value).replace(/\\/g, '/');
+    }
+
+    function resolveRootPrefix() {
+        const cleaned = trimSlashes(rootPath) || 'docs';
+        return '/' + cleaned;
+    }
+
     return {
         name: 'greg:copy-docs',
 
@@ -51,6 +64,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets']
          * Vite doesn't auto-serve project files outside public/ as raw assets.
          */
         configureServer(server) {
+            const rootPrefix = resolveRootPrefix();
             server.middlewares.use((req, res, next) => {
                 const originalUrl = req.url ?? '';
                 const [urlPath, query = ''] = originalUrl.split('?');
@@ -63,8 +77,9 @@ export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets']
                 }
 
                 // Docs markdown files
-                if (url.startsWith('/' + docsDir + '/') && url.endsWith('.md')) {
-                    const filePath = path.resolve(root, url.slice(1));
+                if ((url === rootPrefix || url.startsWith(rootPrefix + '/')) && url.endsWith('.md')) {
+                    const rel = url.slice(rootPrefix.length).replace(/^\//, '');
+                    const filePath = path.resolve(root, docsDir, rel);
                     if (fs.existsSync(filePath)) {
                         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                         res.end(fs.readFileSync(filePath, 'utf8'));
@@ -91,12 +106,13 @@ export function vitePluginCopyDocs({ docsDir = 'docs', staticDirs = ['snippets']
         /** After bundle is written, copy .md files and staticDirs verbatim. */
         writeBundle() {
             let count = 0;
+            const rootPrefix = trimSlashes(resolveRootPrefix());
 
             // Copy markdown docs
             const docsRoot = path.resolve(root, docsDir);
             for (const srcFile of walkMd(docsRoot)) {
-                const rel = path.relative(root, srcFile);
-                const destFile = path.join(outDir, rel);
+                const rel = toPosix(path.relative(docsRoot, srcFile));
+                const destFile = path.join(outDir, rootPrefix, rel);
                 fs.mkdirSync(path.dirname(destFile), { recursive: true });
                 fs.copyFileSync(srcFile, destFile);
                 count++;

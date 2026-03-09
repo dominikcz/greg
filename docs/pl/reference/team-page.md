@@ -174,7 +174,7 @@ Przyjmuje właściwości `title` / `lead` oraz `children`.
 
 `icon` w `SocialLinkItem` może być:
 
-- stringiem wbudowanej ikony (`github`, `twitter`, `x`, `linkedin`, `discord`, `facebook`, `instagram`, `mastodon`, `npm`, `slack`, `youtube`),
+- napisem wbudowanej ikony (`github`, `twitter`, `x`, `linkedin`, `discord`, `facebook`, `instagram`, `mastodon`, `npm`, `slack`, `youtube`),
 - obiektem `{ svg: string }` z własnym SVG.
 
 ```md

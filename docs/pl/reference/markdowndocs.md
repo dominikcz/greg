@@ -73,13 +73,13 @@ export default {
         sidebar: [{ text: 'Przewodnik', auto: '/guide' }],
         outline: { level: [2, 3], label: 'Na tej stronie' },
         lastUpdatedText: 'Zaktualizowano:',
-        langMenuLabel: 'Zmien jezyk',
+        langMenuLabel: 'Zmień język',
         sidebarMenuLabel: 'Menu',
-        skipToContentLabel: 'Przejdz do tresci',
-        returnToTopLabel: 'Wroc na gore',
-        darkModeSwitchLabel: 'Wyglad',
-        lightModeSwitchTitle: 'Przelacz na jasny motyw',
-        darkModeSwitchTitle: 'Przelacz na ciemny motyw',
+        skipToContentLabel: 'Przejdź do treści',
+        returnToTopLabel: 'Wróć na górę',
+        darkModeSwitchLabel: 'Wygląd',
+        lightModeSwitchTitle: 'Przełącz na jasny motyw',
+        darkModeSwitchTitle: 'Przełącz na ciemny motyw',
         docFooter: { prev: 'Poprzednia', next: 'Nastepna' },
       },
     },
@@ -205,12 +205,6 @@ const gregConfig = {
 };
 ```
 
-## Co rozszerzać i gdzie
-
-- użyj **component registry** dla interaktywnych widgetów,
-- użyj **remark/rehype registries** dla transformacji statycznego HTML,
-- użyj **render handlers** dla logiki działającej w przeglądarce na żywym DOM.
-
 ## Model rozszerzeń runtime
 
 `MarkdownRenderer.svelte` deleguje punkty rozszerzeń do `src/lib/MarkdownDocs/markdownRendererRuntime.ts`.
@@ -231,6 +225,14 @@ Pipeline jest składany z dwóch uporządkowanych rejestrów:
 - `getRemarkPluginEntries(baseUrl, docsPrefix)`
 - `getRehypePluginEntries()`
 
+Obejmują m.in.:
+
+- kontenery niestandardowe (`remarkContainers` + `rehypeContainers`)
+- bloki kodu (`rehypeShiki`, `rehypeCodeTitle`, `rehypeCodeGroup`)
+- preprocessing Mermaid (`rehypeMermaid`)
+- normalizacja Steps (`rehypeStepsWrapper`)
+- nagłówki/TOC (`rehypeSlug`, `rehypeAutolinkHeadings`, `rehypeTocPlaceholder`)
+
 ### 3) Handlery renderowania (post-HTML)
 
 Po renderze HTML uruchamiane są handlery z list:
@@ -238,8 +240,11 @@ Po renderze HTML uruchamiane są handlery z list:
 - `RUNTIME_RENDER_HANDLERS`
 - `THEME_CHANGE_RENDER_HANDLERS`
 
+Obecne handlery obejmują hydrację komponentów i inicjalizację/odświeżanie Mermaid.
+
 ## Gdzie rozszerzać
 
-- użyj **component registry** dla interaktywnych widgetów,
-- użyj **remark/rehype registries** dla transformacji statycznego HTML,
-- użyj **render handlers** dla logiki działającej w przeglądarce na żywym DOM.
+- użyj **component registry** dla interaktywnych widgetów renderowanych z tagów,
+- użyj **rehype/remark registries** dla transformacji statycznego HTML,
+- użyj **render handlers** dla logiki działającej w przeglądarce na żywym DOM
+  (np. silniki diagramów).

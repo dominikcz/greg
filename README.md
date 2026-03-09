@@ -57,8 +57,8 @@ export default defineConfig({
         vitePluginGregConfig(),
         vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
         vitePluginSearchServer({ docsDir: 'docs', rootPath: '/docs' }),
-        vitePluginFrontmatter({ docsDir: 'docs' }),
-        vitePluginCopyDocs({ docsDir: 'docs' }),
+        vitePluginFrontmatter({ docsDir: 'docs', rootPath: '/docs' }),
+        vitePluginCopyDocs({ docsDir: 'docs', rootPath: '/docs' }),
     ],
 })
 ```
@@ -178,8 +178,86 @@ export default {
 | `greg build`          | Production build                 |
 | `greg build:static`   | Production build + static export |
 | `greg build:markdown` | Export resolved markdown         |
+| `greg build:versions` | Build all configured versions    |
 | `greg preview`        | Preview production build         |
 | `greg search-server`  | Standalone search API server     |
+
+## Multi-version Docs
+
+Greg supports two version-source strategies via `greg.config.*`:
+
+- `branches` (default): reads docs from configured git branches/refs and caches snapshots/builds per commit SHA
+- `folders`: reads docs directly from version folders in the working tree
+
+Source mapping (`branch`/`dir` to a version id) is defined in config entries under
+`versioning.branches` or `versioning.folders`. Strategy is selected via
+`versioning.strategy` (or overridden by `--strategy`).
+
+Run:
+
+```sh
+greg build:versions
+```
+
+Branch-based example (default strategy):
+
+```js
+/** @type {import('@dominikcz/greg').GregConfig} */
+export default {
+    rootPath: '/docs',
+    versioning: {
+        strategy: 'branches',
+        default: 'latest',
+        aliases: {
+            latest: '2.1',
+            stable: '2.0',
+        },
+        branches: [
+            { version: '2.1', branch: 'main', title: '2.1' },
+            { version: '2.0', branch: 'release/2.0', title: '2.0' },
+        ],
+    },
+}
+```
+
+Folder-based example:
+
+```js
+/** @type {import('@dominikcz/greg').GregConfig} */
+export default {
+    rootPath: '/docs',
+    versioning: {
+        strategy: 'folders',
+        default: 'latest',
+        aliases: {
+            latest: '2.1',
+            stable: '2.0',
+        },
+        folders: [
+            { version: '2.1', dir: './docs', title: '2.1' },
+            { version: '2.0', dir: './versions/2.0/docs', title: '2.0' },
+        ],
+    },
+}
+```
+
+Output is generated to `dist/versions/<version>` and a manifest is written to `dist/versions/versions.json`.
+
+Example manifest:
+
+```json
+{
+    "default": "latest",
+    "versions": [
+        { "version": "2.1", "title": "2.1", "path": "/versions/2.1/" },
+        { "version": "2.0", "title": "2.0", "path": "/versions/2.0/" }
+    ],
+    "aliases": {
+        "latest": "2.1",
+        "stable": "2.0"
+    }
+}
+```
 
 ## Resolved Markdown Export
 

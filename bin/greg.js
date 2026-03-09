@@ -8,6 +8,7 @@
  *   greg build                  Build for production
  *   greg build:static           Build for production and generate static route files
  *   greg build:markdown         Export resolved markdown files
+ *   greg build:versions         Build multi-version documentation output
  *   greg preview                Preview the production build
  *   greg search-server          Start the standalone search server (production)
  *   greg --version              Print the Greg version
@@ -36,6 +37,7 @@ function help() {
     build          Build the project for production
     build:static   Build and generate static route files
     build:markdown Export resolved markdown files to dist/resolved-markdown
+    build:versions Build all configured docs versions to dist/versions
     preview        Preview the production build
     search-server  Start the standalone search API server (production)
                    Options: --index <path>  --port <number>  --host <addr>
@@ -109,6 +111,11 @@ switch (command) {
     case 'build:markdown': {
         const markdownScript = resolve(__dirname, '../scripts/render-markdown.js');
         runNodeScript(markdownScript, args);
+        break;
+    }
+    case 'build:versions': {
+        const versionsScript = resolve(__dirname, '../scripts/build-versions.js');
+        runNodeScript(versionsScript, args);
         break;
     }
     case 'preview':

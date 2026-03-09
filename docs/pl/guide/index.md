@@ -8,7 +8,7 @@ order: 1
 Witaj w przewodniku Greg. Wybierz temat, aby zacząć.
 
 - [Pierwsze kroki](./getting-started) - instalacja i struktura projektu
-- [Lokalizacja](./localization) - locale, tlumaczenia etykiet i routing jezykow
+- [Lokalizacja](./localization) - locale, tłumaczenia etykiet i routing języków
 - [Routing](./routing) - jak działa routing oparty o pliki i nawigacja
 - [Rozszerzenia Markdown](./markdown) - wszystkie obsługiwane funkcje Markdown
 - [Obsługa zasobów](./asset-handling) - obrazy, pliki publiczne i komponent `<Image>`

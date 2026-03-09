@@ -35,4 +35,4 @@ Więcej:
 
 ## Uwaga dot. deployu
 
-Ponieważ Greg jest SPA-first, serwer powinien przepisywać trasy do `index.html` (zobacz [Deploying](/guide/deploying)).
+Ponieważ Greg jest SPA-first, serwer powinien przepisywać trasy do `index.html` (zobacz [Wdrażanie](/guide/deploying)).

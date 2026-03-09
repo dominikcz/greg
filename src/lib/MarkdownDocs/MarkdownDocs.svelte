@@ -700,6 +700,8 @@
         [
             "/docs/reference/home-page.md",
             "/docs/pl/reference/home-page.md",
+            "/docs/reference/team-page.md",
+            "/docs/pl/reference/team-page.md",
             "/docs/test.md",
         ],
     ) as Record<
