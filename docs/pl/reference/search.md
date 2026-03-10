@@ -2,8 +2,6 @@
 title: Wyszukiwanie
 ---
 
-# Wyszukiwanie
-
 Greg zawiera wbudowane wyszukiwanie pełnotekstowe oparte na [Fuse.js](https://fusejs.io/).
 Nie wymaga zewnętrznej usługi ani klucza API.
 
@@ -18,11 +16,9 @@ search: {
 }
 ```
 
-| Provider | Jak to działa                                                         | Polecane dla                 |
-| -------- | ---------------------------------------------------------------------- | --------------------------- |
-| `server` | Przeglądarka pyta `GET /api/search?q=...` i otrzymuje gotowe wyniki   | Dużych zestawów dokumentacji |
-| `local`  | Przeglądarka pobiera `/search-index.json` i uruchamia Fuse.js lokalnie | Małych zestawów dokumentacji |
-| `none`   | Wbudowane UI wyszukiwania (przycisk + modal + skróty) jest wyłączone  | Stron bez wbudowanego search |
+- `server`: Przeglądarka pyta `GET /api/search?q=...` i otrzymuje gotowe wyniki. Polecane dla dużych zestawów dokumentacji (domyślnie najlepszy wybór).
+- `local`: Przeglądarka pobiera `/search-index.json` i uruchamia Fuse.js lokalnie. Polecane dla małych zestawów dokumentacji.
+- `none`: Wbudowane UI wyszukiwania (przycisk + modal + skróty) jest wyłączone. Polecane dla stron bez wbudowanego search.
 
 `server` to zwykle najlepszy domyślny wybór dla większych zbiorów dokumentacji.
 
@@ -98,21 +94,40 @@ Sygnatura `searchProvider`:
 (query: string, limit?: number) => Promise<SearchResult[]>
 ```
 
+Oczekiwany kształt `SearchResult`:
+
+```ts
+type SearchResult = {
+  id: string;
+  title: string;
+  titleHtml: string;
+  sectionTitle: string;
+  sectionTitleHtml?: string; // opcjonalne, ale zalecane dla spójnego podświetlania nagłówków
+  sectionAnchor: string;
+  excerptHtml: string;
+  score: number;
+}
+```
+
+`sectionTitleHtml` jest teraz używane przez wbudowany modal do renderowania
+podświetleń nagłówków. Jeśli go brakuje, Greg użyje bezpiecznego `sectionTitle`
+bez semantycznych znaczników dopasowania.
+
 ## Otwieranie wyszukiwarki
 
-| Metoda                                     | Akcja        |
-| ------------------------------------------ | ------------ |
+| Metoda                                        | Akcja         |
+| --------------------------------------------- | ------------- |
 | Kliknięcie przycisku **Szukaj...** w headerze | Otwiera modal |
-| `Ctrl + K`                                 | Otwiera modal |
-| `Cmd + K` (macOS)                          | Otwiera modal |
+| `Ctrl + K`                                    | Otwiera modal |
+| `Cmd + K` (macOS)                             | Otwiera modal |
 
 ## Nawigacja klawiaturą w modalu
 
-| Klawisz   | Akcja                          |
-| --------- | ------------------------------ |
-| `↑` / `↓` | Wybierz poprzedni / następny wynik |
-| `Enter`   | Przejdź do zaznaczonego wyniku |
-| `Esc`     | Zamknij modal                  |
+| Klawisz   | Akcja                               |
+| --------- | ----------------------------------- |
+| `↑` / `↓` | Wybierz poprzedni / następny wynik  |
+| `Enter`   | Przejdź do zaznaczonego wyniku      |
+| `Esc`     | Zamknij modal                       |
 
 ## Ranking wyników
 

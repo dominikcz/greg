@@ -2,8 +2,6 @@
 title: Search
 ---
 
-# Search
-
 Greg includes a built-in full-text search powered by [Fuse.js](https://fusejs.io/).
 No external service or API key is required.
 
@@ -19,11 +17,9 @@ search: {
 }
 ```
 
-| Provider | How it works                                                            | Recommended for              |
-| -------- | ----------------------------------------------------------------------- | ---------------------------- |
-| `server` | Browser calls `GET /api/search?q=...` and receives ready-ranked results | Large doc sets, best default |
-| `local`  | Browser downloads `/search-index.json` and runs Fuse.js locally         | Small doc sets               |
-| `none`   | Built-in search UI (button + modal + shortcuts) is disabled            | Sites without built-in search |
+- `server`: Browser calls `GET /api/search?q=...` and receives ready-ranked results. Recommended for large doc sets (best default).
+- `local`: Browser downloads `/search-index.json` and runs Fuse.js locally. Recommended for small doc sets.
+- `none`: Built-in search UI (button + modal + shortcuts) is disabled. Recommended for sites without built-in search.
 
 
 ## How indexing works
@@ -100,6 +96,24 @@ routes queries through your function.
 ```ts
 (query: string, limit?: number) => Promise<SearchResult[]>
 ```
+
+Expected `SearchResult` shape:
+
+```ts
+type SearchResult = {
+  id: string;
+  title: string;
+  titleHtml: string;
+  sectionTitle: string;
+  sectionTitleHtml?: string; // optional but recommended for consistent heading highlights
+  sectionAnchor: string;
+  excerptHtml: string;
+  score: number;
+}
+```
+
+`sectionTitleHtml` is now used by the built-in modal to render heading highlights.
+If missing, Greg falls back to escaped `sectionTitle` (without match-aware markup).
 
 
 ## Opening search
