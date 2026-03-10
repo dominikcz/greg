@@ -37,8 +37,13 @@ export function isSameNavigationTarget(
 export function useRouter(
 	knownPaths: Record<string, unknown>,
 	getRootPathForPath: (path: string) => string,
+	normalizePathForLookup: (path: string) => string = (path) => path,
 ) {
 	let active = $state(normalizePath(window.location.pathname));
+
+	const lookupActive = $derived.by(() =>
+		normalizePath(normalizePathForLookup(active)),
+	);
 
 	function navigate(path: string, anchor?: string) {
 		if (isSameNavigationTarget(window.location.pathname, window.location.hash || '', path, anchor)) return;
@@ -57,8 +62,8 @@ export function useRouter(
 
 	/** Resolved .md file path for the active route, or null if unknown. */
 	const activeMarkdownPath = $derived.by(() => {
-		const rootPath = getRootPathForPath(active);
-		const rel = active.replace(rootPath, '').replace(/^\//, '');
+		const rootPath = getRootPathForPath(lookupActive);
+		const rel = lookupActive.replace(rootPath, '').replace(/^\//, '');
 		const candidates = rel
 			? [`${rootPath}/${rel}.md`, `${rootPath}/${rel}/index.md`]
 			: [`${rootPath}/index.md`, `${rootPath}index.md`];
@@ -84,11 +89,11 @@ export function useRouter(
 		},
 		/** Returns true when active path corresponds to a markdown page. */
 		isMarkdown(flat: FlatItem[]) {
-			const m = flat.find((x: FlatItem) => x.link === active);
+			const m = flat.find((x: FlatItem) => x.link === lookupActive);
 			return m ? m.type === 'md' : true;
 		},
 		title(flat: FlatItem[]) {
-			return getBreadcrumb(active, flat);
+			return getBreadcrumb(lookupActive, flat);
 		},
 	};
 }

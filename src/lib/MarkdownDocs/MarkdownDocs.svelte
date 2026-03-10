@@ -620,6 +620,7 @@
             aside: globalAside,
             lastUpdated: globalLastUpdated,
         }).rootPath,
+        (path) => stripVersionPrefixFromPath(path, versionPathPrefix),
     );
 
     const routePath = $derived(
@@ -730,6 +731,12 @@
     const activeVersionEntry = $derived(
         manifestVersionOptions.find((entry) => entry.version === activeDocsVersion) ?? null,
     );
+    const activeMarkdownFetchPath = $derived.by(() => {
+        const mdPath = router.activeMarkdownPath;
+        if (!mdPath) return null;
+        if (!activeDocsVersion) return mdPath;
+        return normalizeRootPath(`${versionPathPrefix}/${activeDocsVersion}${mdPath}`);
+    });
     const showOutdatedVersionNotice = $derived(
         Boolean(
             activeDocsVersion &&
@@ -1324,7 +1331,7 @@
                         <p class="fetch-error">Could not load page.</p>
                     {/await}
                 {:else}
-                    {#await fetchMarkdown(router.activeMarkdownPath)}
+                    {#await fetchMarkdown(activeMarkdownFetchPath || router.activeMarkdownPath)}
                         <div class="spinner-wrap">
                             <Spinner />
                         </div>
@@ -1338,7 +1345,7 @@
                         {/if}
                         <MarkdownRenderer
                             {markdown}
-                            baseUrl={router.activeMarkdownPath}
+                            baseUrl={activeMarkdownFetchPath || router.activeMarkdownPath}
                             docsPrefix={currentRootPath}
                             {mermaidTheme}
                             {mermaidThemes}
