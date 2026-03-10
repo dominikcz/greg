@@ -368,16 +368,7 @@ export default {
 
 ## TODO
 
-### 0.9
-
 - [ ] AI search integration
-- [ ] multiple versions support
-
-### 1.0
-
 - [ ] edit mode
 - [ ] comments
 - [ ] code cleanup
-
-
-
