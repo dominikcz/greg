@@ -68,6 +68,8 @@ function help() {
     --version   Show version number
     --help      Show this help message
     --single    With 'build': force a single vite build
+        --clean-versions With 'build' + versioning: remove versioned output before build
+        --rebuild-all With 'build' + versioning: rebuild all versions and skip build cache
 `);
 }
 

@@ -187,7 +187,8 @@ Co to polecenie zmienia na dysku:
 Opcjonalne flagi porzadkowe:
 
 - `--clean-cache`: usuwa `.greg/version-cache` przed buildem
-- `--clean-output`: usuwa katalog output przed buildem
+- `--clean-versions`: usuwa katalog wyjscia wersji przed buildem
+- `--rebuild-all`: przebudowuje wszystkie skonfigurowane wersje i pomija uzycie cache buildow branchy w tym uruchomieniu
 
 ## Komponenty UI
 

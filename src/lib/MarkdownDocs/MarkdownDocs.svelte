@@ -289,6 +289,16 @@
         return segment || null;
     }
 
+    function stripVersionPrefixFromPath(pathname: string, prefix: string): string {
+        const normalizedPath = normalizeRootPath(pathname);
+        const activeVersion = findActiveVersion(normalizedPath, prefix);
+        if (!activeVersion) return normalizedPath;
+
+        const versionRoot = `${prefix}/${activeVersion}`;
+        const suffix = normalizedPath.slice(versionRoot.length);
+        return normalizeRootPath(suffix || "/");
+    }
+
     let versionManifest = $state<VersionManifest | null>(null);
     let manifestVersionOptions = $state<{ version: string; title: string; path: string }[]>([]);
     let versionManifestLoadError = $state(false);
@@ -571,7 +581,11 @@
 
     // -- Router ------------------------------------------------------------------
     const router = useRouter(frontmatters, (path) =>
-        resolveLocaleForPath(path, configuredRootPath, configLocales, {
+        resolveLocaleForPath(
+            stripVersionPrefixFromPath(path, versionPathPrefix),
+            configuredRootPath,
+            configLocales,
+            {
             mainTitle: globalMainTitle,
             nav: globalNav,
             sidebar: globalSidebar,
@@ -608,8 +622,11 @@
         }).rootPath,
     );
 
+    const routePath = $derived(
+        stripVersionPrefixFromPath(router.active, versionPathPrefix),
+    );
     const localeContext = $derived(
-        resolveLocaleForPath(router.active, configuredRootPath, configLocales, {
+        resolveLocaleForPath(routePath, configuredRootPath, configLocales, {
             mainTitle: globalMainTitle,
             nav: globalNav,
             sidebar: globalSidebar,
@@ -646,6 +663,32 @@
         }),
     );
     const currentRootPath = $derived(localeContext.rootPath);
+
+    function applyCurrentVersionPrefix(pathname: string): string {
+        const normalizedPath = normalizeRootPath(pathname);
+        const currentPath = normalizeRootPath(window.location.pathname);
+        const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
+        if (!currentVersion) return normalizedPath;
+
+        if (
+            normalizedPath === currentRootPath ||
+            normalizedPath.startsWith(currentRootPath + "/")
+        ) {
+            return normalizeRootPath(
+                `${versionPathPrefix}/${currentVersion}${normalizedPath}`,
+            );
+        }
+
+        return normalizedPath;
+    }
+
+    function navigateInternal(path: string) {
+        router.navigate(applyCurrentVersionPrefix(path));
+    }
+
+    function navigateInternalWithAnchor(path: string, anchor?: string) {
+        router.navigateWithAnchor(applyCurrentVersionPrefix(path), anchor);
+    }
     const localizedVersioningUi = $derived(
         getLocalizedVersioningUi(versioningConfig?.locales, localeContext.key),
     );
@@ -672,7 +715,7 @@
         String(resolvedVersioningUi.outdatedVersionMessage || "").trim(),
     );
     const activeDocsVersion = $derived(
-        findActiveVersion(router.active, versionPathPrefix),
+        findActiveVersion(normalizeRootPath(window.location.pathname), versionPathPrefix),
     );
     const resolvedDefaultVersion = $derived.by(() => {
         if (!versionManifest) return null;
@@ -757,7 +800,7 @@
     const localeSwitchItems = $derived(
         getLocaleSwitchItems({
             entries: localeContext.entries,
-            activePath: router.active,
+            activePath: routePath,
             activeRootPath: currentRootPath,
             activeLocaleKey: localeContext.key,
             frontmatters,
@@ -1000,7 +1043,7 @@
     // Resolve the key of the active page in the frontmatter map so we can read
     // `layout` (and any other fields) without loading the full module.
     const activeKey = $derived.by(() => {
-        const rel = router.active
+        const rel = routePath
             .replace(currentRootPath, "")
             .replace(/^\//, "");
         const candidates: string[] = rel
@@ -1016,9 +1059,7 @@
         activeKey ? frontmatters[activeKey] : undefined,
     );
     /** True when the URL is inside the current locale root path but no matching file exists. */
-    const notFound = $derived(
-        activeKey === null && router.active.startsWith(currentRootPath),
-    );
+    const notFound = $derived(activeKey === null && routePath.startsWith(currentRootPath));
     const activeLayout = $derived<"doc" | "home" | "page">(
         activeFrontmatter?.layout ?? "doc",
     );
@@ -1036,7 +1077,7 @@
     );
 
     /** Auto prev/next from sidebar order; overridable per-page via frontmatter. */
-    const prevNextAuto = $derived(getPrevNext(router.active, flat));
+    const prevNextAuto = $derived(getPrevNext(routePath, flat));
     const prevNext = $derived({
         prev:
             activeFrontmatter?.prev === false
@@ -1061,7 +1102,7 @@
     });
 
     /** Breadcrumb path from root to active page. */
-    const breadcrumbItems = $derived(getBreadcrumbItems(router.active, menu));
+    const breadcrumbItems = $derived(getBreadcrumbItems(routePath, menu));
 
     /** Whether the left nav sidebar should be visible. */
     const showSidebar = $derived(activeLayout === "doc");
@@ -1099,7 +1140,7 @@
 
         if (href.startsWith("#")) {
             event.preventDefault();
-            router.navigateWithAnchor(router.active, href.slice(1));
+            navigateInternalWithAnchor(routePath, href.slice(1));
             return;
         }
 
@@ -1126,7 +1167,7 @@
                 // Resolve relative links against the current markdown file directory,
                 // not the route path (which may not end with "/").
                 const mdPath =
-                    router.activeMarkdownPath ?? `${router.active}.md`;
+                    router.activeMarkdownPath ?? `${routePath}.md`;
                 const mdDir = mdPath.slice(0, mdPath.lastIndexOf("/") + 1);
                 resolvedPath = new URL(pathPart, window.location.origin + mdDir)
                     .pathname;
@@ -1140,7 +1181,7 @@
             resolvedPath.replace(/\/index$/, "") || currentRootPath;
 
         event.preventDefault();
-        router.navigateWithAnchor(resolvedPath, hashPart || undefined);
+        navigateInternalWithAnchor(resolvedPath, hashPart || undefined);
     }
 </script>
 
@@ -1177,7 +1218,7 @@
         {versionStatusText}
         onVersionChange={navigateToVersion}
         onThemeChange={(t) => setThemeManually(t)}
-        navigate={router.navigate}
+        navigate={navigateInternal}
         onOpenSearch={() => (searchOpen = true)}
     />
 
@@ -1202,8 +1243,8 @@
                     {menu}
                     rootPath={currentRootPath}
                     ariaLabel={sidebarMenuLabel}
-                    active={router.active}
-                    navigate={router.navigate}
+                    active={routePath}
+                    navigate={navigateInternal}
                 />
             </aside>
             <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
@@ -1242,7 +1283,7 @@
                             {#if breadcrumb}
                                 <Breadcrumb
                                     items={breadcrumbItems}
-                                    navigate={router.navigate}
+                                    navigate={navigateInternal}
                                     rootPath={currentRootPath}
                                 />
                             {/if}
@@ -1273,7 +1314,7 @@
                                     next={prevNext.next}
                                     prevLabel={docFooterPrevLabel || undefined}
                                     nextLabel={docFooterNextLabel || undefined}
-                                    navigate={router.navigate}
+                                    navigate={navigateInternal}
                                 />
                             {/if}
                         {:else}
@@ -1291,7 +1332,7 @@
                         {#if breadcrumb}
                             <Breadcrumb
                                 items={breadcrumbItems}
-                                navigate={router.navigate}
+                                navigate={navigateInternal}
                                 rootPath={currentRootPath}
                             />
                         {/if}
@@ -1363,7 +1404,7 @@
                                 next={prevNext.next}
                                 prevLabel={docFooterPrevLabel || undefined}
                                 nextLabel={docFooterNextLabel || undefined}
-                                navigate={router.navigate}
+                                navigate={navigateInternal}
                             />
                         {/if}
                     {:catch}
@@ -1380,7 +1421,7 @@
                         href={currentRootPath}
                         onclick={(e) => {
                             e.preventDefault();
-                            router.navigate(currentRootPath);
+                            navigateInternal(currentRootPath);
                         }}>Wróć do dokumentacji</a
                     >
                 </div>
@@ -1398,14 +1439,14 @@
                     container={mainEl}
                     level={outlineNorm.level}
                     label={outlineNorm.label}
-                    active={router.active}
+                    active={routePath}
                 />
             {/if}
             {#if carbonAds && showOutline}
                 <CarbonAds
                     code={carbonAds.code}
                     placement={carbonAds.placement}
-                    active={router.active}
+                    active={routePath}
                 />
             {/if}
         </aside>
@@ -1423,7 +1464,7 @@
         <SearchModal
             bind:open={searchOpen}
             onClose={() => (searchOpen = false)}
-            onNavigate={router.navigateWithAnchor}
+            onNavigate={navigateInternalWithAnchor}
             localeRootPath={currentRootPath}
             allLocaleRootPaths={localeContext.allRootPaths}
             baseRootPath={normalizeRootPath(configuredRootPath)}

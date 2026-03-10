@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { createHash } from 'node:crypto';
 import {
     buildDefaultVersionPathPrefix,
     DEFAULT_OUTPUT_ROOT,
@@ -30,7 +31,8 @@ function parseArgs(argv) {
     const out = {
         strategy: '',
         cleanCache: false,
-        cleanOutput: false,
+        cleanVersions: false,
+        rebuildAll: false,
         passthrough: [],
     };
 
@@ -44,8 +46,12 @@ function parseArgs(argv) {
             out.cleanCache = true;
             continue;
         }
-        if (arg === '--clean-output') {
-            out.cleanOutput = true;
+        if (arg === '--clean-versions') {
+            out.cleanVersions = true;
+            continue;
+        }
+        if (arg === '--rebuild-all') {
+            out.rebuildAll = true;
             continue;
         }
         out.passthrough.push(arg);
@@ -87,6 +93,13 @@ function copyDir(src, dst) {
 function overlayDir(src, dst) {
     ensureDir(dst);
     fs.cpSync(src, dst, { recursive: true, force: true });
+}
+
+function mergeVersionAssetsIntoHostingRoot(versionOutDir, hostingRoot) {
+    const versionAssetsDir = path.join(versionOutDir, 'assets');
+    if (!fs.existsSync(versionAssetsDir)) return;
+    const hostingAssetsDir = path.join(hostingRoot, 'assets');
+    overlayDir(versionAssetsDir, hostingAssetsDir);
 }
 
 function resolveGregConfigPath() {
@@ -143,6 +156,63 @@ function git(args, options = {}) {
         shell: false,
         encoding: options.encoding ?? 'utf8',
     });
+}
+
+function collectFilesRecursively(absPath) {
+    if (!fs.existsSync(absPath)) return [];
+    const stat = fs.statSync(absPath);
+    if (stat.isFile()) return [absPath];
+    if (!stat.isDirectory()) return [];
+
+    const out = [];
+    const queue = [absPath];
+
+    while (queue.length > 0) {
+        const current = queue.pop();
+        const entries = fs.readdirSync(current, { withFileTypes: true });
+        for (const entry of entries) {
+            if (entry.name === '.git' || entry.name === 'node_modules') continue;
+            const full = path.join(current, entry.name);
+            if (entry.isDirectory()) {
+                queue.push(full);
+            } else if (entry.isFile()) {
+                out.push(full);
+            }
+        }
+    }
+
+    return out;
+}
+
+function computeWorkspaceBuildFingerprint() {
+    const hash = createHash('sha1');
+    const inputs = [
+        'vite.config.js',
+        'vite.config.ts',
+        'greg.config.js',
+        'greg.config.ts',
+        'package.json',
+        'src/main.js',
+        'src/App.svelte',
+        'src/lib/MarkdownDocs',
+        'scripts/generate-static.js',
+    ];
+
+    const files = inputs
+        .flatMap((item) => collectFilesRecursively(path.resolve(PROJECT_ROOT, item)))
+        .sort((a, b) => a.localeCompare(b));
+
+    if (files.length === 0) return 'no-workspace-inputs';
+
+    for (const filePath of files) {
+        const rel = path.relative(PROJECT_ROOT, filePath).replace(/\\/g, '/');
+        hash.update(rel);
+        hash.update('\0');
+        hash.update(fs.readFileSync(filePath));
+        hash.update('\0');
+    }
+
+    return hash.digest('hex').slice(0, 12);
 }
 
 function getCurrentBranch() {
@@ -416,9 +486,10 @@ async function main() {
     const hostingRoot = path.resolve(PROJECT_ROOT, versioning.hostOutDir || defaultHostingRoot);
     const workRoot = path.resolve(PROJECT_ROOT, '.greg/version-build');
     const branchCacheDir = path.resolve(PROJECT_ROOT, versioning.branchCacheDir || '.greg/version-cache');
+    const workspaceBuildFingerprint = computeWorkspaceBuildFingerprint();
 
     if (args.cleanCache) removeDir(branchCacheDir);
-    if (args.cleanOutput) removeDir(outputRoot);
+    if (args.cleanVersions) removeDir(outputRoot);
 
     if (usingDefaultOutDir && fs.existsSync(legacyOutputRoot) && legacyOutputRoot !== outputRoot) {
         removeDir(legacyOutputRoot);
@@ -460,6 +531,7 @@ async function main() {
 
             const targetOut = path.join(outputRoot, entry.version);
             copyDir(tempOut, targetOut);
+            mergeVersionAssetsIntoHostingRoot(targetOut, hostingRoot);
 
             manifest.versions.push({
                 version: entry.version,
@@ -482,8 +554,13 @@ async function main() {
                 branchCacheDir,
             });
 
-            const buildCache = path.join(branchCacheDir, 'builds', sanitizeSegment(entry.version), sha);
-            const hasBuildCache = fs.existsSync(path.join(buildCache, 'index.html'));
+            const buildCache = path.join(
+                branchCacheDir,
+                'builds',
+                sanitizeSegment(entry.version),
+                `${sha}-${workspaceBuildFingerprint}`,
+            );
+            const hasBuildCache = !args.rebuildAll && fs.existsSync(path.join(buildCache, 'index.html'));
 
             if (!hasBuildCache) {
                 console.log(`[greg] versions: building '${entry.version}' from ${entry.branch} (${sha.slice(0, 8)})`);
@@ -499,6 +576,7 @@ async function main() {
 
             const targetOut = path.join(outputRoot, entry.version);
             copyDir(buildCache, targetOut);
+            mergeVersionAssetsIntoHostingRoot(targetOut, hostingRoot);
 
             manifest.versions.push({
                 version: entry.version,

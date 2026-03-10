@@ -187,7 +187,8 @@ What this command changes on disk:
 Optional maintenance flags:
 
 - `--clean-cache`: removes `.greg/version-cache` before building
-- `--clean-output`: removes output directory before building
+- `--clean-versions`: removes the versioned output directory before building
+- `--rebuild-all`: rebuilds every configured version and skips branch build cache reuse for this run
 
 ## UI Components
 
