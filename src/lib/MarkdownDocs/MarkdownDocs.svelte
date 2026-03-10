@@ -35,6 +35,7 @@
         resolveLocaleForPath,
     } from "./localeUtils";
     import {
+        buildDefaultVersionPathPrefix,
         DEFAULT_PATH_PREFIX,
         DEFAULT_VERSIONS_DIR_NAME,
     } from "./versioningDefaults.js";
@@ -178,12 +179,18 @@
     type VersioningUiConfig = {
         versionMenuLabel?: string;
         manifestUnavailableText?: string;
+        showManifestUnavailableStatus?: boolean;
         outdatedVersionMessage?: string;
         outdatedVersionActionLabel?: string;
     };
 
+    type VersioningLocaleUiConfig = Omit<
+        VersioningUiConfig,
+        "showManifestUnavailableStatus"
+    >;
+
     type VersioningLocaleConfig = {
-        ui?: VersioningUiConfig;
+        ui?: VersioningLocaleUiConfig;
     };
 
     let {
@@ -244,6 +251,9 @@
               ui?: VersioningUiConfig;
               locales?: Record<string, VersioningLocaleConfig>;
               pathPrefix?: string;
+                            branches?: Array<unknown>;
+                            folders?: Array<unknown>;
+                            foldersDir?: string;
           }
         | null;
     const globalVersioningUi = (versioningConfig?.ui ?? {}) as VersioningUiConfig;
@@ -265,7 +275,8 @@
     }
 
     function normalizeVersionPrefix(value: string | undefined): string {
-        const cleaned = String(value || DEFAULT_PATH_PREFIX)
+        const fallbackPrefix = buildDefaultVersionPathPrefix((gregConfig as any).base);
+        const cleaned = String(value || fallbackPrefix || DEFAULT_PATH_PREFIX)
             .trim()
             .replace(/^\/+|\/+$/g, "");
         return "/" + (cleaned || DEFAULT_VERSIONS_DIR_NAME);
@@ -282,6 +293,19 @@
     let manifestVersionOptions = $state<{ version: string; title: string; path: string }[]>([]);
     let versionManifestLoadError = $state(false);
     const versionPathPrefix = normalizeVersionPrefix(versioningConfig?.pathPrefix);
+    const hasVersionDefinitions = $derived.by(() => {
+        if (!versioningConfig) return false;
+        const hasBranches =
+            Array.isArray(versioningConfig.branches) &&
+            versioningConfig.branches.length > 0;
+        const hasFolders =
+            Array.isArray(versioningConfig.folders) &&
+            versioningConfig.folders.length > 0;
+        const hasFoldersDir =
+            typeof versioningConfig.foldersDir === "string" &&
+            versioningConfig.foldersDir.trim().length > 0;
+        return hasBranches || hasFolders || hasFoldersDir;
+    });
     function formatOutdatedMessage(
         currentTitle: string,
         defaultTitle: string,
@@ -297,6 +321,16 @@
 
     $effect(() => {
         let cancelled = false;
+
+        if (!hasVersionDefinitions) {
+            versionManifest = null;
+            manifestVersionOptions = [];
+            versionManifestLoadError = false;
+            return () => {
+                cancelled = true;
+            };
+        }
+
         const manifestUrl = `${versionPathPrefix}/versions.json`;
 
         fetch(manifestUrl)
@@ -626,7 +660,10 @@
         String(
             resolvedVersioningUi.manifestUnavailableText ||
                 "Version selector unavailable",
-        ),
+        ).trim(),
+    );
+    const showManifestUnavailableStatus = $derived(
+        globalVersioningUi.showManifestUnavailableStatus !== false,
     );
     const outdatedVersionActionLabel = $derived(
         String(resolvedVersioningUi.outdatedVersionActionLabel || "Go to latest"),
@@ -658,7 +695,11 @@
         ),
     );
     const versionStatusText = $derived(
-        versionManifestLoadError && versioningConfig ? manifestUnavailableText : "",
+        versionManifestLoadError &&
+            hasVersionDefinitions &&
+            showManifestUnavailableStatus
+            ? manifestUnavailableText
+            : "",
     );
     const mainTitle = $derived(localeContext.mainTitle);
     const nav = $derived(localeContext.nav);

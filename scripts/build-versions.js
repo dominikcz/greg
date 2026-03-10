@@ -6,8 +6,8 @@
  * - branches (default): extract docs snapshots from git refs
  * - folders: read docs directly from configured directories
  *
- * Produces output under `dist/__versions/<version>` by default and writes
- * `dist/__versions/versions.json` manifest.
+ * Produces output under `<outDir>/__versions/<version>` by default and writes
+ * `<outDir>/__versions/versions.json` manifest.
  */
 
 import fs from 'node:fs';
@@ -15,10 +15,13 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {
+    buildDefaultVersionPathPrefix,
     DEFAULT_OUTPUT_ROOT,
+    DEFAULT_OUTPUT_BASE_DIR,
     DEFAULT_PATH_PREFIX,
     DEFAULT_VERSIONS_DIR_NAME,
     LEGACY_VERSIONS_DIR_NAME,
+    normalizeBasePath,
 } from '../src/lib/MarkdownDocs/versioningDefaults.js';
 
 const PROJECT_ROOT = process.cwd();
@@ -397,8 +400,13 @@ async function main() {
     const strategy = args.strategy || versioning.strategy || 'branches';
     validateVersioningConfig(versioning, strategy);
     const globalRootPath = normalizeRootPath(config.rootPath, '/docs');
-    const versionPathPrefix = normalizePathPrefix(versioning.pathPrefix, DEFAULT_PATH_PREFIX);
-    const outputRoot = path.resolve(PROJECT_ROOT, versioning.outDir || DEFAULT_OUTPUT_ROOT);
+    const siteOutDir = String(config.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
+    const siteBase = normalizeBasePath(config.base);
+    const defaultOutputRoot = path.join(siteOutDir, DEFAULT_VERSIONS_DIR_NAME);
+    const defaultPathPrefix = buildDefaultVersionPathPrefix(siteBase);
+
+    const versionPathPrefix = normalizePathPrefix(versioning.pathPrefix, defaultPathPrefix || DEFAULT_PATH_PREFIX);
+    const outputRoot = path.resolve(PROJECT_ROOT, versioning.outDir || defaultOutputRoot || DEFAULT_OUTPUT_ROOT);
     const usingDefaultOutDir = !versioning.outDir;
     const legacyOutputRoot = path.resolve(PROJECT_ROOT, path.dirname(outputRoot), LEGACY_VERSIONS_DIR_NAME);
     const outputBaseName = path.basename(outputRoot).toLowerCase();

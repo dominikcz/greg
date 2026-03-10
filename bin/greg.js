@@ -18,6 +18,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve, dirname } from 'node:path';
 import fs from 'node:fs';
+import { DEFAULT_OUTPUT_BASE_DIR } from '../src/lib/MarkdownDocs/versioningDefaults.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -156,6 +157,10 @@ async function hasVersioningBuildConfig() {
     }
 }
 
+function resolveSiteOutDir(config) {
+    return String(config?.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
+}
+
 switch (command) {
     case 'init': {
         const initScript = resolve(__dirname, 'init.js');
@@ -186,13 +191,15 @@ switch (command) {
     }
     case 'build:static': {
         const startedAt = Date.now();
+        const config = await loadGregConfig();
+        const distDir = resolveSiteOutDir(config);
         const buildStatus = run('vite build', args, { exit: false });
         if (buildStatus !== 0) {
             printElapsedSeconds(startedAt);
             process.exit(buildStatus);
         }
         const staticScript = resolve(__dirname, '../scripts/generate-static.js');
-        const status = runNodeScript(staticScript, [], { exit: false });
+        const status = runNodeScript(staticScript, ['--distDir', distDir], { exit: false });
         printElapsedSeconds(startedAt);
         process.exit(status);
         break;

@@ -10,7 +10,7 @@ Greg supports multi-version documentation builds with two source strategies:
 - `branches` (default): reads docs from Git branches/refs
 - `folders`: reads docs from local version directories
 
-Both strategies produce the same final artifact (`dist/__versions/<version>` + `versions.json`).
+Both strategies produce the same final artifact (`<outDir>/__versions/<version>` + `versions.json`).
 After build, Greg also syncs the default version to `dist/` so the root output can be hosted directly.
 The difference is where source docs come from and how reproducible each build is.
 
@@ -90,8 +90,8 @@ How versioning works in this mode:
 1. For every `branches[]` entry, Greg resolves `branch` to a commit SHA.
 2. Greg creates or reuses a cached docs snapshot for that SHA under `.greg/version-cache/sources/...`.
 3. Greg builds the site for that snapshot (or reuses cached build output for the same SHA).
-4. Greg copies final output to `dist/__versions/<version>`.
-5. After all versions are processed, Greg writes one manifest file to `dist/__versions/versions.json`.
+4. Greg copies final output to `<outDir>/__versions/<version>`.
+5. After all versions are processed, Greg writes one manifest file to `<outDir>/__versions/versions.json`.
 6. Greg syncs the default version output to `dist/`.
 
 Important: Greg does not checkout branches in your working tree. It reads files directly from Git objects.
@@ -129,8 +129,8 @@ How versioning works in this mode:
 
 1. For every `folders[]` entry, Greg resolves `dir` to an absolute path.
 2. Greg runs a full Vite build using that directory as docs source.
-3. The temporary build output is copied to `dist/__versions/<version>`.
-4. After all versions are processed, Greg writes `dist/__versions/versions.json`.
+3. The temporary build output is copied to `<outDir>/__versions/<version>`.
+4. After all versions are processed, Greg writes `<outDir>/__versions/versions.json`.
 5. Greg syncs the default version output to `dist/`.
 
 Important: in folder mode, each configured version is rebuilt from current local files on each run.
@@ -148,6 +148,11 @@ greg build
 If `versioning` is configured, `greg build` automatically runs multi-version build.
 This prevents accidental replacement of versioned output by a single build.
 
+VitePress-compatible defaults in this flow:
+
+- top-level `greg.config.* > outDir` controls where versions are emitted (`<outDir>/__versions`)
+- top-level `greg.config.* > base` is used to derive default manifest URL prefix
+
 Force single-version Vite build (even with versioning configured):
 
 ```sh
@@ -156,15 +161,15 @@ greg build --single
 
 Output:
 
-- built sites in `dist/__versions/<version>`
-- manifest in `dist/__versions/versions.json`
+- built sites in `<outDir>/__versions/<version>` (default `dist/__versions/<version>`)
+- manifest in `<outDir>/__versions/versions.json`
 - default version copied to `dist/` for direct hosting
 
 What exactly happens when Greg runs multi-version build (`greg build` with versioning):
 
 1. Greg loads `greg.config.js` or `greg.config.ts` and validates `versioning` schema.
 2. Greg selects strategy (`versioning.strategy`, default `branches`).
-3. Greg prepares working directories: output root (default `dist/__versions`), temporary work root (`.greg/version-build`), and branch cache root (`.greg/version-cache`).
+3. Greg prepares working directories: output root (default `<outDir>/__versions`, where `outDir` defaults to `dist`), temporary work root (`.greg/version-build`), and branch cache root (`.greg/version-cache`).
 4. Greg builds each configured version according to strategy.
 5. Greg validates uniqueness of version IDs and validates aliases (`alias -> version`).
 6. Greg resolves default version (configured `default` or first built version).
@@ -173,7 +178,7 @@ What exactly happens when Greg runs multi-version build (`greg build` with versi
 
 What this command changes on disk:
 
-- writes/updates files in `dist/__versions`
+- writes/updates files in `<outDir>/__versions`
 - writes/updates files in `dist` (default version sync)
 - writes/updates internal working data under `.greg/`
 - does not modify your source docs files
@@ -199,6 +204,7 @@ export default {
     ui: {
       versionMenuLabel: "Version",
       manifestUnavailableText: "Version selector unavailable",
+      showManifestUnavailableStatus: false,
       outdatedVersionMessage: "You are viewing an older version ({current}). Recommended: {default}.",
       outdatedVersionActionLabel: "Go to latest"
     }
@@ -241,12 +247,14 @@ Text resolution priority:
 2. `versioning.ui`
 3. built-in defaults
 
+`showManifestUnavailableStatus` is global-only and must be configured in `versioning.ui`.
+
 ## Fallback Behavior
 
 If `versions.json` cannot be loaded:
 
 - Greg hides the selector
-- Greg shows `manifestUnavailableText` in the header
+- Greg shows `manifestUnavailableText` in the header only when `showManifestUnavailableStatus` is not `false`
 
 This keeps docs usable even if a deployment serves only a single version.
 

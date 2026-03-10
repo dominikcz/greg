@@ -1,6 +1,9 @@
 import type { GregConfig } from '@dominikcz/greg'
 
 export default {
+    // VitePress-compatible build options:
+    // base: '/',
+    // outDir: 'dist',
     rootPath: '{{ROOT_PATH}}',
     mainTitle: '{{TITLE}}',
     sidebar: 'auto',
@@ -14,6 +17,7 @@ export default {
     //     ui: {
     //         versionMenuLabel: 'Version',
     //         manifestUnavailableText: 'Version selector unavailable',
+    //         showManifestUnavailableStatus: false,
     //         outdatedVersionMessage: 'You are viewing an older version ({current}). Recommended: {default}.',
     //         outdatedVersionActionLabel: 'Go to latest',
     //     },

@@ -175,6 +175,8 @@ export type GregVersioningConfig = {
         versionMenuLabel?: string;
         /** Header fallback text shown when versions.json cannot be loaded. */
         manifestUnavailableText?: string;
+        /** Show header fallback status when versions.json cannot be loaded. Default: true. */
+        showManifestUnavailableStatus?: boolean;
         /** Outdated notice text. Use placeholders: {current}, {default}. */
         outdatedVersionMessage?: string;
         /** Button label in outdated notice. */
@@ -210,6 +212,10 @@ export type GregVersioningConfig = {
 };
 
 export type GregConfig = {
+    /** VitePress-compatible base public path (e.g. '/docs/'). Default: '/'. */
+    base?: string;
+    /** VitePress-compatible build output directory. Default: 'dist'. */
+    outDir?: string;
     /** URL prefix of the docs folder (e.g. '/docs'). Default: '/docs'. */
     rootPath?: string;
     /** Version badge shown in the header. Empty string = hidden. */

@@ -7,6 +7,10 @@
  * @type {import('./src/vite-env').GregConfig}
  */
 export default {
+    /** VitePress-compatible base public path. */
+    base: '/',
+    /** VitePress-compatible build output directory. */
+    outDir: 'dist',
     /** URL prefix of the docs folder. */
     rootPath: '/docs',
 
@@ -197,6 +201,7 @@ export default {
         ui: {
             versionMenuLabel: 'Version',
             manifestUnavailableText: 'Version selector unavailable',
+            showManifestUnavailableStatus: false,
             outdatedVersionMessage: 'You are viewing an older version ({current}). Recommended: {default}.',
             outdatedVersionActionLabel: 'Go to latest',
         },

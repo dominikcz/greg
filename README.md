@@ -263,8 +263,13 @@ After configuration is in place, run:
 greg build
 ```
 
-Output is generated to `dist/__versions/<version>` and a manifest is written to `dist/__versions/versions.json`.
+Output is generated to `<outDir>/__versions/<version>` (default `dist/__versions/<version>`) and a manifest is written to `<outDir>/__versions/versions.json`.
 After that, Greg syncs the default version to `dist/` so the root output is directly hostable.
+
+Defaults are VitePress-compatible:
+
+- `outDir` comes from top-level `greg.config.* > outDir` (default `dist`)
+- manifest path prefix is based on top-level `greg.config.* > base` (default `/`)
 
 Optional UI labels/messages can be configured under `versioning.ui`:
 
@@ -274,6 +279,7 @@ export default {
         ui: {
             versionMenuLabel: 'Version',
             manifestUnavailableText: 'Version selector unavailable',
+            showManifestUnavailableStatus: false,
             outdatedVersionMessage: 'You are viewing an older version ({current}). Recommended: {default}.',
             outdatedVersionActionLabel: 'Go to latest'
         }

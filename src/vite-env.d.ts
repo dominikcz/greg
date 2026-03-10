@@ -136,6 +136,7 @@ declare module 'virtual:greg-config' {
         ui?: {
             versionMenuLabel?: string;
             manifestUnavailableText?: string;
+            showManifestUnavailableStatus?: boolean;
             outdatedVersionMessage?: string;
             outdatedVersionActionLabel?: string;
         };
@@ -156,6 +157,8 @@ declare module 'virtual:greg-config' {
         branchCacheDir?: string;
     };
     type GregConfig = {
+        base?: string;
+        outDir?: string;
         rootPath?: string;
         version?: string;
         mainTitle?: string;
