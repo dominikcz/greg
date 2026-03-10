@@ -385,6 +385,8 @@
 
         const currentPath = normalizeRootPath(window.location.pathname);
         const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
+        const isDefaultTarget =
+            Boolean(resolvedDefaultVersion) && version === resolvedDefaultVersion;
         const search = window.location.search || "";
         const hash = window.location.hash || "";
 
@@ -398,13 +400,21 @@
                     : currentPath.startsWith(currentPrefix + "/")
                       ? currentPath.slice(currentPrefix.length)
                       : "";
-            targetPath = normalizeRootPath(next.path + suffix);
+            if (isDefaultTarget) {
+                targetPath = suffix ? normalizeRootPath(suffix) : "/";
+            } else {
+                targetPath = normalizeRootPath(next.path + suffix);
+            }
         } else if (
             currentPath === currentRootPath ||
             currentPath.startsWith(currentRootPath + "/")
         ) {
-            const suffix = currentPath.slice(currentRootPath.length);
-            targetPath = normalizeRootPath(next.path + currentRootPath + suffix);
+            if (isDefaultTarget) {
+                targetPath = currentPath;
+            } else {
+                const suffix = currentPath.slice(currentRootPath.length);
+                targetPath = normalizeRootPath(next.path + currentRootPath + suffix);
+            }
         }
 
         window.location.assign(`${targetPath}${search}${hash}`);
