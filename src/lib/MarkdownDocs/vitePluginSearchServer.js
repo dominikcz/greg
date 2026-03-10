@@ -39,8 +39,25 @@ export function vitePluginSearchServer({
 	docsDir = 'docs',
 	rootPath = '/docs',
 	searchUrl = '/api/search',
+	fuzzy = {},
 } = {}) {
 	let resolvedDocsDir;
+	const fuzzyConfig = /** @type {{ threshold?: number; minMatchCharLength?: number; ignoreLocation?: boolean }} */ (fuzzy);
+	const threshold = Number.isFinite(Number(fuzzyConfig.threshold))
+		? Number(fuzzyConfig.threshold)
+		: 0.35;
+	const minMatchCharLength = Number.isFinite(Number(fuzzyConfig.minMatchCharLength))
+		? Math.max(1, Number(fuzzyConfig.minMatchCharLength))
+		: 3;
+	const ignoreLocation = fuzzyConfig.ignoreLocation !== false;
+	const fuseOptions = {
+		includeScore: true,
+		includeMatches: true,
+		threshold,
+		ignoreLocation,
+		minMatchCharLength,
+		keys: FUSE_OPTIONS.keys,
+	};
 
 	// Fuse instance, lazily built and cached between requests.
 	// Cleared whenever a .md file changes.
@@ -53,7 +70,7 @@ export function vitePluginSearchServer({
 		if (fuseCache) return fuseCache;
 		if (!buildPromise) {
 			buildPromise = buildSearchIndex(resolvedDocsDir, rootPath).then(index => {
-				fuseCache = new Fuse(index, FUSE_OPTIONS);
+				fuseCache = new Fuse(index, fuseOptions);
 				return fuseCache;
 			}).catch(err => {
 				buildPromise = null; // allow retry
@@ -69,6 +86,32 @@ export function vitePluginSearchServer({
 		invalidateSearchIndexCache();
 	}
 
+	function normalizePath(value) {
+		const raw = String(value ?? '').trim();
+		if (!raw || raw === '/') return '/';
+		return '/' + raw.replace(/^\/+|\/+$/g, '');
+	}
+
+	function isPathInLocale(id, localeRoot, baseRoot, localeRoots) {
+		const currentRoot = normalizePath(localeRoot);
+		const normalizedBase = normalizePath(baseRoot);
+		const normalizedId = normalizePath(id);
+		const roots = (localeRoots ?? []).map(normalizePath);
+
+		if (!(normalizedId === currentRoot || normalizedId.startsWith(currentRoot + '/'))) {
+			return false;
+		}
+
+		if (currentRoot === normalizedBase) {
+			const otherRoots = roots.filter((rp) => rp !== currentRoot);
+			if (otherRoots.some((rp) => normalizedId === rp || normalizedId.startsWith(rp + '/'))) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	/** Connect-compatible middleware factory */
 	function middleware() {
 		return async (req, res, next) => {
@@ -81,10 +124,21 @@ export function vitePluginSearchServer({
 			const q = (params.get('q') ?? '').trim();
 			// Cap limit to protect server from expensive searches
 			const limit = Math.min(Math.max(parseInt(params.get('limit') ?? '10', 10) || 10, 1), 50);
+			const localeRoot = params.get('localeRoot');
+			const baseRoot = params.get('baseRoot');
+			const localeRoots = (params.get('localeRoots') ?? '')
+				.split(',')
+				.map(v => v.trim())
+				.filter(Boolean);
 
 			try {
 				const fuse = await loadFuse();
-				const results = q ? fuse.search(q, { limit }).map(buildFuseResult) : [];
+				let results = q ? fuse.search(q, { limit }).map(buildFuseResult) : [];
+				if (localeRoot && baseRoot) {
+					results = results.filter((result) =>
+						isPathInLocale(result.id, localeRoot, baseRoot, localeRoots),
+					);
+				}
 				const body = JSON.stringify({ query: q, results });
 				res.writeHead(200, {
 					'Content-Type': 'application/json; charset=utf-8',
@@ -105,7 +159,7 @@ export function vitePluginSearchServer({
 		name: 'greg:search-server',
 
 		configResolved(config) {
-			resolvedDocsDir = path.join(config.root, docsDir);
+			resolvedDocsDir = path.resolve(config.root, docsDir);
 		},
 
 		configureServer(server) {

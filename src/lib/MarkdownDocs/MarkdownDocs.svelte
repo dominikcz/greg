@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-    import type { Snippet } from "svelte";
+    import { tick, type Snippet } from "svelte";
     import DocsNavigation from "./DocsNavigation.svelte";
     import DocsSiteHeader from "./DocsSiteHeader.svelte";
     import SearchModal from "./SearchModal.svelte";
@@ -159,7 +159,7 @@
          * `(query: string, limit?: number) => Promise<SearchResult[]>`
          * Overrides greg.config.js › search.provider when set.
          * The function must return objects matching the SearchResult shape:
-         * { id, title, titleHtml, sectionTitle, sectionAnchor, excerptHtml, score }
+         * { id, title, titleHtml, sectionTitle, sectionTitleHtml?, sectionAnchor, excerptHtml, score }
          */
         searchProvider?: (query: string, limit?: number) => Promise<any[]>;
     };
@@ -700,6 +700,225 @@
     function navigateInternalWithAnchor(path: string, anchor?: string) {
         router.navigateWithAnchor(applyCurrentVersionPrefix(path), anchor);
     }
+
+    const SEARCH_HIGHLIGHT_STORAGE_KEY = "greg-search-highlight";
+
+    function clearSearchHighlights(container: HTMLElement) {
+        const marks = container.querySelectorAll("mark[data-greg-search-highlight='true']");
+        for (const mark of marks) {
+            const parent = mark.parentNode;
+            if (!parent) continue;
+            parent.replaceChild(document.createTextNode(mark.textContent || ""), mark);
+            parent.normalize();
+        }
+    }
+
+    function escapeRegex(value: string): string {
+        return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function extractSearchTerms(phrase: string): string[] {
+        return Array.from(
+            new Set(
+                phrase
+                    .split(/\s+/)
+                    .map((token) => token.trim())
+                    .filter((token) => token.length >= 2),
+            ),
+        );
+    }
+
+    function highlightSearchTerms(container: HTMLElement, phrase: string): number {
+        const terms = extractSearchTerms(phrase);
+        if (terms.length === 0) return 0;
+
+        const pattern = new RegExp(`(${terms.map(escapeRegex).join("|")})`, "gi");
+        const loweredTerms = terms.map((term) => term.toLowerCase());
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+            acceptNode: (node) => {
+                const parent = node.parentElement;
+                if (!parent) return NodeFilter.FILTER_REJECT;
+                if (
+                    parent.closest(
+                        "script,style,code,pre,kbd,samp,var,mark[data-greg-search-highlight='true']",
+                    )
+                ) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                const text = String(node.textContent || "").toLowerCase();
+                if (!text) return NodeFilter.FILTER_REJECT;
+                return loweredTerms.some((term) => text.includes(term))
+                    ? NodeFilter.FILTER_ACCEPT
+                    : NodeFilter.FILTER_REJECT;
+            },
+        });
+
+        const textNodes: Text[] = [];
+        while (walker.nextNode()) {
+            textNodes.push(walker.currentNode as Text);
+        }
+
+        let count = 0;
+        for (const textNode of textNodes) {
+            const text = textNode.textContent || "";
+            pattern.lastIndex = 0;
+            if (!pattern.test(text)) continue;
+            pattern.lastIndex = 0;
+
+            const fragment = document.createDocumentFragment();
+            let lastIndex = 0;
+            let match: RegExpExecArray | null;
+
+            while ((match = pattern.exec(text)) !== null) {
+                const index = match.index;
+                if (index > lastIndex) {
+                    fragment.appendChild(
+                        document.createTextNode(text.slice(lastIndex, index)),
+                    );
+                }
+
+                const mark = document.createElement("mark");
+                mark.setAttribute("data-greg-search-highlight", "true");
+                mark.textContent = match[0];
+                fragment.appendChild(mark);
+                count++;
+                lastIndex = index + match[0].length;
+            }
+
+            if (lastIndex < text.length) {
+                fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+            }
+
+            textNode.parentNode?.replaceChild(fragment, textNode);
+        }
+
+        return count;
+    }
+
+    function applyPendingSearchHighlights() {
+        if (!mainEl) return;
+
+        let raw = "";
+        try {
+            raw = sessionStorage.getItem(SEARCH_HIGHLIGHT_STORAGE_KEY) || "";
+        } catch {
+            return;
+        }
+        if (!raw) return;
+
+        let parsed: { query?: string; path?: string; timestamp?: number } | null = null;
+        try {
+            parsed = JSON.parse(raw);
+        } catch {
+            parsed = null;
+        }
+        if (!parsed?.query) return;
+
+        clearSearchHighlights(mainEl);
+        const matches = highlightSearchTerms(mainEl, parsed.query);
+
+        if (matches > 0) {
+            const first = mainEl.querySelector(
+                "mark[data-greg-search-highlight='true']",
+            ) as HTMLElement | null;
+            first?.scrollIntoView({ block: "center", behavior: "smooth" });
+            try {
+                sessionStorage.removeItem(SEARCH_HIGHLIGHT_STORAGE_KEY);
+            } catch {
+                // Ignore storage errors.
+            }
+        }
+    }
+
+    function hasPendingSearchHighlightForRoute(): boolean {
+        let raw = "";
+        try {
+            raw = sessionStorage.getItem(SEARCH_HIGHLIGHT_STORAGE_KEY) || "";
+        } catch {
+            return false;
+        }
+        if (!raw) return false;
+
+        try {
+            const parsed = JSON.parse(raw) as { query?: string };
+            return Boolean(parsed?.query);
+        } catch {
+            return false;
+        }
+    }
+
+    $effect(() => {
+        const activePath = routePath;
+        if (!activePath) return;
+        if (!hasPendingSearchHighlightForRoute()) return;
+
+        let cancelled = false;
+        const timers: number[] = [];
+        const start = Date.now();
+        const schedule = async () => {
+            await tick();
+            const run = () => {
+                if (cancelled) return;
+                applyPendingSearchHighlights();
+                if (!hasPendingSearchHighlightForRoute()) return;
+                if (Date.now() - start > 6000) return;
+                const id = window.setTimeout(run, 250);
+                timers.push(id);
+            };
+            run();
+        };
+
+        schedule();
+        return () => {
+            cancelled = true;
+            for (const id of timers) window.clearTimeout(id);
+        };
+    });
+
+    $effect(() => {
+        const handler = () => {
+            let cancelled = false;
+            const timers: number[] = [];
+            const start = Date.now();
+            const run = async () => {
+                await tick();
+                if (cancelled) return;
+                applyPendingSearchHighlights();
+                if (!hasPendingSearchHighlightForRoute()) return;
+                if (Date.now() - start > 6000) return;
+                const id = window.setTimeout(run, 250);
+                timers.push(id);
+            };
+            run();
+
+            return () => {
+                cancelled = true;
+                for (const id of timers) window.clearTimeout(id);
+            };
+        };
+
+        const listener = () => {
+            const cleanup = handler();
+            if (cleanup) window.setTimeout(cleanup, 6500);
+        };
+
+        window.addEventListener("greg-search-highlight-request", listener);
+        return () =>
+            window.removeEventListener(
+                "greg-search-highlight-request",
+                listener,
+            );
+    });
+
+    function navigateHome(path: string) {
+        const currentPath = normalizeRootPath(window.location.pathname);
+        const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
+        if (currentVersion) {
+            window.location.assign(path);
+            return;
+        }
+        navigateInternal(path);
+    }
     const localizedVersioningUi = $derived(
         getLocalizedVersioningUi(versioningConfig?.locales, localeContext.key),
     );
@@ -1236,6 +1455,7 @@
         onVersionChange={navigateToVersion}
         onThemeChange={(t) => setThemeManually(t)}
         navigate={navigateInternal}
+        {navigateHome}
         onOpenSearch={() => (searchOpen = true)}
     />
 

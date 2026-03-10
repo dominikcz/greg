@@ -346,6 +346,12 @@ export default {
      * Dev/preview exposes '/api/search' automatically via vitePluginSearchServer.
      * Production example:
      *   greg search-server --index dist/search-index.json --port 3100
+     *
+     * fuzzy lets you tune matching strictness:
+     * - threshold: 0..1, lower = stricter, fewer fuzzy matches
+     * - minMatchCharLength: minimum contiguous match length
+     * - ignoreLocation: true = match can be anywhere in text,
+     *   false = prefer matches closer to start of title/section/content
      */
     search: {
         provider: 'server',
@@ -353,6 +359,18 @@ export default {
         // to greg search-server (recommended for production).
         // Use full URL only when the search server is on a different origin:
         // serverUrl: 'http://127.0.0.1:3100/api/search',
-        serverUrl: '/api/search',
+        // serverUrl: '/api/search',
+        serverUrl: 'http://localhost:3100/api/search',
+
+        // Suggested strict preset for docs-heavy projects.
+        fuzzy: {
+            // Lower value = fewer loose matches by short fragments.
+            threshold: 0.18,
+            // Require at least 4 contiguous characters for a match.
+            minMatchCharLength: 4,
+            // true: useful for long docs where terms are often mid-paragraph.
+            ignoreLocation: true
+        }
+
     },
 };

@@ -41,6 +41,7 @@
 		onVersionChange?: (version: string) => void;
 		onThemeChange: (t: "light" | "dark") => void;
 		navigate: (path: string) => void;
+		navigateHome?: (path: string) => void;
 		onOpenSearch: () => void;
 	};
 
@@ -90,6 +91,7 @@
 		onVersionChange = () => {},
 		onThemeChange,
 		navigate,
+		navigateHome = navigate,
 		onOpenSearch,
 	}: Props = $props();
 
@@ -133,7 +135,7 @@
 			aria-label={logoAlt}
 			onclick={(e) => {
 				e.preventDefault();
-				navigate(rootPath);
+				navigateHome(rootPath);
 			}}
 		>
 			<span

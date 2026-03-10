@@ -53,6 +53,7 @@ async function loadGregConfig() {
 const gregConfig = await loadGregConfig();
 const base = normalizeBasePath(gregConfig.base, DEFAULT_SITE_BASE);
 const outDir = String(gregConfig.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
+const searchConfig = gregConfig.search ?? {};
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -69,7 +70,11 @@ export default defineConfig({
     svelte(),
     vitePluginGregConfig(),
     vitePluginSearchIndex({ docsDir, rootPath }),
-    vitePluginSearchServer({ docsDir, rootPath }),
+    vitePluginSearchServer({
+      docsDir,
+      rootPath,
+      fuzzy: searchConfig.fuzzy,
+    }),
     vitePluginFrontmatter({ docsDir, rootPath }),
     vitePluginCopyDocs({ docsDir, rootPath }),
   ],

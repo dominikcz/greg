@@ -192,6 +192,15 @@ declare module 'virtual:greg-config' {
             formatOptions?: Intl.DateTimeFormatOptions & { forceLocale?: boolean };
         };
         externalLinkIcon?: boolean;
+        search?: {
+            provider?: 'server' | 'local' | 'none';
+            serverUrl?: string;
+            fuzzy?: {
+                threshold?: number;
+                minMatchCharLength?: number;
+                ignoreLocation?: boolean;
+            };
+        };
         locales?: Record<string, LocaleConfig>;
         sidebar?: 'auto' | SidebarItem[];
         versioning?: GregVersioningConfig;

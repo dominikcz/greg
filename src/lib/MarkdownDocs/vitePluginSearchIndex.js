@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { resolve } from 'node:path';
 import { buildSearchIndex, invalidateSearchIndexCache } from './searchIndexBuilder.js';
 
 /**
@@ -18,7 +18,7 @@ export function vitePluginSearchIndex({ docsDir = 'docs', rootPath = '/docs' } =
 		name: 'vite-plugin-search-index',
 
 		configResolved(config) {
-			resolvedDocsDir = join(config.root, docsDir);
+			resolvedDocsDir = resolve(config.root, docsDir);
 		},
 
 		// Dev-server: answer GET /search-index.json with the cached index

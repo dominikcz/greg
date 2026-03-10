@@ -303,6 +303,23 @@ export type GregConfig = {
     };
     externalLinkIcon?: boolean;
 
+    /** Search mode and fuzzy matching tuning. */
+    search?: {
+        /** Search backend mode. */
+        provider?: 'server' | 'local' | 'none';
+        /** Endpoint used when provider is 'server'. */
+        serverUrl?: string;
+        /** Fuzzy matching settings for local/dev/prod search backends. */
+        fuzzy?: {
+            /** Fuse threshold (0..1), lower = stricter. Default: 0.35 */
+            threshold?: number;
+            /** Minimum contiguous match length. Default: 3 */
+            minMatchCharLength?: number;
+            /** Ignore match position in text. Default: true */
+            ignoreLocation?: boolean;
+        };
+    };
+
     /**
      * Sidebar configuration.
      *   'auto'      – generate sidebar from docs folder structure (default)

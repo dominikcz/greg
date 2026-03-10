@@ -448,7 +448,7 @@ function getExcerptHtml(text, indices, contextLen = 150) {
 /**
  * Convert a raw Fuse.js result object into a client-ready SearchResult.
  * @param {any} fuseResult
- * @returns {{ id: string; title: string; titleHtml: string; sectionTitle: string; sectionAnchor: string; excerptHtml: string; score: number }}
+ * @returns {{ id: string; title: string; titleHtml: string; sectionTitle: string; sectionTitleHtml: string; sectionAnchor: string; excerptHtml: string; score: number }}
  */
 export function buildFuseResult(fuseResult) {
 	const { item, matches = [], score = 1 } = fuseResult;
@@ -463,25 +463,31 @@ export function buildFuseResult(fuseResult) {
 	const sectionContent = sorted.find(m => m.key === 'sections.content');
 	const sectionHeading = sorted.find(m => m.key === 'sections.heading');
 
-	let excerptHtml = '', sectionTitle = '', sectionAnchor = '';
+	let excerptHtml = '', sectionTitle = '', sectionTitleHtml = '', sectionAnchor = '';
 
-	if (sectionContent) {
-		const sec = item.sections[sectionContent.refIndex];
-		sectionTitle = sec?.heading ?? '';
-		sectionAnchor = sec?.anchor ?? '';
-		excerptHtml = getExcerptHtml(sectionContent.value, sectionContent.indices);
-	} else if (sectionHeading) {
+	if (sectionHeading) {
 		const sec = item.sections[sectionHeading.refIndex];
 		sectionTitle = sec?.heading ?? '';
+		sectionTitleHtml = highlightText(sectionTitle, sectionHeading.indices);
 		sectionAnchor = sec?.anchor ?? '';
+		// Heading match is usually the most relevant intent signal.
 		excerptHtml = escapeHtml((sec?.content ?? '').slice(0, 150));
+	} else if (sectionContent) {
+		const sec = item.sections[sectionContent.refIndex];
+		sectionTitle = sec?.heading ?? '';
+		sectionTitleHtml = escapeHtml(sectionTitle);
+		sectionAnchor = sec?.anchor ?? '';
+		excerptHtml = getExcerptHtml(sectionContent.value, sectionContent.indices);
 	} else {
+		sectionTitleHtml = escapeHtml(sectionTitle);
 		excerptHtml = escapeHtml((item.sections[0]?.content ?? '').slice(0, 150));
 	}
+
+	if (!sectionTitleHtml) sectionTitleHtml = escapeHtml(sectionTitle);
 
 	const titleHtml = titleMatch
 		? highlightText(item.title, titleMatch.indices)
 		: escapeHtml(item.title);
 
-	return { id: item.id, title: item.title, titleHtml, sectionTitle, sectionAnchor, excerptHtml, score };
+	return { id: item.id, title: item.title, titleHtml, sectionTitle, sectionTitleHtml, sectionAnchor, excerptHtml, score };
 }

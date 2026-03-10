@@ -22,6 +22,7 @@
         title: string;
         titleHtml: string;
         sectionTitle: string;
+        sectionTitleHtml?: string;
         sectionAnchor: string;
         excerptHtml: string;
         score: number;
@@ -118,6 +119,16 @@
         searchProvider ? "custom" : (cfgSearch.provider ?? "server"),
     );
     const serverUrl: string = cfgSearch.serverUrl ?? "/api/search";
+    const fuzzyCfg = cfgSearch.fuzzy ?? {};
+    const localThreshold: number = Number.isFinite(Number(fuzzyCfg.threshold))
+        ? Number(fuzzyCfg.threshold)
+        : 0.35;
+    const localMinMatchCharLength: number = Number.isFinite(
+        Number(fuzzyCfg.minMatchCharLength),
+    )
+        ? Math.max(1, Number(fuzzyCfg.minMatchCharLength))
+        : 3;
+    const localIgnoreLocation: boolean = fuzzyCfg.ignoreLocation !== false;
 
     // ── State ──────────────────────────────────────────────────────────────────
 
@@ -149,9 +160,9 @@
             fuse = new Fuse(data, {
                 includeScore: true,
                 includeMatches: true,
-                threshold: 0.4,
-                ignoreLocation: true,
-                minMatchCharLength: 2,
+                threshold: localThreshold,
+                ignoreLocation: localIgnoreLocation,
+                minMatchCharLength: localMinMatchCharLength,
                 keys: [
                     { name: "title", weight: 3 },
                     { name: "sections.heading", weight: 2 },
@@ -207,12 +218,15 @@
             return;
         }
 
+        const displayLimit = 10;
+        const fetchLimit = 50;
+
         if (mode === "local") {
             if (!fuse) return;
             results = fuse
-                .search(q, { limit: 50 })
+                .search(q, { limit: fetchLimit })
                 .filter((res) => isPathInActiveLocale(res.item.id))
-                .slice(0, 10)
+                .slice(0, displayLimit)
                 .map(buildLocalResult);
             selectedIndex = 0;
             return;
@@ -225,17 +239,25 @@
         try {
             let raw: SearchResult[];
             if (mode === "custom" && searchProvider) {
-                raw = await searchProvider(q, 10);
+                raw = await searchProvider(q, fetchLimit);
             } else {
-                const url = `${serverUrl}?q=${encodeURIComponent(q)}&limit=10`;
+                const localeRoot = normalizePath(localeRootPath);
+                const baseRoot = normalizePath(baseRootPath);
+                const localeRoots = (allLocaleRootPaths ?? [])
+                    .map(normalizePath)
+                    .join(",");
+                const url =
+                    `${serverUrl}?q=${encodeURIComponent(q)}` +
+                    `&limit=${fetchLimit}` +
+                    `&localeRoot=${encodeURIComponent(localeRoot)}` +
+                    `&baseRoot=${encodeURIComponent(baseRoot)}` +
+                    `&localeRoots=${encodeURIComponent(localeRoots)}`;
                 const res = await fetch(url, { signal: abortCtrl.signal });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 raw = data.results ?? [];
             }
-            results = raw
-                .filter((result) => isPathInActiveLocale(result.id))
-                .slice(0, 10);
+            results = raw.slice(0, displayLimit);
             selectedIndex = 0;
         } catch (e: any) {
             if (e?.name === "AbortError") return; // superseded by newer query — ignore
@@ -369,12 +391,16 @@
         const titleHtml = titleMatch
             ? highlightText(item.title, titleMatch.indices)
             : escapeHtml(item.title);
+        const sectionTitleHtml = sectionHeading
+            ? highlightText(sectionTitle, sectionHeading.indices)
+            : escapeHtml(sectionTitle);
 
         return {
             id: item.id,
             title: item.title,
             titleHtml,
             sectionTitle,
+            sectionTitleHtml,
             sectionAnchor,
             excerptHtml,
             score,
@@ -403,7 +429,27 @@
     }
 
     function goTo(result: SearchResult) {
+        const phrase = query.trim();
+        if (phrase) {
+            try {
+                sessionStorage.setItem(
+                    "greg-search-highlight",
+                    JSON.stringify({
+                        query: phrase,
+                        path: result.id,
+                        timestamp: Date.now(),
+                    }),
+                );
+            } catch {
+                // Ignore storage errors and continue navigation.
+            }
+        }
         onNavigate(result.id, result.sectionAnchor || undefined);
+        window.setTimeout(() => {
+            window.dispatchEvent(
+                new CustomEvent("greg-search-highlight-request"),
+            );
+        }, 0);
         onClose();
     }
 
@@ -522,7 +568,8 @@
                                         <polyline points="9 18 15 12 9 6" />
                                     </svg>
                                     <span class="result-section"
-                                        >{result.sectionTitle}</span
+                                        >› {@html result.sectionTitleHtml ??
+                                            escapeHtml(result.sectionTitle)}</span
                                     >
                                 {/if}
                             </div>
