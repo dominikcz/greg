@@ -143,7 +143,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
                 }
             }
 
-            console.log(`\x1b[32mâś“\x1b[0m greg:copy-docs – ${count} files copied to ${path.relative(root, outDir)}/`);
+            console.log(`\x1b[32m✓\x1b[0m greg:copy-docs – ${count} files copied to ${path.relative(root, outDir)}/`);
         },
     };
 }

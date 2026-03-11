@@ -73,7 +73,7 @@ for (const route of routes) {
     fs.mkdirSync(outDir, { recursive: true });
     fs.copyFileSync(src, outFile);
     count++;
-    console.log(`  âś“  ${route}/index.html`);
+    console.log(`  ✓  ${route}/index.html`);
 }
 
 console.log(`\nStatic export: ${count} routes written to dist/`);
