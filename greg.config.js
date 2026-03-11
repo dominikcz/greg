@@ -8,7 +8,7 @@
  */
 export default {
     /** VitePress-compatible base public path. */
-    base: '/greg/',
+    base: '/',
     /** VitePress-compatible build output directory. */
     outDir: 'dist',
     /** VitePress-compatible docs source directory (physical folder). */
