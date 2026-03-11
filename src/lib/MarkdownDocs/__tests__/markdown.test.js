@@ -12,7 +12,7 @@ const importsFixtureOptions = {
 	docsDir: 'docs',
 };
 
-// â”€â”€â”€ rehype-slug â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── rehype-slug ───────────────────────────────────────────────────────────────
 
 describe('rehype-slug', () => {
 	it('adds id to h1', async () => {
@@ -32,7 +32,7 @@ describe('rehype-slug', () => {
 
 	it('slugifies special characters', async () => {
 		const html = await processMarkdown('## C++ & Rust');
-		// rehype-slug keeps consecutive punctuation: C++ becomes c-- (each + â†’ -)
+		// rehype-slug keeps consecutive punctuation: C++ becomes c-- (each + → -)
 		expect(html).toMatch(/id="c-[^"]*rust"/);
 	});
 
@@ -43,12 +43,12 @@ describe('rehype-slug', () => {
 	});
 });
 
-// â”€â”€â”€ rehype-autolink-headings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── rehype-autolink-headings ──────────────────────────────────────────────────
 
 describe('rehype-autolink-headings (behavior: prepend)', () => {
 	it('prepends a # anchor before heading text', async () => {
 		const html = await processMarkdown('## My Section');
-		// behavior:'prepend' â†’ <h2 id="..."><a class="header-anchor" ...>#</a>My Section</h2>
+		// behavior:'prepend' → <h2 id="..."><a class="header-anchor" ...>#</a>My Section</h2>
 		expect(html).toMatch(/<h2 id="my-section"><a class="header-anchor"[^>]*href="#my-section"[^>]*>#<\/a>My Section<\/h2>/);
 	});
 
@@ -59,9 +59,9 @@ describe('rehype-autolink-headings (behavior: prepend)', () => {
 	});
 });
 
-// â”€â”€â”€ [[TOC]] placeholder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── [[TOC]] placeholder ───────────────────────────────────────────────────────
 
-describe('rehypeTocPlaceholder â€” [[TOC]]', () => {
+describe('rehypeTocPlaceholder — [[TOC]]', () => {
 	const md = `
 [[TOC]]
 
@@ -147,9 +147,9 @@ describe('rehypeTocPlaceholder â€” [[TOC]]', () => {
 	});
 });
 
-// â”€â”€â”€ Custom Containers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Custom Containers ─────────────────────────────────────────────────────────
 
-describe('remarkContainers â€” ::: info', () => {
+describe('remarkContainers — ::: info', () => {
 	it('renders info container with default title', async () => {
 		const html = await processMarkdown('::: info\nContent\n:::');
 		expect(html).toContain('class="custom-block info"');
@@ -166,7 +166,7 @@ describe('remarkContainers â€” ::: info', () => {
 	});
 });
 
-describe('remarkContainers â€” ::: tip', () => {
+describe('remarkContainers — ::: tip', () => {
 	it('renders tip container with default title', async () => {
 		const html = await processMarkdown('::: tip\nA tip\n:::');
 		expect(html).toContain('class="custom-block tip"');
@@ -174,7 +174,7 @@ describe('remarkContainers â€” ::: tip', () => {
 	});
 });
 
-describe('remarkContainers â€” ::: warning', () => {
+describe('remarkContainers — ::: warning', () => {
 	it('renders warning container with default title', async () => {
 		const html = await processMarkdown('::: warning\nWatch out\n:::');
 		expect(html).toContain('class="custom-block warning"');
@@ -182,7 +182,7 @@ describe('remarkContainers â€” ::: warning', () => {
 	});
 });
 
-describe('remarkContainers â€” ::: danger', () => {
+describe('remarkContainers — ::: danger', () => {
 	it('renders danger container with default title', async () => {
 		const html = await processMarkdown('::: danger\nDangerous\n:::');
 		expect(html).toContain('class="custom-block danger"');
@@ -190,7 +190,7 @@ describe('remarkContainers â€” ::: danger', () => {
 	});
 });
 
-describe('remarkContainers â€” ::: details', () => {
+describe('remarkContainers — ::: details', () => {
 	it('renders details as <details> element', async () => {
 		const html = await processMarkdown('::: details\nHidden\n:::');
 		expect(html).toContain('<details');
@@ -225,7 +225,7 @@ describe('remarkContainers â€” ::: details', () => {
 	});
 });
 
-describe('remarkContainers â€” custom labels', () => {
+describe('remarkContainers — custom labels', () => {
 	it('respects infoLabel option', async () => {
 		const html = await processMarkdown('::: info\nMsg\n:::', { containers: { infoLabel: 'UWAGA' } });
 		expect(html).toContain('UWAGA');
@@ -238,7 +238,7 @@ describe('remarkContainers â€” custom labels', () => {
 	});
 });
 
-describe('remarkContainers â€” unknown type is ignored', () => {
+describe('remarkContainers — unknown type is ignored', () => {
 	it('leaves unknown ::: blocks as-is (not transformed)', async () => {
 		const html = await processMarkdown('::: custom-unknown\nContent\n:::');
 		expect(html).not.toContain('custom-block');
@@ -325,7 +325,7 @@ describe('rehype-code-title', () => {
 	});
 });
 
-describe('remarkContainers â€” content', () => {
+describe('remarkContainers — content', () => {
 	it('renders markdown content inside containers', async () => {
 		const html = await processMarkdown('::: info\n**bold** and `code`\n:::');
 		expect(html).toContain('<strong>bold</strong>');
@@ -357,9 +357,9 @@ describe('remarkContainers â€” content', () => {
 	});
 });
 
-// â”€â”€â”€ docsUtils â€” __partial filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── docsUtils — __partial filter ─────────────────────────────────────────────
 
-describe('docsUtils â€” prepareMenu', async () => {
+describe('docsUtils — prepareMenu', async () => {
 	const { prepareMenu, parseSidebarConfig } = await import('../docsUtils.js');
 	const { handleSectionClick } = await import('../navigationUtils.js');
 
@@ -515,7 +515,7 @@ describe('docsUtils â€” prepareMenu', async () => {
 	});
 });
 
-describe('imports â€” snippets and markdown includes', () => {
+describe('imports — snippets and markdown includes', () => {
 	const testFile = path.join(process.cwd(), 'src/lib/MarkdownDocs/__tests__/fixtures/test.md');
 
 	it('imports code snippet with <<< as code block (no markdown parsing inside)', async () => {
@@ -667,7 +667,7 @@ describe('imports â€” snippets and markdown includes', () => {
 	});
 });
 
-describe('remarkImportsBrowser â€” link normalization', () => {
+describe('remarkImportsBrowser — link normalization', () => {
 	async function renderBrowserMarkdown(markdown, options) {
 		const file = await unified()
 			.use(remarkParse)

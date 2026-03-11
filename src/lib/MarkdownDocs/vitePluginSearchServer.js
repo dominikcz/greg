@@ -42,6 +42,7 @@ export function vitePluginSearchServer({
 	fuzzy = {},
 } = {}) {
 	let resolvedDocsDir;
+	let viteBase = '/';
 	const fuzzyConfig = /** @type {{ threshold?: number; minMatchCharLength?: number; ignoreLocation?: boolean }} */ (fuzzy);
 	const threshold = Number.isFinite(Number(fuzzyConfig.threshold))
 		? Number(fuzzyConfig.threshold)
@@ -98,7 +99,11 @@ export function vitePluginSearchServer({
 		const normalizedId = normalizePath(id);
 		const roots = (localeRoots ?? []).map(normalizePath);
 
-		if (!(normalizedId === currentRoot || normalizedId.startsWith(currentRoot + '/'))) {
+		const inCurrentRoot = currentRoot === '/'
+			? normalizedId.startsWith('/')
+			: (normalizedId === currentRoot || normalizedId.startsWith(currentRoot + '/'));
+
+		if (!inCurrentRoot) {
 			return false;
 		}
 
@@ -117,7 +122,13 @@ export function vitePluginSearchServer({
 		return async (req, res, next) => {
 			const urlStr = req.url ?? '';
 			const qIdx = urlStr.indexOf('?');
-			const pathname = qIdx >= 0 ? urlStr.slice(0, qIdx) : urlStr;
+			const rawPathname = qIdx >= 0 ? urlStr.slice(0, qIdx) : urlStr;
+			// Strip the Vite base prefix — configureServer runs before Vite's
+			// own base-stripping middleware, so req.url still has the full prefix.
+			const base = viteBase === '/' ? '' : viteBase.replace(/\/$/, '');
+			const pathname = (base && rawPathname.startsWith(base))
+				? '/' + rawPathname.slice(base.length).replace(/^\/+/, '')
+				: rawPathname;
 			if (pathname !== searchUrl || req.method !== 'GET') return next();
 
 			const params = new URLSearchParams(qIdx >= 0 ? urlStr.slice(qIdx + 1) : '');
@@ -160,6 +171,7 @@ export function vitePluginSearchServer({
 
 		configResolved(config) {
 			resolvedDocsDir = path.resolve(config.root, docsDir);
+			viteBase = config.base ?? '/';
 		},
 
 		configureServer(server) {

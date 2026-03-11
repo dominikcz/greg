@@ -21,7 +21,7 @@ hero:
 
 features:
   - icon: 📝
-    title: Najpierw Markdown
+    title: Po prostu Markdown
     details: Twórz dokumentację w czystym Markdown, z kontenerami, grupami kodu, matematyką i dodatkami.
   - icon: ⚡
     title: Oparte o Vite

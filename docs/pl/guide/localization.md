@@ -5,22 +5,23 @@ order: 3
 
 ## Lokalizacja
 
-Greg obsĹ‚uguje konfiguracjÄ™ locale przez `locales` w
-`greg.config.js`. KaĹĽdy jÄ™zyk moĹĽe mieÄ‡ wĹ‚asne etykiety, nawigacjÄ™, sidebar
-i przetĹ‚umaczone teksty UI w `themeConfig`.
+Greg obsługuje konfigurację locale przez `locales` w
+`greg.config.js`. Każdy język może mieć własne etykiety, nawigację, sidebar
+i przetłumaczone teksty UI w `themeConfig`.
 
 ## Podstawowa mapa locale
 
 ```js
 export default {
-  srcDir: '/docs',
+  srcDir: 'docs',
+  docsBase: '',
   locales: {
     '/': {
       lang: 'en-US',
       label: 'English',
       title: 'Greg',
       themeConfig: {
-        nav: [{ text: 'Guide', link: '/docs/guide' }],
+        nav: [{ text: 'Guide', link: '/guide' }],
         sidebar: [{ text: 'Guide', auto: '/guide' }],
       },
     },
@@ -29,7 +30,7 @@ export default {
       label: 'Polski',
       title: 'Greg',
       themeConfig: {
-        nav: [{ text: 'Przewodnik', link: '/docs/pl/guide' }],
+        nav: [{ text: 'Przewodnik', link: '/pl/guide' }],
         sidebar: [{ text: 'Przewodnik', auto: '/guide' }],
       },
     },
@@ -37,15 +38,15 @@ export default {
 };
 ```
 
-Dla `srcDir: '/docs'` mapowanie URL locale wyglÄ…da tak:
+Dla `docsBase: ''` mapowanie URL locale wygląda tak:
 
-- `'/'` -> `/docs`
-- `'/pl/'` -> `/docs/pl`
+- `'/'` -> `/`
+- `'/pl/'` -> `/pl`
 
 ## Foldery locale i trasy
 
-PrzyjÄ™ta konwencja to trzymanie tĹ‚umaczeĹ„ w folderze prefiksowanym locale,
-na przykĹ‚ad:
+Przyjęta konwencja to trzymanie tłumaczeń w folderze prefiksowanym locale,
+na przykład:
 
 ```text
 docs/
@@ -58,36 +59,37 @@ To daje:
 - EN: `/docs/guide/getting-started`
 - PL: `/docs/pl/guide/getting-started`
 
-W przetĹ‚umaczonych stronach uĹĽywaj linkĂłw wewnÄ™trznych dla danego locale,
-ĹĽeby uniknÄ…Ä‡ przypadkowych Ĺ›cieĹĽek `/pl/pl/...`.
+W przetłumaczonych stronach używaj linków wewnętrznych dla danego locale,
+żeby uniknąć przypadkowych ścieżek `/pl/pl/...`.
 
-## Osobny katalog dla kaĹĽdego locale
+## Osobny katalog dla każdego locale
 
-MoĹĽesz teĹĽ trzymaÄ‡ kaĹĽdy jÄ™zyk w osobnym katalogu najwyĹĽszego poziomu.
+Możesz też trzymać każdy język w osobnym katalogu najwyższego poziomu.
 
 ```js
 export default {
-  srcDir: '/docs',
+  srcDir: 'docs',
+  docsBase: '',
   locales: {
     '/en/': {
       lang: 'en-US',
       label: 'English',
       themeConfig: {
-        nav: [{ text: 'Guide', link: '/docs/en/guide' }],
+        nav: [{ text: 'Guide', link: '/en/guide' }],
       },
     },
     '/pl/': {
       lang: 'pl-PL',
       label: 'Polski',
       themeConfig: {
-        nav: [{ text: 'Przewodnik', link: '/docs/pl/guide' }],
+        nav: [{ text: 'Przewodnik', link: '/pl/guide' }],
       },
     },
   },
 };
 ```
 
-Rekomendowana struktura treĹ›ci:
+Rekomendowana struktura treści:
 
 ```text
 docs/
@@ -99,27 +101,27 @@ docs/
     reference/
 ```
 
-W efekcie dostajesz adresy `/docs/en/...` i `/docs/pl/...` z caĹ‚kowicie
-rozdzielonymi drzewami treĹ›ci dla kaĹĽdego jÄ™zyka.
+W efekcie dostajesz adresy `/en/...` i `/pl/...` z całkowicie
+rozdzielonymi drzewami treści dla każdego języka.
 
-### DomyĹ›lne lÄ…dowanie na locale
+### Domyślne lądowanie na locale
 
-Gdy uĹĽywasz wyĹ‚Ä…cznie namespacowanych locale (np. `'/en/'` i `'/pl/'`, bez
+Gdy używasz wyłącznie namespacowanych locale (np. `'/en/'` i `'/pl/'`, bez
 locale `'/'`), Greg automatycznie przekierowuje:
 
 - `/` -> root pierwszego locale (np. `/docs/en`)
-- `/docs` (lub TwĂłj `srcDir`) -> root pierwszego locale
+- root docs (dla `docsBase: ''` będzie to `/`) -> root pierwszego locale
 
-To oznacza, ĹĽe kolejnoĹ›Ä‡ wpisĂłw w `locales` wyznacza domyĹ›lny jÄ™zyk.
+To oznacza, że kolejność wpisów w `locales` wyznacza domyślny język.
 
 Mechanizm krok po kroku:
 
 1. Greg sprawdza, czy istnieje locale `'/'`.
-2. JeĹ›li istnieje, redirect nie jest wykonywany.
-3. JeĹ›li nie istnieje i uĹĽytkownik wejdzie na `/` albo bazowy root docs,
+2. Jeśli istnieje, redirect nie jest wykonywany.
+3. Jeśli nie istnieje i użytkownik wejdzie na `/` albo bazowy root docs,
    Greg nawiguje do roota pierwszego wpisu z `locales`.
 
-PrzykĹ‚ad:
+Przykład:
 
 ```js
 locales: {
@@ -128,35 +130,35 @@ locales: {
 }
 ```
 
-W tym ukĹ‚adzie domyĹ›lnym jÄ™zykiem lÄ…dowania bÄ™dzie English, bo `'/en/'` jest
+W tym układzie domyślnym językiem lądowania będzie English, bo `'/en/'` jest
 pierwsze.
 
 ## Co trafia do `themeConfig`
 
-KaĹĽdy locale moĹĽe tĹ‚umaczyÄ‡ standardowe elementy UI dokumentacji:
+Każdy locale może tłumaczyć standardowe elementy UI dokumentacji:
 
 - `nav`, `sidebar`, `outline`
 - `docFooter.prev`, `docFooter.next`
-- etykiety jÄ™zyka i dostÄ™pnoĹ›ci (`langMenuLabel`, `skipToContentLabel`, ...)
+- etykiety języka i dostępności (`langMenuLabel`, `skipToContentLabel`, ...)
 - etykiety wyszukiwania przez `themeConfig.search.locales`
 
-PrzykĹ‚ad:
+Przykład:
 
 ```js
 themeConfig: {
-  langMenuLabel: 'ZmieĹ„ jÄ™zyk',
-  returnToTopLabel: 'WrĂłÄ‡ do gĂłry',
-  docFooter: { prev: 'Poprzednia strona', next: 'NastÄ™pna strona' },
+  langMenuLabel: 'Zmień język',
+  returnToTopLabel: 'Wróć do góry',
+  docFooter: { prev: 'Poprzednia strona', next: 'Następna strona' },
   search: {
     locales: {
       '/pl/': {
         button: { buttonText: 'Szukaj...', buttonAriaLabel: 'Wyszukiwarka' },
         modal: {
           searchBox: { placeholder: 'Szukaj w dokumentacji...' },
-          noResultsText: 'Brak wynikĂłw dla',
+          noResultsText: 'Brak wyników dla',
           loadingScreen: { loadingText: 'Wczytywanie indeksu...' },
-          errorScreen: { titleText: 'Nie udaĹ‚o siÄ™ wczytaÄ‡ indeksu wyszukiwania.' },
-          footer: { navigateText: 'nawiguj', selectText: 'otwĂłrz', closeText: 'zamknij' },
+          errorScreen: { titleText: 'Nie udało się wczytać indeksu wyszukiwania.' },
+          footer: { navigateText: 'nawiguj', selectText: 'otwórz', closeText: 'zamknij' },
         },
       },
     },
@@ -167,7 +169,7 @@ themeConfig: {
 ## Wyszukiwanie a lokalizacja
 
 Zachowanie wyszukiwania konfigurujesz globalnie w top-level `search`, a teksty
-UI wyszukiwarki zostajÄ… per-locale w `themeConfig.search.locales`.
+UI wyszukiwarki zostają per-locale w `themeConfig.search.locales`.
 
 ```js
 export default {
@@ -192,8 +194,8 @@ export default {
 };
 ```
 
-DziÄ™ki temu masz jednÄ… konfiguracjÄ™ backendu search i tĹ‚umaczenia osobno dla
-kaĹĽdego jÄ™zyka.
+Dzięki temu masz jedną konfigurację backendu search i tłumaczenia osobno dla
+każdego języka.
 
 ## Lokalizacja wersjonowania
 
@@ -230,7 +232,7 @@ Jesli `versions.json` nie jest dostepny, Greg pokazuje w headerze lokalizowany
 ## Rekomendowany workflow
 
 1. Zacznij od struktury stron EN.
-2. OdtwĂłrz te same Ĺ›cieĹĽki w `docs/pl/...`.
-3. PrzetĹ‚umacz treĹ›Ä‡ stron.
-4. PrzetĹ‚umacz nawigacjÄ™ i etykiety w `themeConfig` locale.
-5. Zbuduj projekt i zweryfikuj trasy oraz search dla obu jÄ™zykĂłw.
+2. Odtwórz te same ścieżki w `docs/pl/...`.
+3. Przetłumacz treść stron.
+4. Przetłumacz nawigację i etykiety w `themeConfig` locale.
+5. Zbuduj projekt i zweryfikuj trasy oraz search dla obu języków.

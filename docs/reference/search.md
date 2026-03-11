@@ -44,8 +44,8 @@ import { vitePluginSearchIndex, vitePluginSearchServer } from '@dominikcz/greg/p
 export default defineConfig({
   plugins: [
     svelte(),
-    vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/docs' }),
-    vitePluginSearchServer({ docsDir: 'docs', srcDir: '/docs' }),
+    vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/' }),
+    vitePluginSearchServer({ docsDir: 'docs', srcDir: '/' }),
   ],
 });
 ```
@@ -120,7 +120,7 @@ If missing, Greg falls back to escaped `sectionTitle` (without match-aware marku
 
 | Method                                     | Action      |
 | ------------------------------------------ | ----------- |
-| Click the **Searchâ€¦** button in the header | Opens modal |
+| Click the **Search…** button in the header | Opens modal |
 | `Ctrl + K`                                 | Opens modal |
 | `Cmd + K` (macOS)                          | Opens modal |
 
@@ -129,7 +129,7 @@ If missing, Greg falls back to escaped `sectionTitle` (without match-aware marku
 
 | Key       | Action                        |
 | --------- | ----------------------------- |
-| `â†‘` / `â†“` | Select previous / next result |
+| `↑` / `↓` | Select previous / next result |
 | `Enter`   | Navigate to selected result   |
 | `Esc`     | Close modal                   |
 
@@ -140,11 +140,11 @@ Results are scored by Fuse.js using weighted fields:
 
 | Field             | Weight |
 | ----------------- | ------ |
-| Page title        | 3Ă—     |
-| Section heading   | 2Ă—     |
-| Section body text | 1Ă—     |
+| Page title        | 3×      |
+| Section heading   | 2×      |
+| Section body text | 1×      |
 
-A fuzzy threshold of `0.4` is used â€” tighter than the default, so only genuine
+A fuzzy threshold of `0.4` is used — tighter than the default, so only genuine
 matches surface. `ignoreLocation: true` means the match can appear anywhere in
 the text, not just at the start.
 

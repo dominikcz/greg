@@ -13,7 +13,7 @@ Mount it in `src/App.svelte`:
     import MarkdownDocs from '@dominikcz/greg'
 </script>
 
-<MarkdownDocs srcDir="/docs" version="1.0.0" />
+<MarkdownDocs srcDir="/" version="1.0.0" />
 ```
 
 
@@ -50,7 +50,7 @@ Locale paths are resolved under `srcDir`:
 
 ```js
 export default {
-  srcDir: '/docs',
+<MarkdownDocs srcDir="/" version="1.0.0" />
   i18nRouting: true,
   locales: {
     '/': {
@@ -69,14 +69,15 @@ export default {
         lightModeSwitchTitle: 'Switch to light theme',
         darkModeSwitchTitle: 'Switch to dark theme',
         docFooter: { prev: 'Previous', next: 'Next' },
-      },
+  srcDir: 'docs',
+  docsBase: '',
     },
     '/pl/': {
       lang: 'pl-PL',
       label: 'Polski',
       title: 'Dokumentacja',
       themeConfig: {
-        nav: [{ text: 'Przewodnik', link: '/docs/pl/guide' }],
+        nav: [{ text: 'Guide', link: '/guide' }],
         sidebar: [{ text: 'Przewodnik', auto: '/pl/guide' }],
         outline: { level: [2, 3], label: 'Na tej stronie' },
         lastUpdatedText: 'Zaktualizowano:',
@@ -95,7 +96,7 @@ export default {
 ```
 
 ### `srcDir`
-
+        nav: [{ text: 'Przewodnik', link: '/pl/guide' }],
 - **Type:** `string`
 - **Default:** `"/docs"`
 
@@ -116,9 +117,11 @@ Pass the package version via Vite's `define`:
 
 ```svelte
 <!-- Assuming __VERSION__ is defined in vite.config.js -->
-<MarkdownDocs srcDir="/docs" version={__VERSION__} />
+<MarkdownDocs srcDir="/" version={__VERSION__} />
 ```
-
+URL prefix used by `<MarkdownDocs>` routing.
+In `greg.config.*` use top-level `docsBase` for this value.
+Top-level `srcDir` is the physical docs folder (e.g. `docs`).
 ### `mainTitle`
 
 - **Type:** `string`
@@ -127,14 +130,14 @@ Pass the package version via Vite's `define`:
 Name of the project shown in the top-left header.
 
 ```svelte
-<MarkdownDocs srcDir="/docs" version="1.0.0" mainTitle="My Project" />
+<MarkdownDocs srcDir="/" version="1.0.0" mainTitle="My Project" />
 ```
 
 ### `outline`
 
-- **Type:** `false | number | [number, number] | 'deep' | { level?: â€¦, label?: string }`
+- **Type:** `false | number | [number, number] | 'deep' | { level?: …, label?: string }`
 - **Default:** `[2, 3]`
-
+<MarkdownDocs srcDir="/" version={__VERSION__} />
 Controls the right-side **Outline** (on-this-page) panel.
 
 | Value                                 | Effect                             |
@@ -145,8 +148,8 @@ Controls the right-side **Outline** (on-this-page) panel.
 | `'deep'`                              | `h2` through `h6`                  |
 | `{ level: [2,4], label: 'Contents' }` | Custom range and panel label       |
 
-```svelte
-<MarkdownDocs srcDir="/docs" version="1.0.0" outline="deep" />
+<MarkdownDocs srcDir="/" version="1.0.0" mainTitle="My Project" />
+<MarkdownDocs srcDir="/" version="1.0.0" outline="deep" />
 ```
 
 ### `carbonAds`
@@ -159,7 +162,7 @@ See the [Carbon Ads reference](/reference/carbon-ads) for details.
 
 ```svelte
 <MarkdownDocs
-  srcDir="/docs"
+  srcDir="/"
   version="1.0.0"
   carbonAds={{ code: 'CWYD42JW', placement: 'myprojectdev' }}
 />
@@ -174,10 +177,10 @@ folder URL has no `index.md`). Useful for a custom landing splash or a
 "choose a topic" prompt.
 
 ```svelte
-<MarkdownDocs srcDir="/docs" version="1.0.0">
+<MarkdownDocs srcDir="/" version="1.0.0">
   {#snippet children()}
-    <p>đź‘ Select a page from the sidebar to get started.</p>
-  {/snippet}
+    <p>👉 Select a page from the sidebar to get started.</p>
+  srcDir="/"
 </MarkdownDocs>
 ```
 
@@ -194,7 +197,7 @@ import { vitePluginSearchIndex } from '@dominikcz/greg/plugins';
 export default defineConfig({
   plugins: [
     svelte(),
-    vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/docs' }),
+    vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/' }),
   ],
   resolve: {
     alias: {
@@ -207,18 +210,18 @@ export default defineConfig({
 | Option     | Description                                                        |
 | ---------- | ------------------------------------------------------------------ |
 | `docsDir`  | Folder name relative to the project root that contains `.md` files |
-| `srcDir` | URL prefix â€” must match the `srcDir` prop                        |
+| `srcDir` | URL prefix — must match the `srcDir` prop                        |
 
 
 ## svelte.config.js
-
+    vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/' }),
 The markdown pipeline is configured in `svelte.config.js`. The `gregConfig`
 object at the top of the file exposes user-facing options:
 
 ```js
 const gregConfig = {
   markdown: {
-    math: false,   // set to true to enable $â€¦$ / $$â€¦$$ rendering via MathJax
+    math: false,   // set to true to enable $…$ / $$…$$ rendering via MathJax
   },
 };
 ```

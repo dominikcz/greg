@@ -15,17 +15,17 @@ export default {
     srcDir: 'docs',
     /** VitePress-compatible: patterns to exclude from docs source. */
     srcExclude: [],
-    /** URL prefix for the docs section in the browser (default: 'docs'). */
-    docsBase: 'documentation',
+    /** URL prefix for the docs section in the browser ('' = root URLs like /guide). */
+    // docsBase: '',
 
     // ── Locales (VitePress-compatible) ─────────────────────────────────────
     /**
-     * Optional VitePress-style locale map.
-     * Keys are locale paths ('/', '/pl/', ...), resolved under `docsBase`. Default value is `docs`.
-     *
-     * Example for docsBase 'documentation':
-     * - '/'    -> '/documentation'
-     * - '/pl/' -> '/documentation/pl'
+    * Optional VitePress-style locale map.
+    * Keys are locale paths ('/', '/pl/', ...), resolved under `docsBase`.
+    *
+    * Example for docsBase '':
+    * - '/'    -> '/'
+    * - '/pl/' -> '/pl'
      */
     locales: {
         '/': {
@@ -363,8 +363,7 @@ export default {
         // to greg search-server (recommended for production).
         // Use full URL only when the search server is on a different origin:
         // serverUrl: 'http://127.0.0.1:3100/api/search',
-        // serverUrl: '/api/search',
-        serverUrl: 'http://localhost:3100/api/search',
+        serverUrl: '/api/search',
 
         // Suggested strict preset for docs-heavy projects.
         fuzzy: {

@@ -5,7 +5,7 @@ import { buildSearchIndex, invalidateSearchIndexCache } from './searchIndexBuild
  * Vite plugin: serves /search-index.json in dev and emits it as a build asset.
  *
  * The build is shared with vitePluginSearchServer via the module-level cache
- * in searchIndexBuilder.js â€” both plugins pay the I/O cost only once.
+ * in searchIndexBuilder.js — both plugins pay the I/O cost only once.
  *
  * @param {object} options
  * @param {string} [options.docsDir='docs']   - directory (relative to project root)

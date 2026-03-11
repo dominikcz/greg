@@ -7,19 +7,19 @@
  * When the file is absent the module resolves to `export default {}`.
  *
  * Supported config keys (all optional):
- *   srcDir       string           â€“ physical docs source directory, relative to project root (default: 'docs')
- *   srcExclude   string[]         â€“ glob patterns to exclude from docs source (VitePress-compatible, default: [])
- *   docsBase     string           â€“ URL prefix for the docs section, e.g. 'docs' â†’ URLs like /docs/guide (default: 'docs')
- *   srcDir     string           â€“ @deprecated, use docsBase instead
- *   version      string           â€“ version badge text
- *   mainTitle    string           â€“ site title shown in the header
- *   outline      OutlineOption    â€“ global outline setting (VitePress-compatible)
- *   mermaidTheme string           â€“ default mermaid theme key
+ *   srcDir       string           – physical docs source directory, relative to project root (default: 'docs')
+ *   srcExclude   string[]         – glob patterns to exclude from docs source (VitePress-compatible, default: [])
+ *   docsBase     string           – URL prefix for the docs section, e.g. 'docs' → URLs like /docs/guide (default: 'docs')
+ *   srcDir     string           – @deprecated, use docsBase instead
+ *   version      string           – version badge text
+ *   mainTitle    string           – site title shown in the header
+ *   outline      OutlineOption    – global outline setting (VitePress-compatible)
+ *   mermaidTheme string           – default mermaid theme key
  *   carbonAds    { code, placement } | null
- *   breadcrumb   boolean          â€“ show breadcrumb above content
- *   backToTop    boolean          â€“ show Back To Top button
- *   lastModified boolean          â€“ show last-modified date below content
- *   locales      Record<string, LocaleConfig> â€“ VitePress-style locale map
+ *   breadcrumb   boolean          – show breadcrumb above content
+ *   backToTop    boolean          – show Back To Top button
+ *   lastModified boolean          – show last-modified date below content
+ *   locales      Record<string, LocaleConfig> – VitePress-style locale map
  *   sidebar      'auto' | SidebarItem[]
  *
  * HMR: changing greg.config.js triggers a full page reload.

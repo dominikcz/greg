@@ -50,8 +50,13 @@ async function loadGregConfig() {
 const gregConfig = await loadGregConfig();
 const base = normalizeBasePath(gregConfig.base, DEFAULT_SITE_BASE);
 const outDir = String(gregConfig.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
-const docsDir = process.env.GREG_DOCS_DIR || gregConfig.srcDir || 'docs';
-const srcDir = '/' + String(process.env.GREG_DOCS_BASE || gregConfig.docsBase || gregConfig.srcDir || 'docs').replace(/^\/+|\/+$/g, '');
+const srcDir = process.env.GREG_DOCS_DIR ?? gregConfig.srcDir ?? 'docs';
+const docsBaseValue = process.env.GREG_DOCS_BASE !== undefined
+  ? process.env.GREG_DOCS_BASE
+  : (Object.prototype.hasOwnProperty.call(gregConfig, 'docsBase')
+      ? gregConfig.docsBase
+  : '');
+const docsBase = '/' + String(docsBaseValue ?? '').replace(/^\/+|\/+$/g, '');
 const searchConfig = gregConfig.search ?? {};
 
 // https://vite.dev/config/
@@ -68,14 +73,14 @@ export default defineConfig({
   plugins: [
     svelte(),
     vitePluginGregConfig(),
-    vitePluginSearchIndex({ docsDir, srcDir }),
+    vitePluginSearchIndex({ docsDir: srcDir, srcDir: docsBase }),
     vitePluginSearchServer({
-      docsDir,
-      srcDir,
+      docsDir: srcDir,
+      srcDir: docsBase,
       fuzzy: searchConfig.fuzzy,
     }),
-    vitePluginFrontmatter({ docsDir, srcDir }),
-    vitePluginCopyDocs({ docsDir, srcDir }),
+    vitePluginFrontmatter({ docsDir: srcDir, srcDir: docsBase }),
+    vitePluginCopyDocs({ docsDir: srcDir, srcDir: docsBase }),
   ],
   define: {
     __NAME__: `"${pkg.name}"`,

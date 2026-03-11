@@ -224,10 +224,10 @@ export type GregConfig = {
     mainTitle?: string;
     /**
      * VitePress-compatible outline setting.
-     *   false       â€“ disable outline
-     *   2           â€“ h2 only
-     *   [2, 3]      â€“ h2 and h3 (default)
-     *   'deep'      â€“ h2â€“h6
+     *   false       – disable outline
+     *   2           – h2 only
+     *   [2, 3]      – h2 and h3 (default)
+     *   'deep'      – h2–h6
      *   { level: [2,3], label: 'On this page' }
      */
     outline?: OutlineOption | boolean;
@@ -241,8 +241,8 @@ export type GregConfig = {
     backToTop?: boolean;
     /**
      * Show last-modified date below content.
-     *   true  â€“ default format, browser locale
-     *   object â€“ full control: { text?, locale?, formatOptions? }
+     *   true  – default format, browser locale
+     *   object – full control: { text?, locale?, formatOptions? }
      */
     lastModified?: boolean | { text?: string; locale?: string; formatOptions?: Intl.DateTimeFormatOptions };
     /**
@@ -322,8 +322,8 @@ export type GregConfig = {
 
     /**
      * Sidebar configuration.
-     *   'auto'      â€“ generate sidebar from docs folder structure (default)
-     *   SidebarItem[] â€“ manual tree, optionally with auto sub-sections
+     *   'auto'      – generate sidebar from docs folder structure (default)
+     *   SidebarItem[] – manual tree, optionally with auto sub-sections
      */
     sidebar?: 'auto' | SidebarItem[];
     /** Multi-version docs build configuration. */

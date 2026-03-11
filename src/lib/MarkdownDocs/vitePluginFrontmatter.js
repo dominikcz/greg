@@ -5,7 +5,7 @@
  * YAML frontmatter using js-yaml and exposes the result as a virtual module:
  *
  *   import frontmatters from 'virtual:greg-frontmatter';
- *   // â†’ Record<string, { title?, order?, layout?, hero?, features?, ... }>
+ *   // → Record<string, { title?, order?, layout?, hero?, features?, ... }>
  *   // keys are route-prefixed paths, e.g. '/docs/guide/index.md'
  *
  * HMR: when a .md file changes its virtual module is invalidated so the dev
@@ -24,7 +24,10 @@ function parseFrontmatter(content) {
     const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!m) return {};
     try {
-        return yaml.load(m[1]) ?? {};
+        const parsed = yaml.load(m[1]);
+        return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+            ? parsed
+            : {};
     } catch {
         return {};
     }
@@ -36,10 +39,15 @@ function parseFrontmatter(content) {
 export function vitePluginFrontmatter({ docsDir = 'docs', srcDir = '/docs' } = {}) {
     let root = process.cwd();
 
+    function normalizeSrcDir(value) {
+        const cleaned = String(value ?? '').replace(/^\/+|\/+$/g, '');
+        return cleaned ? `/${cleaned}` : '/';
+    }
+
     /** Collect all .md paths and return the virtual module source. */
     function buildModule() {
         const absDocsDir = path.resolve(root, docsDir);
-        const normalizedSrcDir = '/' + String(srcDir || '/docs').replace(/^\/+|\/+$/g, '');
+        const normalizedSrcDir = normalizeSrcDir(srcDir);
         const entries = {};
 
         function walk(dir) {
@@ -52,7 +60,9 @@ export function vitePluginFrontmatter({ docsDir = 'docs', srcDir = '/docs' } = {
                     walk(full);
                 } else if (item.isFile() && item.name.endsWith('.md') && !item.name.startsWith('__')) {
                     const rel = path.relative(absDocsDir, full).replace(/\\/g, '/');
-                    const viteKey = `${normalizedSrcDir}/${rel}`; // e.g. /docs/guide/index.md
+                    const viteKey = normalizedSrcDir === '/'
+                        ? `/${rel}`
+                        : `${normalizedSrcDir}/${rel}`; // e.g. /docs/guide/index.md
                     try {
                         const content = fs.readFileSync(full, 'utf8');
                         const stat = fs.statSync(full);

@@ -347,7 +347,11 @@ export function resolveLocaleForPath(
             .find(
                 (entry) =>
                     cleanPath === entry.srcDir ||
-                    cleanPath.startsWith(entry.srcDir + "/"),
+                    cleanPath.startsWith(entry.srcDir + "/") ||
+                    (entry.segment && (
+                        cleanPath === entry.segment ||
+                        cleanPath.startsWith(entry.segment + "/")
+                    )),
             ) ?? entries[0];
 
     const themeConfig = matched.config.themeConfig ?? {};
@@ -446,8 +450,12 @@ function hasMarkdownForPath(
 ): boolean {
     const rel = routePath.replace(srcDir, "").replace(/^\//, "");
     const candidates = rel
-        ? [`${srcDir}/${rel}.md`, `${srcDir}/${rel}/index.md`]
-        : [`${srcDir}/index.md`, `${srcDir}index.md`];
+        ? (srcDir === "/"
+            ? [`/${rel}.md`, `/${rel}/index.md`]
+            : [`${srcDir}/${rel}.md`, `${srcDir}/${rel}/index.md`])
+        : (srcDir === "/"
+            ? [`/index.md`]
+            : [`${srcDir}/index.md`, `${srcDir}index.md`]);
     return candidates.some((candidate) => candidate in frontmatters);
 }
 
@@ -481,8 +489,12 @@ export function getLocaleSwitchItems(args: {
     const relPath =
         preservePath &&
         (activePath === activeSrcDir ||
-            activePath.startsWith(activeSrcDir + "/"))
-            ? activePath.slice(activeSrcDir.length)
+            (activeSrcDir === "/"
+                ? activePath.startsWith("/")
+                : activePath.startsWith(activeSrcDir + "/")))
+            ? (activeSrcDir === "/"
+                ? (activePath === "/" ? "" : activePath)
+                : activePath.slice(activeSrcDir.length))
             : "";
 
     return entries.map((entry) => {
@@ -492,13 +504,22 @@ export function getLocaleSwitchItems(args: {
                 ? entry.config.link.trim()
                 : "";
 
-        const link = localeLink
+        let link: string = localeLink
             ? EXTERNAL_LINK_RE.test(localeLink)
                 ? localeLink
                 : normalizeSrcDir(localeLink)
             : hasMarkdownForPath(frontmatters, entry.srcDir, mappedPath)
               ? mappedPath
               : entry.srcDir;
+        // For non-root locales without an explicit link, strip the docsBase prefix
+        // so the language switcher navigates to the locale-segment root (e.g. '/pl')
+        // rather than the docsBase-prefixed path (e.g. '/documentation/pl').
+        if (!localeLink && entry.segment) {
+            const base = entry.srcDir.slice(0, entry.srcDir.length - entry.segment.length);
+            if (base && (link === base || link.startsWith(base + "/"))) {
+                link = link.slice(base.length) || "/";
+            }
+        }
         return {
             key: entry.key,
             label: getLocaleLabel(entry),

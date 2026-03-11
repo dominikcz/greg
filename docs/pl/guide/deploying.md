@@ -1,11 +1,11 @@
 ---
-title: WdraĹĽanie
+title: Wdrażanie
 order: 6
 ---
 
-# WdraĹĽanie
+# Wdrażanie
 
-Greg buduje aplikacjÄ™ SPA. Serwer WWW musi zwracaÄ‡ `index.html` dla kaĹĽdej trasy, ktĂłra nie odpowiada fizycznemu plikowi.
+Greg buduje aplikację SPA. Serwer WWW musi zwracać `index.html` dla każdej trasy, która nie odpowiada fizycznemu plikowi.
 
 ## Build
 
@@ -25,26 +25,26 @@ dist/
 
 ## Generowanie statycznych tras
 
-JeĹ›li hosting nie wspiera fallbacku SPA, moĹĽesz wygenerowaÄ‡ kopie `index.html` dla kaĹĽdej trasy:
+Jeśli hosting nie wspiera fallbacku SPA, możesz wygenerować kopie `index.html` dla każdej trasy:
 
 ```sh
 greg build:static
 ```
 
-Polecenie uruchamia `vite build`, a nastÄ™pnie kopiuje `dist/index.html` do
-`dist/<route>/index.html` dla kaĹĽdej znanej strony. DziÄ™ki temu dziaĹ‚a to nawet
-na prostym hostingu statycznym bez reguĹ‚ przepisywania.
+Polecenie uruchamia `vite build`, a następnie kopiuje `dist/index.html` do
+`dist/<route>/index.html` dla każdej znanej strony. Dzięki temu działa to nawet
+na prostym hostingu statycznym bez reguł przepisywania.
 
 ## Eksport Markdown
 
-Aby wyeksportowaÄ‡ rozwiniÄ™te pliki Markdown (z includami i snippetami):
+Aby wyeksportować rozwinięte pliki Markdown (z includami i snippetami):
 
 ```sh
 greg build:markdown
 ```
 
-DomyĹ›lnie wynik trafia do `dist/resolved-markdown/`.
-MoĹĽesz uĹĽyÄ‡ `--docsDir` lub `--outDir`, aby zmieniÄ‡ Ĺ›cieĹĽki.
+Domyślnie wynik trafia do `dist/resolved-markdown/`.
+Możesz użyć `--docsDir` lub `--outDir`, aby zmienić ścieżki.
 
 ## Fallback SPA - konfiguracja serwera
 
@@ -113,13 +113,13 @@ Lub konfiguracja w `netlify.toml`:
 GitHub Pages natywnie nie wspiera fallbacku SPA. Typowy workaround:
 
 1. Skopiuj `dist/index.html` do `dist/404.html` po buildzie.
-2. Dodaj skrypt przekierowujÄ…cy w `404.html`, ktĂłry odtwarza oryginalny URL.
+2. Dodaj skrypt przekierowujący w `404.html`, który odtwarza oryginalny URL.
 
-Alternatywnie uĹĽyj GitHub Actions i workflow dla deployu SPA.
+Alternatywnie użyj GitHub Actions i workflow dla deployu SPA.
 
 ## Base path
 
-JeĹ›li docs sÄ… serwowane z subĹ›cieĹĽki (np. `https://example.com/my-project/`),
+Jeśli docs są serwowane z subścieżki (np. `https://example.com/my-project/`),
 ustaw `base` w `vite.config.js`:
 
 ```js
@@ -129,7 +129,7 @@ export default defineConfig({
 });
 ```
 
-Zaktualizuj teĹĽ `srcDir` w `greg.config.js`:
+Zaktualizuj też `srcDir` w `greg.config.js`:
 
 ```js
 export default {

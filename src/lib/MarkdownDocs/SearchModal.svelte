@@ -2,8 +2,9 @@
     import { onMount, tick } from "svelte";
     import Fuse from "fuse.js";
     import gregConfig from "virtual:greg-config";
+    import { withBase } from "./common";
 
-    // â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Types ──────────────────────────────────────────────────────────────────
 
     type SearchSection = {
         heading: string;
@@ -31,7 +32,7 @@
     /**
      * Custom search provider function.
      * `(query, limit?) => Promise<SearchResult[]>`
-     * When provided, takes priority over greg.config.js â€ş search.provider.
+     * When provided, takes priority over greg.config.js ”ş search.provider.
      */
     export type SearchProviderFn = (
         query: string,
@@ -92,7 +93,11 @@
         const baseRoot = normalizePath(baseSrcDir);
         const roots = (allLocaleSrcDirs ?? []).map(normalizePath);
 
-        if (!(id === currentRoot || id.startsWith(currentRoot + "/"))) {
+        const inCurrentRoot = currentRoot === "/"
+            ? id.startsWith("/")
+            : (id === currentRoot || id.startsWith(currentRoot + "/"));
+
+        if (!inCurrentRoot) {
             return false;
         }
 
@@ -111,7 +116,7 @@
         return true;
     }
 
-    // â”€â”€ Config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Config ─────────────────────────────────────────────────────────────────
 
     const cfgSearch = (gregConfig as any)?.search ?? {};
     /** Effective mode. Reactive so the prop can change at runtime. */
@@ -130,7 +135,7 @@
         : 3;
     const localIgnoreLocation: boolean = fuzzyCfg.ignoreLocation !== false;
 
-    // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── State ──────────────────────────────────────────────────────────────────
 
     let query = $state("");
     let results = $state<SearchResult[]>([]);
@@ -146,7 +151,7 @@
 
     let fuse: Fuse<SearchEntry> | null = null;
 
-    // â”€â”€ Local mode: pre-load index into browser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Local mode: pre-load index into browser ─────────────────────────────
 
     onMount(async () => {
         if (mode !== "local") {
@@ -154,7 +159,7 @@
             return;
         }
         try {
-            const res = await fetch("/search-index.json");
+            const res = await fetch(withBase("/search-index.json"));
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data: SearchEntry[] = await res.json();
             fuse = new Fuse(data, {
@@ -197,24 +202,33 @@
         });
     });
 
-    // â”€â”€ Debounced search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Debounced search ───────────────────────────────────────────────────────
 
     let searchTimer: ReturnType<typeof setTimeout>;
     let abortCtrl: AbortController | null = null;
+    let searchGeneration = 0;
 
     function handleInput() {
         clearTimeout(searchTimer);
-        if (!query.trim()) {
+        const q = query.trim();
+        searchGeneration += 1;
+        if (!q) {
+            abortCtrl?.abort();
+            isSearching = false;
             results = [];
             return;
         }
-        searchTimer = setTimeout(runSearch, 200);
+        if (mode !== "local") isSearching = true;
+        const generation = searchGeneration;
+        searchTimer = setTimeout(() => void runSearch(generation), 200);
     }
 
-    async function runSearch() {
+    async function runSearch(generation = searchGeneration) {
+        if (generation !== searchGeneration) return;
         const q = query.trim();
         if (!q) {
             results = [];
+            isSearching = false;
             return;
         }
 
@@ -223,16 +237,18 @@
 
         if (mode === "local") {
             if (!fuse) return;
-            results = fuse
+            const localResults = fuse
                 .search(q, { limit: fetchLimit })
                 .filter((res) => isPathInActiveLocale(res.item.id))
                 .slice(0, displayLimit)
                 .map(buildLocalResult);
+            if (generation !== searchGeneration) return;
+            results = localResults;
             selectedIndex = 0;
             return;
         }
 
-        // server / custom â€” cancel previous in-flight request
+        // server / custom — cancel previous in-flight request
         abortCtrl?.abort();
         abortCtrl = new AbortController();
         isSearching = true;
@@ -247,7 +263,7 @@
                     .map(normalizePath)
                     .join(",");
                 const url =
-                    `${serverUrl}?q=${encodeURIComponent(q)}` +
+                    `${withBase(serverUrl)}?q=${encodeURIComponent(q)}`+
                     `&limit=${fetchLimit}` +
                     `&localeRoot=${encodeURIComponent(localeRoot)}` +
                     `&baseRoot=${encodeURIComponent(baseRoot)}` +
@@ -257,18 +273,22 @@
                 const data = await res.json();
                 raw = data.results ?? [];
             }
+            if (generation !== searchGeneration) return;
             results = raw.slice(0, displayLimit);
             selectedIndex = 0;
         } catch (e: any) {
-            if (e?.name === "AbortError") return; // superseded by newer query â€” ignore
+            if (e?.name === "AbortError") return; // superseded by newer query — ignore
+            if (generation !== searchGeneration) return;
             console.error("[Search]", e);
             results = [];
         } finally {
-            isSearching = false;
+            if (generation === searchGeneration) {
+                isSearching = false;
+            }
         }
     }
 
-    // â”€â”€ Local mode helpers: Fuse.js result â†’ SearchResult â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Local mode helpers: Fuse.js result → SearchResult ─────────────────────
 
     function escapeHtml(str: string): string {
         return str
@@ -309,7 +329,7 @@
         if (!indices?.length) {
             return (
                 escapeHtml(text.slice(0, contextLen)) +
-                (text.length > contextLen ? "â€¦" : "")
+                (text.length > contextLen ? "…" : "")
             );
         }
 
@@ -330,8 +350,8 @@
                     ],
             );
 
-        const prefix = from > 0 ? "â€¦" : "";
-        const suffix = to < text.length ? "â€¦" : "";
+        const prefix = from > 0 ? "…" : "";
+        const suffix = to < text.length ? "…" : "";
 
         let html = prefix;
         let last = 0;
@@ -407,7 +427,7 @@
         };
     }
 
-    // â”€â”€ Keyboard navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Keyboard navigation ────────────────────────────────────────────────────
 
     function handleKeydown(e: KeyboardEvent) {
         switch (e.key) {
@@ -568,7 +588,7 @@
                                         <polyline points="9 18 15 12 9 6" />
                                     </svg>
                                     <span class="result-section"
-                                        >â€ş {@html result.sectionTitleHtml ??
+                                        >”ş {@html result.sectionTitleHtml ??
                                             escapeHtml(result.sectionTitle)}</span
                                     >
                                 {/if}
@@ -582,8 +602,8 @@
                     {/each}
                 </ul>
                 <div class="search-footer">
-                    <span><kbd>â†‘</kbd><kbd>â†“</kbd> {searchNavigateText}</span>
-                    <span><kbd>â†µ</kbd> {searchSelectText}</span>
+                    <span><kbd>↑</kbd><kbd>↓</kbd> {searchNavigateText}</span>
+                    <span><kbd>↵</kbd> {searchSelectText}</span>
                     <span><kbd>Esc</kbd> {searchCloseText}</span>
                 </div>
             {:else if !query.trim()}
@@ -643,7 +663,7 @@
         }
     }
 
-    /* â”€â”€ Input row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Input row ─────────────────────────────────────────────── */
     .search-field {
         display: flex;
         align-items: center;
@@ -696,7 +716,7 @@
         }
     }
 
-    /* â”€â”€ Status / empty states â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Status / empty states ─────────────────────────────────── */
     .search-status {
         padding: 2.5rem 1.25rem;
         text-align: center;
@@ -735,7 +755,7 @@
         }
     }
 
-    /* â”€â”€ Results list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Results list ──────────────────────────────────────────── */
     .search-results {
         list-style: none;
         margin: 0;
@@ -822,7 +842,7 @@
         }
     }
 
-    /* â”€â”€ Footer keyboard hints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* ── Footer keyboard hints ─────────────────────────────────── */
     .search-footer {
         display: flex;
         gap: 1.25rem;

@@ -10,7 +10,7 @@
  *
  * The `staticDirs` option (default: ['snippets']) lists additional project-root
  * directories whose files should also be served/copied verbatim.  This is
- * needed for `<<< @â€‹/snippets/file.js` style snippet includes.
+ * needed for `<<< @”‹/snippets/file.js` style snippet includes.
  */
 
 import fs from 'node:fs';
@@ -23,6 +23,7 @@ function trimSlashes(value) {
 export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticDirs = ['snippets'] } = {}) {
     let root = process.cwd();
     let outDir = 'dist';
+    let viteBase = '/';
 
     function* walkAll(dir) {
         if (!fs.existsSync(dir)) return;
@@ -47,8 +48,8 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
     }
 
     function resolveRootPrefix() {
-        const cleaned = trimSlashes(srcDir) || 'docs';
-        return '/' + cleaned;
+        const cleaned = trimSlashes(srcDir);
+        return cleaned ? '/' + cleaned : '';
     }
 
     return {
@@ -57,6 +58,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
         configResolved(config) {
             root = config.root;
             outDir = path.resolve(config.root, config.build.outDir);
+            viteBase = config.base ?? '/';
         },
 
         /**
@@ -68,7 +70,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
             server.middlewares.use((req, res, next) => {
                 const originalUrl = req.url ?? '';
                 const [urlPath, query = ''] = originalUrl.split('?');
-                const url = urlPath ?? '';
+                const rawUrl = urlPath ?? '';
 
                 // Let Vite handle module requests like `/docs/file.md?import`.
                 if (query) {
@@ -76,8 +78,19 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
                     return;
                 }
 
+                // Strip the Vite base prefix (e.g. /greg/) from the URL.
+                // configureServer middleware runs before Vite's own base-stripping
+                // middleware, so req.url still contains the full base prefix.
+                const base = viteBase === '/' ? '' : viteBase.replace(/\/$/, '');
+                const url = (base && rawUrl.startsWith(base))
+                    ? '/' + rawUrl.slice(base.length).replace(/^\/+/, '')
+                    : rawUrl;
+
                 // Docs markdown files
-                if ((url === rootPrefix || url.startsWith(rootPrefix + '/')) && url.endsWith('.md')) {
+                const isDocsMarkdown = rootPrefix
+                    ? (url === rootPrefix || url.startsWith(rootPrefix + '/')) && url.endsWith('.md')
+                    : url.startsWith('/') && url.endsWith('.md');
+                if (isDocsMarkdown) {
                     const rel = url.slice(rootPrefix.length).replace(/^\//, '');
                     const filePath = path.resolve(root, docsDir, rel);
                     if (fs.existsSync(filePath)) {
@@ -130,7 +143,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
                 }
             }
 
-            console.log(`\x1b[32mâś“\x1b[0m greg:copy-docs â€“ ${count} files copied to ${path.relative(root, outDir)}/`);
+            console.log(`\x1b[32mâś“\x1b[0m greg:copy-docs – ${count} files copied to ${path.relative(root, outDir)}/`);
         },
     };
 }

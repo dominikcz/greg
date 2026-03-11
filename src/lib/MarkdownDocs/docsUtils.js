@@ -2,6 +2,17 @@ function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+function joinDocPath(base, ...parts) {
+    const baseNorm = String(base || '/').replace(/\/+$/g, '') || '/';
+    const suffix = parts
+        .filter((p) => p != null && String(p).length > 0)
+        .map((p) => String(p).replace(/^\/+|\/+$/g, ''))
+        .filter(Boolean)
+        .join('/');
+    const joined = suffix ? `${baseNorm}/${suffix}` : baseNorm;
+    return joined.replace(/\/+/g, '/');
+}
+
 /**
  * Normalise a raw frontmatter badge value to `{ text, type }` or `undefined`.
  * Accepts a plain string (type defaults to 'tip') or an object.
@@ -57,7 +68,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
     const paths = Object.keys(modules);
     const root = [];
 
-    // Sort so index.md files are processed first â€” they define the folder nodes
+    // Sort so index.md files are processed first — they define the folder nodes
     const sorted = [...paths].sort((a, b) => {
         const aIdx = a.endsWith('index.md') ? 0 : 1;
         const bIdx = b.endsWith('index.md') ? 0 : 1;
@@ -87,7 +98,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
                     // We must NOT look in currentLevel (folder's own children) — we need
                     // the folder node itself, which is lastFolderNode (or root for top-level).
                     const folderParts = parts.slice(0, idx);
-                    const link = folderParts.length ? base + '/' + folderParts.join('/') : base;
+                    const link = folderParts.length ? joinDocPath(base, folderParts.join('/')) : joinDocPath(base);
                     const rawLabel = folderParts.length
                         ? folderParts[folderParts.length - 1]
                         : base.split('/').filter(Boolean).pop() ?? 'Home';
@@ -116,7 +127,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
                 } else {
                     // Regular .md file — leaf node
                     const fileName = part.replace(/\.md$/, '');
-                    const link = base + '/' + parts.slice(0, idx).concat(fileName).join('/');
+                    const link = joinDocPath(base, parts.slice(0, idx).concat(fileName).join('/'));
                     if (!currentLevel.find(c => c.link === link)) {
                         currentLevel.push({
                             label: fm.title ?? capitalize(fileName),
@@ -130,7 +141,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
                 }
             } else {
                 // Folder segment — find or create the node and descend
-                const folderLink = base + '/' + parts.slice(0, idx + 1).join('/');
+                const folderLink = joinDocPath(base, parts.slice(0, idx + 1).join('/'));
                 let child = currentLevel.find(c => c.link === folderLink);
                 if (!child) {
                     child = { label: capitalize(part), link: folderLink, children: [], type: 'folder', _isSection: true };
@@ -215,7 +226,7 @@ export function parseSidebarConfig(items, frontmatters, base) {
     function convert(item) {
         if (item.auto) {
             // `auto` is relative to `base` (srcDir), e.g. '/guide' -> '/docs/guide'
-            const autoBase = base + item.auto;
+            const autoBase = joinDocPath(base, item.auto);
             // Only pass paths that belong to this sub-section so stray paths
             // don't become extra folder segments inside prepareMenu.
             const autoFrontmatters = Object.fromEntries(

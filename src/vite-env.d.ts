@@ -163,10 +163,8 @@ declare module 'virtual:greg-config' {
         srcDir?: string;
         /** VitePress-compatible: glob patterns to exclude from docs source. Default: `[]` */
         srcExclude?: string[];
-        /** URL prefix for the docs section (e.g. `'docs'` â†’ `â€¦/docs/guide`). Default: `'docs'` */
+        /** URL prefix for the docs section (e.g. `'documentation'` → `…/documentation/guide`). Default: `''` (root). */
         docsBase?: string;
-        /** @deprecated Use `docsBase` instead. */
-        srcDir?: string;
         version?: string;
         mainTitle?: string;
         outline?: OutlineOption | boolean;

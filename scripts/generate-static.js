@@ -27,7 +27,7 @@ const DIST = path.resolve(distDir);
 const DOCS = path.resolve(docsDir);
 const ROOT_PATH = srcDir;
 
-// â”€â”€ Collect routes from the docs/ folder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Collect routes from the docs/ folder ────────────────────────────────────
 
 function collectRoutes(dir, base) {
     const routes = [];
@@ -38,10 +38,10 @@ function collectRoutes(dir, base) {
             routes.push(...collectRoutes(full, `${base}/${entry.name}`));
         } else if (entry.isFile() && entry.name.endsWith('.md')) {
             if (entry.name === 'index.md') {
-                // /docs/guide/index.md  â†’  /docs/guide
+                // /docs/guide/index.md  →  /docs/guide
                 routes.push(base);
             } else {
-                // /docs/guide/routing.md  â†’  /docs/guide/routing
+                // /docs/guide/routing.md  →  /docs/guide/routing
                 routes.push(`${base}/${entry.name.replace(/\.md$/, '')}`);
             }
         }
@@ -54,11 +54,11 @@ const routes = [...new Set([
     ...collectRoutes(DOCS, ROOT_PATH),
 ])];
 
-// â”€â”€ Copy index.html to each route â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Copy index.html to each route ───────────────────────────────────────────
 
 const src = path.join(DIST, 'index.html');
 if (!fs.existsSync(src)) {
-    console.error('dist/index.html not found â€“ run npm run build first.');
+    console.error('dist/index.html not found – run npm run build first.');
     process.exit(1);
 }
 

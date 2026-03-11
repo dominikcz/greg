@@ -31,7 +31,7 @@ Dla tych komponentów nie ma skrótu w stylu `::: ...`; używaj tagów komponent
     dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
   }}
   actions={[
-    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'brand', text: 'Get Started', link: '/guide/getting-started' },
     { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />
@@ -58,7 +58,7 @@ W plikach `.svelte` zaimportuj komponent jawnie:
     dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
   }}
   actions={[
-    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'brand', text: 'Get Started', link: '/guide/getting-started' },
     { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />
@@ -73,7 +73,7 @@ W plikach `.svelte` zaimportuj komponent jawnie:
     dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
   }}
   actions={[
-    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'brand', text: 'Get Started', link: '/guide/getting-started' },
     { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />

@@ -5,7 +5,7 @@ export default {
     // base: '/',
     // outDir: 'dist',
     srcDir: '{{DOCS_DIR}}',
-    docsBase: '{{DOCS_DIR}}',
+    docsBase: '',
     mainTitle: '{{TITLE}}',
     sidebar: 'auto',
     // versioning: {

@@ -14,7 +14,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
-// â”€â”€ Per-process cache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Per-process cache ─────────────────────────────────────────────────────────
 /** @type {Map<string, Promise<SearchEntry[]>>} */
 const _cache = new Map();
 const INCLUDE_RE = /^<!--\s*@include:\s*([^\s]+)\s*-->$/;
@@ -26,7 +26,7 @@ const REGION_RE = /^(.*?)#([^#{]+)$/;
  * @typedef {{ id: string; title: string; sections: SearchSection[] }} SearchEntry
  */
 
-// â”€â”€ File helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── File helpers ──────────────────────────────────────────────────────────────
 
 /**
  * Recursively collect all *.md files, skipping partial files/folders that start with `__`.
@@ -49,7 +49,7 @@ export function walkDir(dir, fileList = []) {
 }
 
 /**
- * Strip markdown syntax â†’ plain, searchable text.
+ * Strip markdown syntax → plain, searchable text.
  * @param {string} text
  * @returns {string}
  */
@@ -58,9 +58,9 @@ export function cleanMarkdown(text) {
 		.replace(/^---[\s\S]*?---\n?/, '')             // YAML frontmatter
 		.replace(/```[\s\S]*?```/g, '')                // fenced code blocks
 		.replace(/~~~[\s\S]*?~~~/g, '')
-		.replace(/`([^`]+)`/g, '$1')                   // inline code â€” keep value
+		.replace(/`([^`]+)`/g, '$1')                   // inline code — keep value
 		.replace(/!\[.*?\]\(.*?\)/g, '')               // images
-		.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')       // links â€” keep text
+		.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')       // links — keep text
 		.replace(/\[([^\]]+)\]\[.*?\]/g, '$1')
 		.replace(/\*\*\*([^*]+)\*\*\*/g, '$1')         // bold-italic
 		.replace(/\*\*([^*]+)\*\*/g, '$1')             // bold
@@ -315,7 +315,7 @@ export function extractSections(markdown) {
 	return sections.filter(s => s.content || s.heading);
 }
 
-// â”€â”€ Index builder (cached) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Index builder (cached) ────────────────────────────────────────────────────
 
 /**
  * Build the full search index from all docs in `docsDir`.
@@ -378,7 +378,7 @@ export function invalidateSearchIndexCache() {
 	_cache.clear();
 }
 
-// â”€â”€ Fuse.js result â†’ SearchResult  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Fuse.js result → SearchResult  ───────────────────────────────────────────
 // These helpers run on the server side (inside the Vite plugin / standalone server).
 
 /**
@@ -421,7 +421,7 @@ function highlightText(text, indices) {
 function getExcerptHtml(text, indices, contextLen = 150) {
 	if (!text) return '';
 	if (!indices?.length) {
-		return escapeHtml(text.slice(0, contextLen)) + (text.length > contextLen ? 'â€¦' : '');
+		return escapeHtml(text.slice(0, contextLen)) + (text.length > contextLen ? '…' : '');
 	}
 	const firstMatchStart = indices[0][0];
 	const from = Math.max(0, firstMatchStart - 50);
@@ -432,8 +432,8 @@ function getExcerptHtml(text, indices, contextLen = 150) {
 		.filter(([s, e]) => e >= 0 && s < sliced.length)
 		.map(([s, e]) => [Math.max(0, s), Math.min(sliced.length - 1, e)]);
 
-	const prefix = from > 0 ? 'â€¦' : '';
-	const suffix = to < text.length ? 'â€¦' : '';
+	const prefix = from > 0 ? '…' : '';
+	const suffix = to < text.length ? '…' : '';
 	let html = prefix;
 	let last = 0;
 	for (const [s, e] of adjusted) {

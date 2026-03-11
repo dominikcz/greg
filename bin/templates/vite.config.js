@@ -9,15 +9,15 @@ import {
 } from '@dominikcz/greg/plugins'
 
 const docsDir = process.env.GREG_DOCS_DIR || '{{DOCS_DIR}}'
-const srcDir = process.env.GREG_ROOT_PATH || '{{ROOT_PATH}}'
+const docsBase = process.env.GREG_DOCS_BASE || '{{ROOT_PATH}}'
 
 export default defineConfig({
     plugins: [
         svelte(),
         vitePluginGregConfig(),
-        vitePluginSearchIndex({ docsDir, srcDir }),
-        vitePluginSearchServer({ docsDir, srcDir }),
-        vitePluginFrontmatter({ docsDir, srcDir }),
-        vitePluginCopyDocs({ docsDir, srcDir }),
+        vitePluginSearchIndex({ docsDir, srcDir: docsBase }),
+        vitePluginSearchServer({ docsDir, srcDir: docsBase }),
+        vitePluginFrontmatter({ docsDir, srcDir: docsBase }),
+        vitePluginCopyDocs({ docsDir, srcDir: docsBase }),
     ],
 })

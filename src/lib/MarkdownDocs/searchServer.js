@@ -144,7 +144,11 @@ function isPathInLocale(id, localeRoot, baseRoot, localeRoots) {
 	const normalizedId = normalizePath(id);
 	const roots = (localeRoots ?? []).map(normalizePath);
 
-	if (!(normalizedId === currentRoot || normalizedId.startsWith(currentRoot + '/'))) {
+	const inCurrentRoot = currentRoot === '/'
+		? normalizedId.startsWith('/')
+		: (normalizedId === currentRoot || normalizedId.startsWith(currentRoot + '/'));
+
+	if (!inCurrentRoot) {
 		return false;
 	}
 

@@ -8,7 +8,7 @@ type FlatItem = { label: string; link: string; type: string };
  * Manages the active URL, module resolution and popstate handling.
  *
  * `knownPaths` is a set of known markdown file paths (e.g. from the frontmatter
- * virtual module). Values are ignored â€“ only keys are used for existence checks.
+ * virtual module). Values are ignored – only keys are used for existence checks.
  */
 function normalizePath(raw: string): string {
 	return decodeURI(raw).replace(/\/$/, '') || '/';
@@ -21,7 +21,14 @@ function normalizeHash(raw?: string): string {
 }
 
 export function buildNavigationUrl(path: string, anchor?: string): string {
-	return `${normalizePath(path)}${normalizeHash(anchor)}`;
+	const normalized = normalizePath(path);
+	const isBaseLikeRoot = /^\/[^/]+$/.test(normalized);
+	const preserveTrailingSlash =
+		isBaseLikeRoot
+		&& !anchor
+		&& String(path).endsWith('/');
+	const pathname = preserveTrailingSlash ? `${normalized}/` : normalized;
+	return `${pathname}${normalizeHash(anchor)}`;
 }
 
 export function isSameNavigationTarget(
@@ -65,8 +72,16 @@ export function useRouter(
 		const srcDir = getSrcDirForPath(lookupActive);
 		const rel = lookupActive.replace(srcDir, '').replace(/^\//, '');
 		const candidates = rel
-			? [`${srcDir}/${rel}.md`, `${srcDir}/${rel}/index.md`]
-			: [`${srcDir}/index.md`, `${srcDir}index.md`];
+			? (
+				srcDir === '/'
+					? [`/${rel}.md`, `/${rel}/index.md`]
+					: [`${srcDir}/${rel}.md`, `${srcDir}/${rel}/index.md`]
+			)
+			: (
+				srcDir === '/'
+					? ['/index.md']
+					: [`${srcDir}/index.md`, `${srcDir}index.md`]
+			);
 		for (const c of candidates) {
 			if (c in knownPaths) return c;
 		}

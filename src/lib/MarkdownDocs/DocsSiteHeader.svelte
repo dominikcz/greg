@@ -131,12 +131,12 @@
 <header class="site-header">
 	<div class="header-left">
 		<a
-			href={withBase("/")}
+			href={withBase(srcDir || "/")}
 			class="site-title"
 			aria-label={logoAlt}
 			onclick={(e) => {
 				e.preventDefault();
-				navigateHome("/");
+				navigateHome(srcDir || "/");
 			}}
 		>
 			<span

@@ -3,7 +3,7 @@ import {
     getLocaleEntries,
     getLocaleSwitchItems,
     resolveLocaleForPath,
-} from '../localeUtils.ts';
+} from '../localeUtils';
 
 describe('localeUtils', () => {
     const locales = {
@@ -33,8 +33,8 @@ describe('localeUtils', () => {
                     text: 'Edytuj strone',
                 },
                 footer: { message: 'Licencja MIT', copyright: 'Copyright' },
-                aside: 'left',
-                lastUpdated: { text: 'Aktualizacja', formatOptions: { dateStyle: 'short' } },
+                aside: /** @type {'left'} */ ('left'),
+                lastUpdated: { text: 'Aktualizacja', formatOptions: { dateStyle: /** @type {'short'} */ ('short') } },
             },
         },
     };
@@ -42,8 +42,8 @@ describe('localeUtils', () => {
     const defaults = {
         mainTitle: 'Greg',
         nav: [],
-        sidebar: 'auto',
-        outline: [2, 3],
+        sidebar: /** @type {'auto'} */ ('auto'),
+        outline: /** @type {[number, number]} */ ([2, 3]),
         langMenuLabel: 'Change language',
         returnToTopLabel: 'Back to top',
         darkModeSwitchLabel: 'Appearance',
@@ -102,7 +102,7 @@ describe('localeUtils', () => {
         });
         expect(fromPlGuide).toEqual([
             expect.objectContaining({ key: '/', link: '/docs/guide', active: false }),
-            expect.objectContaining({ key: '/pl/', link: '/docs/pl/guide', active: true }),
+            expect.objectContaining({ key: '/pl/', link: '/pl/guide', active: true }),
         ]);
 
         const fromPlReference = getLocaleSwitchItems({
@@ -114,7 +114,7 @@ describe('localeUtils', () => {
         });
         expect(fromPlReference).toEqual([
             expect.objectContaining({ key: '/', link: '/docs', active: false }),
-            expect.objectContaining({ key: '/pl/', link: '/docs/pl', active: true }),
+            expect.objectContaining({ key: '/pl/', link: '/pl', active: true }),
         ]);
     });
 
@@ -137,7 +137,31 @@ describe('localeUtils', () => {
 
         expect(switched).toEqual([
             expect.objectContaining({ key: '/', link: '/docs', active: false }),
-            expect.objectContaining({ key: '/pl/', link: '/docs/pl', active: true }),
+            expect.objectContaining({ key: '/pl/', link: '/pl', active: true }),
+        ]);
+    });
+
+    it('preserves nested path when switching from root locale to /pl locale', () => {
+        const entries = getLocaleEntries('/', {
+            '/': { label: 'English' },
+            '/pl/': { label: 'Polski' },
+        });
+
+        const switched = getLocaleSwitchItems({
+            entries,
+            activePath: '/guide/versioning',
+            activeSrcDir: '/',
+            activeLocaleKey: '/',
+            frontmatters: {
+                '/guide/versioning.md': {},
+                '/pl/guide/versioning.md': {},
+            },
+            preservePath: true,
+        });
+
+        expect(switched).toEqual([
+            expect.objectContaining({ key: '/', link: '/guide/versioning', active: true }),
+            expect.objectContaining({ key: '/pl/', link: '/pl/guide/versioning', active: false }),
         ]);
     });
 

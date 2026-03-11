@@ -39,7 +39,7 @@ optional image and call-to-action buttons.
     dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
   }}
   actions={[
-    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'brand', text: 'Get Started', link: '/guide/getting-started' },
     { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />
@@ -66,7 +66,7 @@ In `.svelte` files, import the component explicitly:
     dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
   }}
   actions={[
-    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'brand', text: 'Get Started', link: '/guide/getting-started' },
     { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />
@@ -81,7 +81,7 @@ In `.svelte` files, import the component explicitly:
     dark: { src: '/greg-logo-dark.svg', alt: 'My Project logo' },
   }}
   actions={[
-    { theme: 'brand', text: 'Get Started', link: '/docs/guide/getting-started' },
+    { theme: 'brand', text: 'Get Started', link: '/guide/getting-started' },
     { theme: 'alt', text: 'GitHub', link: 'https://github.com/dominikcz/greg' },
   ]}
 />

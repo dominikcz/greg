@@ -15,20 +15,20 @@ Pass the `outline` prop to `<MarkdownDocs>`:
 
 ```svelte
 <!-- Show h2 and h3 (default) -->
-<MarkdownDocs srcDir="/docs" version="1.0.0" outline={[2, 3]} />
+<MarkdownDocs srcDir="/" version="1.0.0" outline={[2, 3]} />
 
 <!-- Show all headings -->
-<MarkdownDocs srcDir="/docs" version="1.0.0" outline="deep" />
+<MarkdownDocs srcDir="/" version="1.0.0" outline="deep" />
 
 <!-- Show only h2 -->
-<MarkdownDocs srcDir="/docs" version="1.0.0" outline={2} />
+<MarkdownDocs srcDir="/" version="1.0.0" outline={2} />
 
 <!-- Disable -->
-<MarkdownDocs srcDir="/docs" version="1.0.0" outline={false} />
+<MarkdownDocs srcDir="/" version="1.0.0" outline={false} />
 
 <!-- Custom label + range -->
 <MarkdownDocs
-  srcDir="/docs"
+  srcDir="/"
   version="1.0.0"
   outline={{ level: [2, 4], label: 'Contents' }}
 />
@@ -39,10 +39,10 @@ Pass the `outline` prop to `<MarkdownDocs>`:
 | Value              | Effect                                                                          |
 | ------------------ | ------------------------------------------------------------------------------- |
 | `false`            | Outline panel is hidden                                                         |
-| `number`           | Only that heading level (e.g. `2` â†’ h2 only)                                    |
+| `number`           | Only that heading level (e.g. `2` → h2 only)                                    |
 | `[min, max]`       | Range of heading levels, e.g. `[2, 3]`                                          |
 | `'deep'`           | Same as `[2, 6]`                                                                |
-| `{ level, label }` | Object form â€” `level` follows the rules above; `label` overrides "On this page" |
+| `{ level, label }` | Object form — `level` follows the rules above; `label` overrides "On this page" |
 
 
 ## Scrollspy behaviour
@@ -66,7 +66,7 @@ page with the `[[toc]]` placeholder:
 ```
 
 By default it includes h2 and h3. This is independent of the right-side Outline
-panel â€” both can be used together.
+panel — both can be used together.
 
 
 ## CSS variables

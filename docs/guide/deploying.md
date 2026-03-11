@@ -21,7 +21,7 @@ The output is placed in `dist/`. It contains:
 ```
 dist/
   index.html
-  assets/          â† JS, CSS, fonts (content-hashed)
+  assets/          ← JS, CSS, fonts (content-hashed)
   search-index.json
   <any public/ files>
 ```
@@ -53,7 +53,7 @@ The output lands in `dist/resolved-markdown/` by default.
 Pass `--docsDir` or `--outDir` to customise paths.
 
 
-## SPA fallback â€” server configuration
+## SPA fallback — server configuration
 
 Configure your server to return `index.html` for all `404` responses.
 
@@ -126,7 +126,7 @@ Add a `vercel.json` at the project root:
 
 GitHub Pages does not natively support SPA fallback. The common workaround is:
 
-1. Copy `dist/index.html` â†’ `dist/404.html` after the build.
+1. Copy `dist/index.html` → `dist/404.html` after the build.
 2. Add a redirect script in `404.html` to restore the original URL and reload.
 
 Alternatively, use [GitHub Actions + a custom workflow](https://vitejs.dev/guide/static-deploy#github-pages) with the approach above.
@@ -140,20 +140,21 @@ set `base` in `vite.config.js`:
 ```js
 export default defineConfig({
   base: '/my-project/',
-  // â€¦
+  // …
 });
 ```
 
-Also update `srcDir` in `greg.config.js`:
+Also update `docsBase` in `greg.config.js`:
 
 ```js
 export default {
-  srcDir: '/my-project/docs',
-  // â€¦
+  srcDir: 'docs',
+  docsBase: '/my-project/docs',
+  // …
 }
 ```
 
-And the `srcDir` in the Vite plugins (`vite.config.js`):
+And the plugin `srcDir` (URL prefix) in `vite.config.js`:
 
 ```js
 vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/my-project/docs' }),

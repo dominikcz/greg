@@ -13,14 +13,15 @@ and translated UI text in `themeConfig`.
 
 ```js
 export default {
-  srcDir: '/docs',
+  srcDir: 'docs',
+  docsBase: '',
   locales: {
     '/': {
       lang: 'en-US',
       label: 'English',
       title: 'Greg',
       themeConfig: {
-        nav: [{ text: 'Guide', link: '/docs/guide' }],
+        nav: [{ text: 'Guide', link: '/guide' }],
         sidebar: [{ text: 'Guide', auto: '/guide' }],
       },
     },
@@ -29,7 +30,7 @@ export default {
       label: 'Polski',
       title: 'Greg',
       themeConfig: {
-        nav: [{ text: 'Przewodnik', link: '/docs/pl/guide' }],
+        nav: [{ text: 'Przewodnik', link: '/pl/guide' }],
         sidebar: [{ text: 'Przewodnik', auto: '/guide' }],
       },
     },
@@ -37,10 +38,10 @@ export default {
 };
 ```
 
-For `srcDir: '/docs'`, locale URL mapping is:
+For `docsBase: ''`, locale URL mapping is:
 
-- `'/'` -> `/docs`
-- `'/pl/'` -> `/docs/pl`
+- `'/'` -> `/`
+- `'/pl/'` -> `/pl`
 
 ## Locale folders and routes
 
@@ -66,20 +67,21 @@ You can also place each locale in its own top-level docs directory.
 
 ```js
 export default {
-  srcDir: '/docs',
+  srcDir: 'docs',
+  docsBase: '',
   locales: {
     '/en/': {
       lang: 'en-US',
       label: 'English',
       themeConfig: {
-        nav: [{ text: 'Guide', link: '/docs/en/guide' }],
+        nav: [{ text: 'Guide', link: '/en/guide' }],
       },
     },
     '/pl/': {
       lang: 'pl-PL',
       label: 'Polski',
       themeConfig: {
-        nav: [{ text: 'Przewodnik', link: '/docs/pl/guide' }],
+        nav: [{ text: 'Przewodnik', link: '/pl/guide' }],
       },
     },
   },
@@ -98,7 +100,7 @@ docs/
     reference/
 ```
 
-That gives URLs such as `/docs/en/...` and `/docs/pl/...`, with fully
+That gives URLs such as `/en/...` and `/pl/...`, with fully
 separated content trees per locale.
 
 ### Default locale landing behavior
@@ -107,7 +109,7 @@ When you use only namespaced locales (for example `'/en/'` and `'/pl/'`, with
 no `'/'` locale), Greg automatically redirects:
 
 - `/` -> first configured locale root (for example `/docs/en`)
-- `/docs` (or your configured `srcDir`) -> first configured locale root
+- docs root (for `docsBase: ''` this is `/`) -> first configured locale root
 
 The first entry order in `locales` is therefore treated as the default locale.
 

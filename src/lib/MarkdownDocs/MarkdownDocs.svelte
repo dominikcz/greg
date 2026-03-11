@@ -29,12 +29,12 @@
     import gregConfig from "virtual:greg-config";
     import {
         type LocaleConfig,
+        getLocaleEntries,
         getLocaleSwitchItems,
-        normalizeSrcDir,
         normalizeLocaleKey,
         resolveLocaleForPath,
     } from "./localeUtils";
-    import { withBase, toSourcePath } from "./common";
+    import { withBase, withoutBase, normalizePath as normalizeSrcDir } from "./common";
     import {
         buildDefaultVersionPathPrefix,
         DEFAULT_PATH_PREFIX,
@@ -197,7 +197,11 @@
 
     let {
         children,
-        srcDir: configuredSrcDir = normalizeSrcDir((gregConfig as any).srcDir ?? "docs"),
+        srcDir: configuredSrcDir = normalizeSrcDir(
+            Object.prototype.hasOwnProperty.call((gregConfig as any), "docsBase")
+                ? (gregConfig as any).docsBase
+                : "",
+        ),
         version: globalVersion = (gregConfig as any).version ?? "",
         mainTitle: globalMainTitle = (gregConfig as any).mainTitle ?? "Greg",
         carbonAds = (gregConfig as any).carbonAds,
@@ -248,6 +252,9 @@
         string,
         LocaleConfig
     >;
+    // Locale entries are precomputed here (before the router) so they can be
+    // used in normalizePathForLookup to translate segment-based URLs to srcDir paths.
+    const localeEntries = $derived(getLocaleEntries(configuredSrcDir, configLocales));
     const versioningConfig = ((gregConfig as any).versioning ?? null) as
         | {
               ui?: VersioningUiConfig;
@@ -386,7 +393,7 @@
         const next = manifestVersionOptions.find((entry) => entry.version === version);
         if (!next) return;
 
-        const currentPath = toSourcePath(window.location.pathname);
+        const currentPath = withoutBase(window.location.pathname);
         const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
         const isDefaultTarget =
             Boolean(resolvedDefaultVersion) && version === resolvedDefaultVersion;
@@ -593,7 +600,7 @@
     const router = useRouter(frontmatters, (path) =>
         resolveLocaleForPath(
             stripVersionPrefixFromPath(
-                toSourcePath(path),
+                withoutBase(path),
                 versionPathPrefix,
             ),
             configuredSrcDir,
@@ -633,16 +640,24 @@
             aside: globalAside,
             lastUpdated: globalLastUpdated,
         }).srcDir,
-        (path) =>
-            stripVersionPrefixFromPath(
-                toSourcePath(path),
+        (path) => {
+            const spaPath = stripVersionPrefixFromPath(
+                withoutBase(path),
                 versionPathPrefix,
-            ),
+            );
+            // Translate segment-based locale URLs to their srcDir-prefixed equivalent
+            // for content lookup. e.g. '/pl/guide' → '/documentation/pl/guide'.
+            const entry = localeEntries.find(
+                (e) => e.segment && (spaPath === e.segment || spaPath.startsWith(e.segment + "/"))
+            );
+            if (entry) return normalizeSrcDir(entry.srcDir + spaPath.slice(entry.segment.length));
+            return spaPath;
+        },
     );
 
     const routePath = $derived(
         stripVersionPrefixFromPath(
-            toSourcePath(router.active),
+            withoutBase(router.active),
             versionPathPrefix,
         ),
     );
@@ -686,7 +701,7 @@
     const currentSrcDir = $derived(localeContext.srcDir);
     function applyCurrentVersionPrefix(pathname: string): string {
         const normalizedPath = normalizeSrcDir(pathname);
-        const currentPath = toSourcePath(window.location.pathname);
+        const currentPath = withoutBase(window.location.pathname);
         const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
         if (!currentVersion) return normalizedPath;
 
@@ -923,7 +938,7 @@
     });
 
     function navigateHome(path: string) {
-        const currentPath = toSourcePath(window.location.pathname);
+        const currentPath = withoutBase(window.location.pathname);
         const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
         if (currentVersion) {
             window.location.assign(withBase(path));
@@ -958,7 +973,7 @@
     );
     const activeDocsVersion = $derived(
         findActiveVersion(
-            toSourcePath(window.location.pathname),
+            withoutBase(window.location.pathname),
             versionPathPrefix,
         ),
     );
@@ -1001,11 +1016,17 @@
     const outline = $derived(localeContext.outline);
     const version = $derived(globalVersion);
     const localeFrontmatters = $derived.by(() => {
+        const currentIndexKey = currentSrcDir === "/"
+            ? "/index.md"
+            : currentSrcDir + "/index.md";
+        const currentPrefix = currentSrcDir === "/"
+            ? "/"
+            : currentSrcDir + "/";
         const inLocale = Object.fromEntries(
             Object.entries(frontmatters).filter(([key]) => {
                 if (
-                    key !== currentSrcDir + "/index.md" &&
-                    !key.startsWith(currentSrcDir + "/")
+                    key !== currentIndexKey &&
+                    !key.startsWith(currentPrefix)
                 ) {
                     return false;
                 }
@@ -1017,8 +1038,8 @@
                     if (
                         otherLocaleRoots.some(
                             (rp) =>
-                                key === rp + "/index.md" ||
-                                key.startsWith(rp + "/"),
+                                key === (rp === "/" ? "/index.md" : rp + "/index.md") ||
+                                key.startsWith(rp === "/" ? "/" : rp + "/"),
                         )
                     ) {
                         return false;
@@ -1298,17 +1319,75 @@
             .replace(currentSrcDir, "")
             .replace(/^\//, "");
         const candidates: string[] = rel
-            ? [
-                  `${currentSrcDir}/${rel}.md`,
-                  `${currentSrcDir}/${rel}/index.md`,
-              ]
-            : [`${currentSrcDir}/index.md`, `${currentSrcDir}index.md`];
+            ? (
+                  currentSrcDir === "/"
+                      ? [
+                            `/${rel}.md`,
+                            `/${rel}/index.md`,
+                        ]
+                      : [
+                            `${currentSrcDir}/${rel}.md`,
+                            `${currentSrcDir}/${rel}/index.md`,
+                        ]
+              )
+            : (currentSrcDir === "/"
+                ? [`/index.md`]
+                : [`${currentSrcDir}/index.md`, `${currentSrcDir}index.md`]);
         return candidates.find((c) => c in frontmatters) ?? null;
     });
 
     const activeFrontmatter = $derived(
         activeKey ? frontmatters[activeKey] : undefined,
     );
+
+    /** Apply withBase to a hero image src string or themed-image object. */
+    function applyBaseToImage(image: unknown): unknown {
+        if (!image) return image;
+        if (typeof image === "string") return withBase(image);
+        const img = image as Record<string, unknown>;
+        if ("light" in img || "dark" in img) {
+            return {
+                ...img,
+                light: typeof img.light === "string" ? withBase(img.light) : img.light,
+                dark: typeof img.dark === "string" ? withBase(img.dark) : img.dark,
+            };
+        }
+        if ("src" in img) return { ...img, src: typeof img.src === "string" ? withBase(img.src as string) : img.src };
+        return image;
+    }
+
+    /** Resolve a frontmatter link so bare absolute paths get the currentSrcDir prefix. */
+    const resolvedHero = $derived.by(() => {
+        const hero = (activeFrontmatter as any)?.hero;
+        if (!hero) return undefined;
+        return {
+            ...hero,
+            image: applyBaseToImage(hero.image),
+            actions: hero.actions?.map((a: { link: string; [k: string]: unknown }) => ({
+                ...a,
+                link: (() => {
+                    const link: string = a.link ?? "";
+                    if (!link || !link.startsWith("/")) return link;
+                    if (link === currentSrcDir || link.startsWith(currentSrcDir + "/")) return link;
+                    return normalizeSrcDir(currentSrcDir + link);
+                })(),
+            })),
+        };
+    });
+
+    const resolvedFeatures = $derived(
+        (activeFrontmatter as any)?.features?.map((f: { icon?: unknown; link?: string; [k: string]: unknown }) => ({
+            ...f,
+            icon: f.icon ? applyBaseToImage(f.icon) : f.icon,
+            link: (() => {
+                const link = f.link ?? "";
+                if (!link || !link.startsWith("/")) return f.link;
+                if (link === currentSrcDir || link.startsWith(currentSrcDir + "/")) return link;
+                return normalizeSrcDir(currentSrcDir + link);
+            })(),
+        }))
+    );
+
     /** True when the URL is inside the current locale root path but no matching file exists. */
     const notFound = $derived(activeKey === null && routePath.startsWith(currentSrcDir));
     const notFoundUi = $derived.by(() => {
@@ -1417,7 +1496,7 @@
         const hashIdx = href.indexOf("#");
         const pathPart = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
         const hashPart = hashIdx >= 0 ? href.slice(hashIdx + 1) : "";
-        const pathWithoutBase = toSourcePath(pathPart);
+        const pathWithoutBase = withoutBase(pathPart);
 
         const cleanSrcDir = currentSrcDir.replace(/\/+$/, "");
 
@@ -1541,8 +1620,8 @@
         >
             {#if activeLayout === "home"}
                 <LayoutHome
-                    hero={(activeFrontmatter as any)?.hero}
-                    features={(activeFrontmatter as any)?.features}
+                    hero={resolvedHero}
+                    features={resolvedFeatures}
                 />
             {:else if router.activeMarkdownPath}
                 {#if useCompiledRenderer}

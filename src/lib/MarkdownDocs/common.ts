@@ -14,8 +14,12 @@ export function joinPath(base: string, path: string) {
 
 export const pathConfig = {
     base: normalizeBase((gregConfig as any).base),
-    srcDir: String((gregConfig as any).srcDir || "docs").replace(SLASHES_RE, '/'),
-    docsBase: String((gregConfig as any).docsBase || "docs").replace(SLASHES_RE, '/'),
+    srcDir: String((gregConfig as any).srcDir ?? "docs").replace(SLASHES_RE, '/'),
+    docsBase: String(
+        Object.prototype.hasOwnProperty.call((gregConfig as any), "docsBase")
+            ? (gregConfig as any).docsBase
+            : "",
+    ).replace(SLASHES_RE, '/'),
 };
 
 export function withBase(path: string): string {
@@ -25,6 +29,19 @@ export function withBase(path: string): string {
 
 export function withoutBase(path: string): string {
     if (EXTERNAL_RE.test(path) || !path.startsWith("/")) return path;
-    return joinPath('/', path.replace(pathConfig.base, ''));
+    const base = pathConfig.base;
+    if (base && path.startsWith(base)) return joinPath('/', path.slice(base.length));
+    return path;
+}
+
+/**
+ * Normalize any path to the canonical `/something` form.
+ * Returns `"/"` for empty, null-ish, or root inputs.
+ * Mirrors `normalizeSrcDir` from `localeUtils` to avoid a circular import.
+ */
+export function normalizePath(path: string): string {
+    const value = String(path || "").trim();
+    if (!value || value === "/") return "/";
+    return "/" + value.replace(/^\/+|\/+$/g, "");
 }
 
