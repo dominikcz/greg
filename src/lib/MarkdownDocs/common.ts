@@ -1,32 +1,30 @@
 import gregConfig from "virtual:greg-config";
 
 const EXTERNAL_RE = /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i;
+const SLASHES_RE = /\/+/g;
 
 function normalizeBase(value: unknown): string {
     const raw = String(value || "/").trim();
     return raw === "/" ? "/" : `/${raw.replace(/^\/+|\/+$/g, "")}`;
 }
 
+export function joinPath(base: string, path: string) {
+  return `${base}${path}`.replace(SLASHES_RE, '/')
+}
+
 export const pathConfig = {
     base: normalizeBase((gregConfig as any).base),
-    srcDir: String((gregConfig as any).srcDir || "docs").replace(/\/$/, ""),
-    docsBase: String((gregConfig as any).docsBase || "docs").replace(/\/$/, ""),
+    srcDir: String((gregConfig as any).srcDir || "docs").replace(SLASHES_RE, '/'),
+    docsBase: String((gregConfig as any).docsBase || "docs").replace(SLASHES_RE, '/'),
 };
 
 export function withBase(path: string): string {
     if (EXTERNAL_RE.test(path) || !path.startsWith("/")) return path;
-    return `${pathConfig.base}${path}`.replace(/\/{2,}/g, "/");
+    return joinPath(pathConfig.base, path);
 }
 
-export function toSourcePath(path: string): string {
+export function withoutBase(path: string): string {
     if (EXTERNAL_RE.test(path) || !path.startsWith("/")) return path;
-    // we always strip the base
-    if (path.startsWith(`${pathConfig.base}`)) {
-        path = path.slice(pathConfig.base.length);
-    }
-    if (path.startsWith(`${pathConfig.docsBase}`)) {
-        return path.replace(`${pathConfig.docsBase}`, `${pathConfig.srcDir}`);
-    }
-    return path;
+    return joinPath('/', path.replace(pathConfig.base, ''));
 }
 
