@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 function parseArgs(argv) {
-    const out = { docsDir: 'docs', srcDir: '/docs', distDir: 'dist' };
+    const out = { docsDir: 'docs', srcDir: '/', distDir: 'dist' };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === '--docsDir' && argv[i + 1]) out.docsDir = argv[++i];

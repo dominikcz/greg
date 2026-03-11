@@ -60,14 +60,19 @@ function parseArgs(argv) {
     return out;
 }
 
-function normalizeSrcDir(value, fallback = '/docs') {
+function normalizeSrcDir(value, fallback = '/') {
     const cleaned = String(value || fallback).trim().replace(/^\/+|\/+$/g, '');
-    return '/' + (cleaned || 'docs');
+    return '/' + cleaned;
 }
 
 function normalizePathPrefix(value, fallback = DEFAULT_PATH_PREFIX) {
     const cleaned = String(value || fallback).trim().replace(/^\/+|\/+$/g, '');
     return '/' + (cleaned || DEFAULT_VERSIONS_DIR_NAME);
+}
+
+function normalizeDocsBase(value, fallback = '/') {
+    const cleaned = String(value ?? fallback).trim().replace(/^\/+|\/+$/g, '');
+    return '/' + cleaned;
 }
 
 function sanitizeSegment(value, fallback = 'item') {
@@ -274,6 +279,7 @@ function runViteBuild(args) {
     const env = {
         ...process.env,
         GREG_DOCS_DIR: docsDir,
+        GREG_DOCS_BASE: srcDir,
         GREG_ROOT_PATH: srcDir,
         PATH:
             path.resolve(PROJECT_ROOT, 'node_modules/.bin') +
@@ -469,7 +475,10 @@ async function main() {
 
     const strategy = args.strategy || versioning.strategy || 'branches';
     validateVersioningConfig(versioning, strategy);
-    const globalSrcDir = normalizeSrcDir(config.srcDir, '/docs');
+    const configuredDocsBase = Object.prototype.hasOwnProperty.call(config, 'docsBase')
+        ? config.docsBase
+        : '/';
+    const globalSrcDir = normalizeDocsBase(configuredDocsBase, '/');
     const siteOutDir = String(config.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
     const siteBase = normalizeBasePath(config.base);
     const defaultOutputRoot = path.join(siteOutDir, DEFAULT_VERSIONS_DIR_NAME);

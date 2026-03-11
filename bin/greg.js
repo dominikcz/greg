@@ -163,6 +163,18 @@ function resolveSiteOutDir(config) {
     return String(config?.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
 }
 
+function resolveDocsSourceDir(config) {
+    return String(config?.srcDir || 'docs').trim() || 'docs';
+}
+
+function resolveDocsBase(config) {
+    const docsBaseValue = Object.prototype.hasOwnProperty.call(config || {}, 'docsBase')
+        ? config.docsBase
+        : '';
+    const cleaned = String(docsBaseValue ?? '').trim().replace(/^\/+|\/+$/g, '');
+    return '/' + cleaned;
+}
+
 switch (command) {
     case 'init': {
         const initScript = resolve(__dirname, 'init.js');
@@ -195,13 +207,19 @@ switch (command) {
         const startedAt = Date.now();
         const config = await loadGregConfig();
         const distDir = resolveSiteOutDir(config);
+        const docsDir = resolveDocsSourceDir(config);
+        const srcDir = resolveDocsBase(config);
         const buildStatus = run('vite build', args, { exit: false });
         if (buildStatus !== 0) {
             printElapsedSeconds(startedAt);
             process.exit(buildStatus);
         }
         const staticScript = resolve(__dirname, '../scripts/generate-static.js');
-        const status = runNodeScript(staticScript, ['--distDir', distDir], { exit: false });
+        const status = runNodeScript(
+            staticScript,
+            ['--docsDir', docsDir, '--srcDir', srcDir, '--distDir', distDir],
+            { exit: false },
+        );
         printElapsedSeconds(startedAt);
         process.exit(status);
         break;
