@@ -350,7 +350,7 @@
         height: 192px;
         background: radial-gradient(
             circle,
-            var(--greg-accent-light),
+            var(--greg-accent),
             transparent 70%
         );
         filter: blur(48px);
@@ -366,8 +366,8 @@
 
     @media (min-width: 960px) {
         .image-bg {
-            width: 320px;
-            height: 320px;
+            width: 480px;
+            height: 480px;
         }
     }
 
