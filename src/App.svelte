@@ -2,4 +2,4 @@
     import MarkdownDocs from "./lib/MarkdownDocs/MarkdownDocs.svelte";
 </script>
 
-<MarkdownDocs rootPath="/docs" version={__VERSION__} />
+<MarkdownDocs version={__VERSION__} />

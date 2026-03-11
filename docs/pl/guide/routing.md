@@ -7,7 +7,7 @@ order: 3
 
 ## Routing oparty o pliki
 
-Greg używa routingu opartego o pliki. Każdy `.md` w `docs/` staje się stroną pod odpowiadającą ścieżką URL:
+Greg uĹĽywa routingu opartego o pliki. KaĹĽdy `.md` w `docs/` staje siÄ™ stronÄ… pod odpowiadajÄ…cÄ… Ĺ›cieĹĽkÄ… URL:
 
 ```
 docs/index.md                 ->  /docs
@@ -15,7 +15,7 @@ docs/guide/getting-started.md ->  /docs/guide/getting-started
 docs/reference/api.md         ->  /docs/reference/api
 ```
 
-Plik `index.md` mapuje się na URL katalogu nadrzędnego:
+Plik `index.md` mapuje siÄ™ na URL katalogu nadrzÄ™dnego:
 
 ```
 docs/guide/index.md  ->  /docs/guide
@@ -23,29 +23,29 @@ docs/guide/index.md  ->  /docs/guide
 
 ## Pliki partial
 
-Każdy plik zaczynający się od `__` jest traktowany jako partial: nie trafia do routingu ani sidebaru, ale można go dołączać dyrektywą `<!--@include:-->`.
+KaĹĽdy plik zaczynajÄ…cy siÄ™ od `__` jest traktowany jako partial: nie trafia do routingu ani sidebaru, ale moĹĽna go doĹ‚Ä…czaÄ‡ dyrektywÄ… `<!--@include:-->`.
 
 ```
-docs/guide/__shared-warning.md  <-  nie jest stroną, tylko plikiem do wstawiania
+docs/guide/__shared-warning.md  <-  nie jest stronÄ…, tylko plikiem do wstawiania
 ```
 
 ## Nawigacja sidebar
 
-Sidebar jest generowany automatycznie ze struktury katalogów i plików.
+Sidebar jest generowany automatycznie ze struktury katalogĂłw i plikĂłw.
 
 Zasady:
-- katalogi stają się zwijanymi sekcjami,
-- pliki stają się linkami,
-- nazwy są automatycznie kapitalizowane,
-- `index.md` podpina się do węzła katalogu,
-- główny `docs/index.md` jest ukryty w sidebarze.
+- katalogi stajÄ… siÄ™ zwijanymi sekcjami,
+- pliki stajÄ… siÄ™ linkami,
+- nazwy sÄ… automatycznie kapitalizowane,
+- `index.md` podpina siÄ™ do wÄ™zĹ‚a katalogu,
+- gĹ‚Ăłwny `docs/index.md` jest ukryty w sidebarze.
 
-### Targety linków sidebaru
+### Targety linkĂłw sidebaru
 
-Dla ręcznych wpisów w `greg.config.js` link respektuje `target`:
+Dla rÄ™cznych wpisĂłw w `greg.config.js` link respektuje `target`:
 
-- domyślnie `_self`
-- `target: '_blank'` otwiera nową kartę
+- domyĹ›lnie `_self`
+- `target: '_blank'` otwiera nowÄ… kartÄ™
 
 ```js
 sidebar: [
@@ -60,12 +60,12 @@ sidebar: [
 ]
 ```
 
-### Kolejność
+### KolejnoĹ›Ä‡
 
-Elementy sortują się według `order` z frontmatter. Mniejsze wartości są wyżej.
+Elementy sortujÄ… siÄ™ wedĹ‚ug `order` z frontmatter. Mniejsze wartoĹ›ci sÄ… wyĹĽej.
 
-Elementy bez `order` trafiają za elementy posortowane. Przy tym samym `order`
-najpierw są katalogi, potem strony, a następnie sortowanie alfabetyczne po etykiecie.
+Elementy bez `order` trafiajÄ… za elementy posortowane. Przy tym samym `order`
+najpierw sÄ… katalogi, potem strony, a nastÄ™pnie sortowanie alfabetyczne po etykiecie.
 
 ```yaml
 ---
@@ -74,7 +74,7 @@ order: 1
 ---
 ```
 
-Dla katalogów wykorzystywane jest `order` z ich `index.md`.
+Dla katalogĂłw wykorzystywane jest `order` z ich `index.md`.
 
 ```yaml
 # docs/guide/index.md
@@ -86,7 +86,7 @@ order: 2
 
 ## Nawigacja SPA
 
-Greg to SPA, więc przejścia między stronami nie przeładowują całej strony.
+Greg to SPA, wiÄ™c przejĹ›cia miÄ™dzy stronami nie przeĹ‚adowujÄ… caĹ‚ej strony.
 
 ```md
 [Getting Started](./getting-started)
@@ -95,39 +95,39 @@ Greg to SPA, więc przejścia między stronami nie przeładowują całej strony.
 [Other page + anchor](./other#some-section)
 ```
 
-Rozszerzenia `.md` i `.html` są automatycznie usuwane.
+Rozszerzenia `.md` i `.html` sÄ… automatycznie usuwane.
 
 ```md
 [link](./page.md)    ->  /docs/.../page
 [link](./page.html)  ->  /docs/.../page
 ```
 
-Linki zewnętrzne (`http://`, `https://`, `//` itd.) są otwierane normalnie
-przez przeglądarkę.
+Linki zewnÄ™trzne (`http://`, `https://`, `//` itd.) sÄ… otwierane normalnie
+przez przeglÄ…darkÄ™.
 
-Jeśli link Markdown (albo HTML anchor) ma jawny `target`, Greg go respektuje.
+JeĹ›li link Markdown (albo HTML anchor) ma jawny `target`, Greg go respektuje.
 
-## `rootPath`
+## `srcDir`
 
-Prop `rootPath` w `<MarkdownDocs>` wskazuje gdzie żyją dokumenty. Domyślnie to `/docs`.
+Prop `srcDir` w `<MarkdownDocs>` wskazuje gdzie ĹĽyjÄ… dokumenty. DomyĹ›lnie to `/docs`.
 
 ```svelte
-<MarkdownDocs rootPath="/documentation" version="2.0.0" />
+<MarkdownDocs srcDir="/documentation" version="2.0.0" />
 ```
 
-Wtyczki Vite powinny używać tego samego `rootPath`.
+Wtyczki Vite powinny uĹĽywaÄ‡ tego samego `srcDir`.
 
 ```js
 // vite.config.js
-vitePluginSearchIndex({ docsDir: 'documentation', rootPath: '/documentation' })
+vitePluginSearchIndex({ docsDir: 'documentation', srcDir: '/documentation' })
 ```
 
 ## Zachowanie 404
 
-Gdy URL nie pasuje do żadnego pliku Markdown, renderowany jest fallback z `children`:
+Gdy URL nie pasuje do ĹĽadnego pliku Markdown, renderowany jest fallback z `children`:
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version="1.0.0">
+<MarkdownDocs srcDir="/docs" version="1.0.0">
   {#snippet children()}
     <p>Wybierz temat z sidebaru.</p>
   {/snippet}

@@ -103,7 +103,7 @@ Use folder mode when each docs version should come from a directory in your work
 Set:
 
 1. `strategy: "folders"`
-2. `folders[]` entries with `version`, `dir`, optional `rootPath`, `title`
+2. `folders[]` entries with `version`, `dir`, optional `srcDir`, `title`
 3. `default` and optional `aliases`
 
 Example:

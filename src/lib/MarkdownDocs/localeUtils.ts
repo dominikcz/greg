@@ -122,7 +122,7 @@ export type LocaleConfig = {
 export type LocaleEntry = {
     key: string;
     segment: string;
-    rootPath: string;
+    srcDir: string;
     config: LocaleConfig;
 };
 
@@ -199,8 +199,8 @@ function splitPathAndSuffix(raw: string): { path: string; suffix: string } {
 function resolveThemeLink(
     rawLink: string,
     args: {
-        baseRootPath: string;
-        localeRootPath: string;
+        baseSrcDir: string;
+        localeSrcDir: string;
         localeSegment: string;
     },
 ): string {
@@ -212,37 +212,37 @@ function resolveThemeLink(
     const { path, suffix } = splitPathAndSuffix(value);
     if (!path) return suffix || value;
 
-    const baseRootPath = normalizeRootPath(args.baseRootPath);
-    const localeRootPath = normalizeRootPath(args.localeRootPath);
+    const baseSrcDir = normalizeSrcDir(args.baseSrcDir);
+    const localeSrcDir = normalizeSrcDir(args.localeSrcDir);
     const localeSegment = args.localeSegment
-        ? normalizeRootPath(args.localeSegment)
+        ? normalizeSrcDir(args.localeSegment)
         : "";
 
-    if (path === "/") return `${localeRootPath}${suffix}`;
+    if (path === "/") return `${localeSrcDir}${suffix}`;
 
-    if (path.startsWith(baseRootPath + "/") || path === baseRootPath) {
-        return `${normalizeRootPath(path)}${suffix}`;
+    if (path.startsWith(baseSrcDir + "/") || path === baseSrcDir) {
+        return `${normalizeSrcDir(path)}${suffix}`;
     }
 
     if (
         localeSegment &&
         (path === localeSegment || path.startsWith(localeSegment + "/"))
     ) {
-        return `${normalizeRootPath(baseRootPath + path)}${suffix}`;
+        return `${normalizeSrcDir(baseSrcDir + path)}${suffix}`;
     }
 
     if (path.startsWith("/")) {
-        return `${normalizeRootPath(localeRootPath + path)}${suffix}`;
+        return `${normalizeSrcDir(localeSrcDir + path)}${suffix}`;
     }
 
-    return `${normalizeRootPath(`${localeRootPath}/${path}`)}${suffix}`;
+    return `${normalizeSrcDir(`${localeSrcDir}/${path}`)}${suffix}`;
 }
 
 function normalizeTopNavLinks(
     nav: TopNavItem[],
     args: {
-        baseRootPath: string;
-        localeRootPath: string;
+        baseSrcDir: string;
+        localeSrcDir: string;
         localeSegment: string;
     },
 ): TopNavItem[] {
@@ -259,8 +259,8 @@ function normalizeTopNavLinks(
 function normalizeSidebarLinks(
     sidebar: SidebarItem[],
     args: {
-        baseRootPath: string;
-        localeRootPath: string;
+        baseSrcDir: string;
+        localeSrcDir: string;
         localeSegment: string;
     },
 ): SidebarItem[] {
@@ -296,7 +296,7 @@ function resolveSearchLocaleConfig(
     return undefined;
 }
 
-export function normalizeRootPath(path: string): string {
+export function normalizeSrcDir(path: string): string {
     const value = String(path || "").trim();
     if (!value || value === "/") return "/";
     return "/" + value.replace(/^\/+|\/+$/g, "");
@@ -316,52 +316,52 @@ export function keyToLocaleSegment(key: string): string {
 }
 
 export function getLocaleEntries(
-    baseRootPath: string,
+    baseSrcDir: string,
     locales: Record<string, LocaleConfig>,
 ): LocaleEntry[] {
-    const base = normalizeRootPath(baseRootPath);
+    const base = normalizeSrcDir(baseSrcDir);
     const rawEntries = Object.entries(locales ?? {});
     if (!rawEntries.length) {
-        return [{ key: "/", segment: "", rootPath: base, config: {} }];
+        return [{ key: "/", segment: "", srcDir: base, config: {} }];
     }
 
     return rawEntries.map(([key, config]) => {
         const segment = keyToLocaleSegment(key);
-        const rootPath = normalizeRootPath(segment ? `${base}${segment}` : base);
-        return { key: normalizeLocaleKey(key), segment, rootPath, config };
+        const srcDir = normalizeSrcDir(segment ? `${base}${segment}` : base);
+        return { key: normalizeLocaleKey(key), segment, srcDir, config };
     });
 }
 
 export function resolveLocaleForPath(
     activePath: string,
-    baseRootPath: string,
+    baseSrcDir: string,
     locales: Record<string, LocaleConfig>,
     defaults: ResolveDefaults,
 ) {
-    const cleanPath = normalizeRootPath(activePath || "/");
-    const normalizedBaseRootPath = normalizeRootPath(baseRootPath);
-    const entries = getLocaleEntries(baseRootPath, locales);
+    const cleanPath = normalizeSrcDir(activePath || "/");
+    const normalizedBaseSrcDir = normalizeSrcDir(baseSrcDir);
+    const entries = getLocaleEntries(baseSrcDir, locales);
     const matched =
         [...entries]
             .sort((a, b) => b.segment.length - a.segment.length)
             .find(
                 (entry) =>
-                    cleanPath === entry.rootPath ||
-                    cleanPath.startsWith(entry.rootPath + "/"),
+                    cleanPath === entry.srcDir ||
+                    cleanPath.startsWith(entry.srcDir + "/"),
             ) ?? entries[0];
 
     const themeConfig = matched.config.themeConfig ?? {};
     const normalizedNav = normalizeTopNavLinks(themeConfig.nav ?? defaults.nav, {
-        baseRootPath: normalizedBaseRootPath,
-        localeRootPath: matched.rootPath,
+        baseSrcDir: normalizedBaseSrcDir,
+        localeSrcDir: matched.srcDir,
         localeSegment: matched.segment,
     });
     const normalizedSidebar = Array.isArray(themeConfig.sidebar ?? defaults.sidebar)
         ? normalizeSidebarLinks(
               (themeConfig.sidebar ?? defaults.sidebar) as SidebarItem[],
               {
-                  baseRootPath: normalizedBaseRootPath,
-                  localeRootPath: matched.rootPath,
+                  baseSrcDir: normalizedBaseSrcDir,
+                  localeSrcDir: matched.srcDir,
                   localeSegment: matched.segment,
               },
           )
@@ -371,8 +371,8 @@ export function resolveLocaleForPath(
         key: matched.key,
         lang: matched.config.lang,
         dir: matched.config.dir,
-        rootPath: matched.rootPath,
-        allRootPaths: entries.map((entry) => entry.rootPath),
+        srcDir: matched.srcDir,
+        allSrcDirs: entries.map((entry) => entry.srcDir),
         mainTitle: matched.config.title ?? defaults.mainTitle,
         nav: normalizedNav,
         sidebar: normalizedSidebar,
@@ -441,13 +441,13 @@ export function resolveLocaleForPath(
 
 function hasMarkdownForPath(
     frontmatters: Record<string, unknown>,
-    rootPath: string,
+    srcDir: string,
     routePath: string,
 ): boolean {
-    const rel = routePath.replace(rootPath, "").replace(/^\//, "");
+    const rel = routePath.replace(srcDir, "").replace(/^\//, "");
     const candidates = rel
-        ? [`${rootPath}/${rel}.md`, `${rootPath}/${rel}/index.md`]
-        : [`${rootPath}/index.md`, `${rootPath}index.md`];
+        ? [`${srcDir}/${rel}.md`, `${srcDir}/${rel}/index.md`]
+        : [`${srcDir}/index.md`, `${srcDir}index.md`];
     return candidates.some((candidate) => candidate in frontmatters);
 }
 
@@ -461,7 +461,7 @@ function getLocaleLabel(entry: LocaleEntry): string {
 export function getLocaleSwitchItems(args: {
     entries: LocaleEntry[];
     activePath: string;
-    activeRootPath: string;
+    activeSrcDir: string;
     activeLocaleKey: string;
     frontmatters: Record<string, unknown>;
     preservePath?: boolean;
@@ -469,7 +469,7 @@ export function getLocaleSwitchItems(args: {
     const {
         entries,
         activePath,
-        activeRootPath,
+        activeSrcDir,
         activeLocaleKey,
         frontmatters,
         preservePath = true,
@@ -480,13 +480,13 @@ export function getLocaleSwitchItems(args: {
 
     const relPath =
         preservePath &&
-        (activePath === activeRootPath ||
-            activePath.startsWith(activeRootPath + "/"))
-            ? activePath.slice(activeRootPath.length)
+        (activePath === activeSrcDir ||
+            activePath.startsWith(activeSrcDir + "/"))
+            ? activePath.slice(activeSrcDir.length)
             : "";
 
     return entries.map((entry) => {
-        const mappedPath = normalizeRootPath(entry.rootPath + relPath);
+        const mappedPath = normalizeSrcDir(entry.srcDir + relPath);
         const localeLink =
             typeof entry.config.link === "string"
                 ? entry.config.link.trim()
@@ -495,10 +495,10 @@ export function getLocaleSwitchItems(args: {
         const link = localeLink
             ? EXTERNAL_LINK_RE.test(localeLink)
                 ? localeLink
-                : normalizeRootPath(localeLink)
-            : hasMarkdownForPath(frontmatters, entry.rootPath, mappedPath)
+                : normalizeSrcDir(localeLink)
+            : hasMarkdownForPath(frontmatters, entry.srcDir, mappedPath)
               ? mappedPath
-              : entry.rootPath;
+              : entry.srcDir;
         return {
             key: entry.key,
             label: getLocaleLabel(entry),

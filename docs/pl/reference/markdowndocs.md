@@ -2,7 +2,7 @@
 title: Komponent MarkdownDocs
 ---
 
-`MarkdownDocs` to komponent najwyższego poziomu, który spina cały silnik dokumentacji: routing, sidebar, panel outline, wyszukiwarkę, tryb jasny/ciemny i Carbon Ads.
+`MarkdownDocs` to komponent najwyĹĽszego poziomu, ktĂłry spina caĹ‚y silnik dokumentacji: routing, sidebar, panel outline, wyszukiwarkÄ™, tryb jasny/ciemny i Carbon Ads.
 
 Zamontuj go w `src/App.svelte`:
 
@@ -11,39 +11,39 @@ Zamontuj go w `src/App.svelte`:
     import MarkdownDocs from '@dominikcz/greg'
 </script>
 
-<MarkdownDocs rootPath="/docs" version="1.0.0" />
+<MarkdownDocs srcDir="/docs" version="1.0.0" />
 ```
 
-## Właściwości
+## WĹ‚aĹ›ciwoĹ›ci
 
 ### `locales` (przez `greg.config.js`)
 
 - **Typ:** `Record<string, LocaleConfig>`
-- **Miejsce:** `greg.config.js` (to nie jest bezpośrednia właściwość komponentu)
+- **Miejsce:** `greg.config.js` (to nie jest bezpoĹ›rednia wĹ‚aĹ›ciwoĹ›Ä‡ komponentu)
 
 Lokalizacja jest wspierana przez `greg.config.js`:
 
 - klucze locale jak `'/'`, `'/pl/'`
 - lokalne `lang`, `title`
-- opcjonalne `label` (etykieta w przełączniku języka)
+- opcjonalne `label` (etykieta w przeĹ‚Ä…czniku jÄ™zyka)
 - lokalny `themeConfig`, m.in.: `nav`, `sidebar`, `outline`, `lastUpdatedText`, etykiety UI, `docFooter`, `siteTitle`, `logo`, `socialLinks`, `editLink`, `footer`, `aside`, `lastUpdated`
 
-Zachowanie przełącznika języka:
+Zachowanie przeĹ‚Ä…cznika jÄ™zyka:
 
-- pojawia się w nagłówku, gdy są co najmniej 2 locale,
-- dla `i18nRouting: true` (domyślnie) zachowuje względną stronę,
-- dla `i18nRouting: false` przełącza na root locale,
-- jeśli odpowiednia strona nie istnieje, robi fallback do root locale.
+- pojawia siÄ™ w nagĹ‚Ăłwku, gdy sÄ… co najmniej 2 locale,
+- dla `i18nRouting: true` (domyĹ›lnie) zachowuje wzglÄ™dnÄ… stronÄ™,
+- dla `i18nRouting: false` przeĹ‚Ä…cza na root locale,
+- jeĹ›li odpowiednia strona nie istnieje, robi fallback do root locale.
 
-Ścieżki locale są rozwiązywane względem `rootPath`:
+ĹšcieĹĽki locale sÄ… rozwiÄ…zywane wzglÄ™dem `srcDir`:
 
-- `rootPath = '/docs'`
-- `'/'` mapuje się na `'/docs'`
-- `'/pl/'` mapuje się na `'/docs/pl'`
+- `srcDir = '/docs'`
+- `'/'` mapuje siÄ™ na `'/docs'`
+- `'/pl/'` mapuje siÄ™ na `'/docs/pl'`
 
 ```js
 export default {
-  rootPath: '/docs',
+  srcDir: '/docs',
   i18nRouting: true,
   locales: {
     '/': {
@@ -73,13 +73,13 @@ export default {
         sidebar: [{ text: 'Przewodnik', auto: '/guide' }],
         outline: { level: [2, 3], label: 'Na tej stronie' },
         lastUpdatedText: 'Zaktualizowano:',
-        langMenuLabel: 'Zmień język',
+        langMenuLabel: 'ZmieĹ„ jÄ™zyk',
         sidebarMenuLabel: 'Menu',
-        skipToContentLabel: 'Przejdź do treści',
-        returnToTopLabel: 'Wróć na górę',
-        darkModeSwitchLabel: 'Wygląd',
-        lightModeSwitchTitle: 'Przełącz na jasny motyw',
-        darkModeSwitchTitle: 'Przełącz na ciemny motyw',
+        skipToContentLabel: 'PrzejdĹş do treĹ›ci',
+        returnToTopLabel: 'WrĂłÄ‡ na gĂłrÄ™',
+        darkModeSwitchLabel: 'WyglÄ…d',
+        lightModeSwitchTitle: 'PrzeĹ‚Ä…cz na jasny motyw',
+        darkModeSwitchTitle: 'PrzeĹ‚Ä…cz na ciemny motyw',
         docFooter: { prev: 'Poprzednia', next: 'Nastepna' },
       },
     },
@@ -87,68 +87,68 @@ export default {
 }
 ```
 
-### `rootPath`
+### `srcDir`
 
 - **Typ:** `string`
-- **Domyślnie:** `"/docs"`
+- **DomyĹ›lnie:** `"/docs"`
 
-Prefiks URL mapowany na katalog `docs/`. Musi zgadzać się z `rootPath` przekazanym do `vitePluginSearchIndex`.
+Prefiks URL mapowany na katalog `docs/`. Musi zgadzaÄ‡ siÄ™ z `srcDir` przekazanym do `vitePluginSearchIndex`.
 
 ```svelte
-<MarkdownDocs rootPath="/documentation" version="1.0.0" />
+<MarkdownDocs srcDir="/documentation" version="1.0.0" />
 ```
 
 ### `version`
 
 - **Typ:** `string`
-- **Domyślnie:** `""`
+- **DomyĹ›lnie:** `""`
 
-Wersja pokazywana jako badge obok tytułu.
+Wersja pokazywana jako badge obok tytuĹ‚u.
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version={__VERSION__} />
+<MarkdownDocs srcDir="/docs" version={__VERSION__} />
 ```
 
 ### `mainTitle`
 
 - **Typ:** `string`
-- **Domyślnie:** `"Greg"`
+- **DomyĹ›lnie:** `"Greg"`
 
-Nazwa projektu w lewym górnym rogu nagłówka.
+Nazwa projektu w lewym gĂłrnym rogu nagĹ‚Ăłwka.
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version="1.0.0" mainTitle="My Project" />
+<MarkdownDocs srcDir="/docs" version="1.0.0" mainTitle="My Project" />
 ```
 
 ### `outline`
 
 - **Typ:** `false | number | [number, number] | 'deep' | { level?: ..., label?: string }`
-- **Domyślnie:** `[2, 3]`
+- **DomyĹ›lnie:** `[2, 3]`
 
 Steruje prawym panelem **Outline**.
 
-| Wartość                             | Efekt                              |
+| WartoĹ›Ä‡                             | Efekt                              |
 | ----------------------------------- | ---------------------------------- |
 | `false`                             | panel outline jest ukryty          |
-| `2`                                 | tylko nagłówki `h2`                |
-| `[2, 3]`                            | `h2` i `h3` *(domyślnie)*          |
+| `2`                                 | tylko nagĹ‚Ăłwki `h2`                |
+| `[2, 3]`                            | `h2` i `h3` *(domyĹ›lnie)*          |
 | `'deep'`                            | od `h2` do `h6`                    |
-| `{ level: [2,4], label: 'Spis' }`   | własny zakres i etykieta panelu    |
+| `{ level: [2,4], label: 'Spis' }`   | wĹ‚asny zakres i etykieta panelu    |
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version="1.0.0" outline="deep" />
+<MarkdownDocs srcDir="/docs" version="1.0.0" outline="deep" />
 ```
 
 ### `carbonAds`
 
 - **Typ:** `{ code: string; placement: string } | undefined`
-- **Domyślnie:** `undefined`
+- **DomyĹ›lnie:** `undefined`
 
 Renderuje blok [Carbon Ads](./carbon-ads) w panelu outline.
 
 ```svelte
 <MarkdownDocs
-  rootPath="/docs"
+  srcDir="/docs"
   version="1.0.0"
   carbonAds={{ code: 'CWYD42JW', placement: 'myprojectdev' }}
 />
@@ -158,19 +158,19 @@ Renderuje blok [Carbon Ads](./carbon-ads) w panelu outline.
 
 - **Typ:** `Snippet | undefined`
 
-Renderowane, gdy aktywna ścieżka nie pasuje do żadnego pliku Markdown.
+Renderowane, gdy aktywna Ĺ›cieĹĽka nie pasuje do ĹĽadnego pliku Markdown.
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version="1.0.0">
+<MarkdownDocs srcDir="/docs" version="1.0.0">
   {#snippet children()}
-    <p>Wybierz stronę z sidebaru, aby zacząć.</p>
+    <p>Wybierz stronÄ™ z sidebaru, aby zaczÄ…Ä‡.</p>
   {/snippet}
 </MarkdownDocs>
 ```
 
 ## Konfiguracja Vite
 
-`vitePluginSearchIndex` musi być dodany do `vite.config.js`, żeby zbudować indeks wyszukiwania:
+`vitePluginSearchIndex` musi byÄ‡ dodany do `vite.config.js`, ĹĽeby zbudowaÄ‡ indeks wyszukiwania:
 
 ```js
 import { vitePluginSearchIndex } from '@dominikcz/greg/plugins';
@@ -178,7 +178,7 @@ import { vitePluginSearchIndex } from '@dominikcz/greg/plugins';
 export default defineConfig({
   plugins: [
     svelte(),
-    vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
+    vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/docs' }),
   ],
   resolve: {
     alias: {
@@ -190,8 +190,8 @@ export default defineConfig({
 
 | Opcja      | Opis                                                        |
 | ---------- | ----------------------------------------------------------- |
-| `docsDir`  | Katalog z plikami `.md` względem root projektu              |
-| `rootPath` | Prefiks URL; musi zgadzać się z `rootPath` komponentu       |
+| `docsDir`  | Katalog z plikami `.md` wzglÄ™dem root projektu              |
+| `srcDir` | Prefiks URL; musi zgadzaÄ‡ siÄ™ z `srcDir` komponentu       |
 
 ## `svelte.config.js`
 
@@ -205,46 +205,46 @@ const gregConfig = {
 };
 ```
 
-## Model rozszerzeń runtime
+## Model rozszerzeĹ„ runtime
 
-`MarkdownRenderer.svelte` deleguje punkty rozszerzeń do `src/lib/MarkdownDocs/markdownRendererRuntime.ts`.
+`MarkdownRenderer.svelte` deleguje punkty rozszerzeĹ„ do `src/lib/MarkdownDocs/markdownRendererRuntime.ts`.
 
-### 1) Rejestr hydracji komponentów
+### 1) Rejestr hydracji komponentĂłw
 
-`COMPONENT_REGISTRY` mapuje nazwę taga na:
+`COMPONENT_REGISTRY` mapuje nazwÄ™ taga na:
 
 - komponent Svelte,
-- funkcję `buildProps(el)`.
+- funkcjÄ™ `buildProps(el)`.
 
-To jest używane np. dla tagów `badge`, `button`, `image`, `link`, `codegroup`.
+To jest uĹĽywane np. dla tagĂłw `badge`, `button`, `image`, `link`, `codegroup`.
 
-### 2) Rejestry pluginów Markdown
+### 2) Rejestry pluginĂłw Markdown
 
-Pipeline jest składany z dwóch uporządkowanych rejestrów:
+Pipeline jest skĹ‚adany z dwĂłch uporzÄ…dkowanych rejestrĂłw:
 
 - `getRemarkPluginEntries(baseUrl, docsPrefix)`
 - `getRehypePluginEntries()`
 
-Obejmują m.in.:
+ObejmujÄ… m.in.:
 
 - kontenery niestandardowe (`remarkContainers` + `rehypeContainers`)
 - bloki kodu (`rehypeShiki`, `rehypeCodeTitle`, `rehypeCodeGroup`)
 - preprocessing Mermaid (`rehypeMermaid`)
 - normalizacja Steps (`rehypeStepsWrapper`)
-- nagłówki/TOC (`rehypeSlug`, `rehypeAutolinkHeadings`, `rehypeTocPlaceholder`)
+- nagĹ‚Ăłwki/TOC (`rehypeSlug`, `rehypeAutolinkHeadings`, `rehypeTocPlaceholder`)
 
 ### 3) Handlery renderowania (post-HTML)
 
-Po renderze HTML uruchamiane są handlery z list:
+Po renderze HTML uruchamiane sÄ… handlery z list:
 
 - `RUNTIME_RENDER_HANDLERS`
 - `THEME_CHANGE_RENDER_HANDLERS`
 
-Obecne handlery obejmują hydrację komponentów i inicjalizację/odświeżanie Mermaid.
+Obecne handlery obejmujÄ… hydracjÄ™ komponentĂłw i inicjalizacjÄ™/odĹ›wieĹĽanie Mermaid.
 
-## Gdzie rozszerzać
+## Gdzie rozszerzaÄ‡
 
-- użyj **component registry** dla interaktywnych widgetów renderowanych z tagów,
-- użyj **rehype/remark registries** dla transformacji statycznego HTML,
-- użyj **render handlers** dla logiki działającej w przeglądarce na żywym DOM
-  (np. silniki diagramów).
+- uĹĽyj **component registry** dla interaktywnych widgetĂłw renderowanych z tagĂłw,
+- uĹĽyj **rehype/remark registries** dla transformacji statycznego HTML,
+- uĹĽyj **render handlers** dla logiki dziaĹ‚ajÄ…cej w przeglÄ…darce na ĹĽywym DOM
+  (np. silniki diagramĂłw).

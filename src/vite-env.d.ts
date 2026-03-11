@@ -118,13 +118,13 @@ declare module 'virtual:greg-config' {
         branch: string;
         title?: string;
         docsDir?: string;
-        rootPath?: string;
+        srcDir?: string;
     };
     type FolderVersionSource = {
         version: string;
         dir: string;
         title?: string;
-        rootPath?: string;
+        srcDir?: string;
     };
     type GregVersioningConfig = {
         strategy?: 'branches' | 'folders';
@@ -159,7 +159,14 @@ declare module 'virtual:greg-config' {
     type GregConfig = {
         base?: string;
         outDir?: string;
-        rootPath?: string;
+        /** VitePress-compatible: physical docs source directory, relative to project root. Default: `'docs'` */
+        srcDir?: string;
+        /** VitePress-compatible: glob patterns to exclude from docs source. Default: `[]` */
+        srcExclude?: string[];
+        /** URL prefix for the docs section (e.g. `'docs'` â†’ `â€¦/docs/guide`). Default: `'docs'` */
+        docsBase?: string;
+        /** @deprecated Use `docsBase` instead. */
+        srcDir?: string;
         version?: string;
         mainTitle?: string;
         outline?: OutlineOption | boolean;

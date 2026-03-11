@@ -1,16 +1,17 @@
 <script lang="ts">
+    import { withBase } from "./common";
     type BreadcrumbItem = { label: string; link: string };
 
     type Props = {
         items: BreadcrumbItem[];
         navigate: (path: string) => void;
         /** Root path excluded from display (e.g. '/docs'). */
-        rootPath: string;
+        srcDir: string;
     };
-    let { items, navigate, rootPath }: Props = $props();
+    let { items, navigate, srcDir }: Props = $props();
 
     // Skip the docs-root node and only render when there are at least two levels.
-    const display = $derived(items.filter((i) => i.link !== rootPath));
+    const display = $derived(items.filter((i) => i.link !== srcDir));
 </script>
 
 {#if display.length > 1}
@@ -19,7 +20,7 @@
             {#if i > 0}<span class="sep" aria-hidden="true">/</span>{/if}
             {#if i < display.length - 1}
                 <a
-                    href={item.link}
+                    href={withBase(item.link)}
                     class="crumb"
                     onclick={(e) => {
                         e.preventDefault();

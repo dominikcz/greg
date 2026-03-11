@@ -8,6 +8,7 @@
 	import Self from "./TreeViewItem.svelte";
 	import type { TreeViewItem } from "./treeViewTypes";
 	import { ChevronRight } from "@lucide/svelte";
+	import { withBase } from "./common";
 
 	interface TreeViewItemProps {
 		item: TreeViewItem;
@@ -75,7 +76,7 @@
 <li>
 	{#if item.children.length}
 		<a
-			href={item.link}
+			href={withBase(item.link)}
 			target={item.target}
 			rel={item.rel}
 			onclick={handleToggleClick}
@@ -100,7 +101,7 @@
 		{/if}
 	{:else}
 		<a
-			href={item.link}
+			href={withBase(item.link)}
 			target={item.target}
 			rel={item.rel}
 			class="no-arrow"

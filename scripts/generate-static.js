@@ -12,22 +12,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 function parseArgs(argv) {
-    const out = { docsDir: 'docs', rootPath: '/docs', distDir: 'dist' };
+    const out = { docsDir: 'docs', srcDir: '/docs', distDir: 'dist' };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i];
         if (a === '--docsDir' && argv[i + 1]) out.docsDir = argv[++i];
-        if (a === '--rootPath' && argv[i + 1]) out.rootPath = argv[++i];
+        if (a === '--srcDir' && argv[i + 1]) out.srcDir = argv[++i];
         if (a === '--distDir' && argv[i + 1]) out.distDir = argv[++i];
     }
     return out;
 }
 
-const { docsDir, rootPath, distDir } = parseArgs(process.argv.slice(2));
+const { docsDir, srcDir, distDir } = parseArgs(process.argv.slice(2));
 const DIST = path.resolve(distDir);
 const DOCS = path.resolve(docsDir);
-const ROOT_PATH = rootPath;
+const ROOT_PATH = srcDir;
 
-// ── Collect routes from the docs/ folder ────────────────────────────────────
+// â”€â”€ Collect routes from the docs/ folder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function collectRoutes(dir, base) {
     const routes = [];
@@ -38,10 +38,10 @@ function collectRoutes(dir, base) {
             routes.push(...collectRoutes(full, `${base}/${entry.name}`));
         } else if (entry.isFile() && entry.name.endsWith('.md')) {
             if (entry.name === 'index.md') {
-                // /docs/guide/index.md  →  /docs/guide
+                // /docs/guide/index.md  â†’  /docs/guide
                 routes.push(base);
             } else {
-                // /docs/guide/routing.md  →  /docs/guide/routing
+                // /docs/guide/routing.md  â†’  /docs/guide/routing
                 routes.push(`${base}/${entry.name.replace(/\.md$/, '')}`);
             }
         }
@@ -54,11 +54,11 @@ const routes = [...new Set([
     ...collectRoutes(DOCS, ROOT_PATH),
 ])];
 
-// ── Copy index.html to each route ───────────────────────────────────────────
+// â”€â”€ Copy index.html to each route â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const src = path.join(DIST, 'index.html');
 if (!fs.existsSync(src)) {
-    console.error('dist/index.html not found – run npm run build first.');
+    console.error('dist/index.html not found â€“ run npm run build first.');
     process.exit(1);
 }
 
@@ -73,7 +73,7 @@ for (const route of routes) {
     fs.mkdirSync(outDir, { recursive: true });
     fs.copyFileSync(src, outFile);
     count++;
-    console.log(`  ✓  ${route}/index.html`);
+    console.log(`  âś“  ${route}/index.html`);
 }
 
 console.log(`\nStatic export: ${count} routes written to dist/`);

@@ -14,10 +14,10 @@ hero:
   actions:
     - theme: brand
       text: Pierwsze kroki
-      link: /docs/pl/guide/getting-started
+      link: /pl/guide/getting-started
     - theme: alt
       text: Referencja Markdown
-      link: /docs/pl/guide/markdown
+      link: /pl/guide/markdown
 
 features:
   - icon: 📝

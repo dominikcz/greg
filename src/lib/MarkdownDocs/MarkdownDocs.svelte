@@ -1,4 +1,4 @@
-﻿<script lang="ts">
+<script lang="ts">
     import { tick, type Snippet } from "svelte";
     import DocsNavigation from "./DocsNavigation.svelte";
     import DocsSiteHeader from "./DocsSiteHeader.svelte";
@@ -30,10 +30,11 @@
     import {
         type LocaleConfig,
         getLocaleSwitchItems,
-        normalizeRootPath,
+        normalizeSrcDir,
         normalizeLocaleKey,
         resolveLocaleForPath,
     } from "./localeUtils";
+    import { withBase, toSourcePath } from "./common";
     import {
         buildDefaultVersionPathPrefix,
         DEFAULT_PATH_PREFIX,
@@ -81,7 +82,8 @@
     };
 
     type Props = {
-        rootPath?: string;
+        srcDir?: string;
+        docsBase?: string;
         children?: Snippet;
         version?: string;
         mainTitle?: string;
@@ -103,8 +105,8 @@
         /** Show Back To Top button. */
         backToTop?: boolean;
         /** Show the file's last-modified date below content (doc layout only).
-         * `true`  – uses default format `{ dateStyle: 'medium' }` and browser locale.
-         * Object  – `{ text?, locale?, formatOptions? }` for full control.
+         * `true`  ďż˝ uses default format `{ dateStyle: 'medium' }` and browser locale.
+         * Object  ďż˝ `{ text?, locale?, formatOptions? }` for full control.
          */
         lastModified?:
             | boolean
@@ -115,7 +117,7 @@
               };
         /**
          * Sidebar tree configuration.
-         * `'auto'` (default) — generated from the docs folder structure.
+         * `'auto'` (default) ďż˝ generated from the docs folder structure.
          * Pass an array of `SidebarItem` objects to define the sidebar manually;
          * items with an `auto` path have their children auto-generated.
          */
@@ -157,7 +159,7 @@
         /**
          * Custom search provider.
          * `(query: string, limit?: number) => Promise<SearchResult[]>`
-         * Overrides greg.config.js › search.provider when set.
+         * Overrides greg.config.js ďż˝ search.provider when set.
          * The function must return objects matching the SearchResult shape:
          * { id, title, titleHtml, sectionTitle, sectionTitleHtml?, sectionAnchor, excerptHtml, score }
          */
@@ -195,7 +197,7 @@
 
     let {
         children,
-        rootPath: configuredRootPath = (gregConfig as any).rootPath ?? "/docs",
+        srcDir: configuredSrcDir = normalizeSrcDir((gregConfig as any).srcDir ?? "docs"),
         version: globalVersion = (gregConfig as any).version ?? "",
         mainTitle: globalMainTitle = (gregConfig as any).mainTitle ?? "Greg",
         carbonAds = (gregConfig as any).carbonAds,
@@ -258,6 +260,7 @@
         | null;
     const globalVersioningUi = (versioningConfig?.ui ?? {}) as VersioningUiConfig;
 
+
     function getLocalizedVersioningUi(
         localesMap: Record<string, VersioningLocaleConfig> | undefined,
         localeKey: string,
@@ -290,13 +293,13 @@
     }
 
     function stripVersionPrefixFromPath(pathname: string, prefix: string): string {
-        const normalizedPath = normalizeRootPath(pathname);
+        const normalizedPath = normalizeSrcDir(pathname);
         const activeVersion = findActiveVersion(normalizedPath, prefix);
         if (!activeVersion) return normalizedPath;
 
         const versionRoot = `${prefix}/${activeVersion}`;
         const suffix = normalizedPath.slice(versionRoot.length);
-        return normalizeRootPath(suffix || "/");
+        return normalizeSrcDir(suffix || "/");
     }
 
     let versionManifest = $state<VersionManifest | null>(null);
@@ -341,7 +344,7 @@
             };
         }
 
-        const manifestUrl = `${versionPathPrefix}/versions.json`;
+        const manifestUrl = withBase(`${versionPathPrefix}/versions.json`);
 
         fetch(manifestUrl)
             .then((res) => {
@@ -361,7 +364,7 @@
                         if (!version) return null;
                         const title = String(entry.title || version);
                         const rawPath = String(entry.path || `${versionPathPrefix}/${version}/`);
-                        const path = normalizeRootPath(rawPath);
+                        const path = normalizeSrcDir(rawPath);
                         return { version, title, path };
                     })
                     .filter((entry): entry is { version: string; title: string; path: string } => Boolean(entry));
@@ -383,7 +386,7 @@
         const next = manifestVersionOptions.find((entry) => entry.version === version);
         if (!next) return;
 
-        const currentPath = normalizeRootPath(window.location.pathname);
+        const currentPath = toSourcePath(window.location.pathname);
         const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
         const isDefaultTarget =
             Boolean(resolvedDefaultVersion) && version === resolvedDefaultVersion;
@@ -401,23 +404,23 @@
                       ? currentPath.slice(currentPrefix.length)
                       : "";
             if (isDefaultTarget) {
-                targetPath = suffix ? normalizeRootPath(suffix) : "/";
+                targetPath = suffix ? normalizeSrcDir(suffix) : "/";
             } else {
-                targetPath = normalizeRootPath(next.path + suffix);
+                targetPath = normalizeSrcDir(next.path + suffix);
             }
         } else if (
-            currentPath === currentRootPath ||
-            currentPath.startsWith(currentRootPath + "/")
+            currentPath === currentSrcDir ||
+            currentPath.startsWith(currentSrcDir + "/")
         ) {
             if (isDefaultTarget) {
                 targetPath = currentPath;
             } else {
-                const suffix = currentPath.slice(currentRootPath.length);
-                targetPath = normalizeRootPath(next.path + currentRootPath + suffix);
+                const suffix = currentPath.slice(currentSrcDir.length);
+                targetPath = normalizeSrcDir(next.path + currentSrcDir + suffix);
             }
         }
 
-        window.location.assign(`${targetPath}${search}${hash}`);
+        window.location.assign(`${withBase(targetPath)}${search}${hash}`);
     }
 
     // -- Outline -----------------------------------------------------------------
@@ -548,10 +551,7 @@
     });
 
     $effect(() => {
-        const href =
-            theme === "dark"
-                ? "/favicon-dark.svg?v=5"
-                : "/favicon-light.svg?v=5";
+        const href = withBase(theme === "dark" ? "/favicon-dark.svg?v=5" : "/favicon-light.svg?v=5");
 
         let el = document.querySelector(
             'link[data-greg-favicon="true"]',
@@ -592,8 +592,11 @@
     // -- Router ------------------------------------------------------------------
     const router = useRouter(frontmatters, (path) =>
         resolveLocaleForPath(
-            stripVersionPrefixFromPath(path, versionPathPrefix),
-            configuredRootPath,
+            stripVersionPrefixFromPath(
+                toSourcePath(path),
+                versionPathPrefix,
+            ),
+            configuredSrcDir,
             configLocales,
             {
             mainTitle: globalMainTitle,
@@ -629,15 +632,22 @@
             footer: globalFooter,
             aside: globalAside,
             lastUpdated: globalLastUpdated,
-        }).rootPath,
-        (path) => stripVersionPrefixFromPath(path, versionPathPrefix),
+        }).srcDir,
+        (path) =>
+            stripVersionPrefixFromPath(
+                toSourcePath(path),
+                versionPathPrefix,
+            ),
     );
 
     const routePath = $derived(
-        stripVersionPrefixFromPath(router.active, versionPathPrefix),
+        stripVersionPrefixFromPath(
+            toSourcePath(router.active),
+            versionPathPrefix,
+        ),
     );
     const localeContext = $derived(
-        resolveLocaleForPath(routePath, configuredRootPath, configLocales, {
+        resolveLocaleForPath(routePath, configuredSrcDir, configLocales, {
             mainTitle: globalMainTitle,
             nav: globalNav,
             sidebar: globalSidebar,
@@ -673,19 +683,18 @@
             lastUpdated: globalLastUpdated,
         }),
     );
-    const currentRootPath = $derived(localeContext.rootPath);
-
+    const currentSrcDir = $derived(localeContext.srcDir);
     function applyCurrentVersionPrefix(pathname: string): string {
-        const normalizedPath = normalizeRootPath(pathname);
-        const currentPath = normalizeRootPath(window.location.pathname);
+        const normalizedPath = normalizeSrcDir(pathname);
+        const currentPath = toSourcePath(window.location.pathname);
         const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
         if (!currentVersion) return normalizedPath;
 
         if (
-            normalizedPath === currentRootPath ||
-            normalizedPath.startsWith(currentRootPath + "/")
+            normalizedPath === currentSrcDir ||
+            normalizedPath.startsWith(currentSrcDir + "/")
         ) {
-            return normalizeRootPath(
+            return normalizeSrcDir(
                 `${versionPathPrefix}/${currentVersion}${normalizedPath}`,
             );
         }
@@ -694,11 +703,14 @@
     }
 
     function navigateInternal(path: string) {
-        router.navigate(applyCurrentVersionPrefix(path));
+        router.navigate(withBase(applyCurrentVersionPrefix(path)));
     }
 
     function navigateInternalWithAnchor(path: string, anchor?: string) {
-        router.navigateWithAnchor(applyCurrentVersionPrefix(path), anchor);
+        router.navigateWithAnchor(
+            withBase(applyCurrentVersionPrefix(path)),
+            anchor,
+        );
     }
 
     const SEARCH_HIGHLIGHT_STORAGE_KEY = "greg-search-highlight";
@@ -911,10 +923,10 @@
     });
 
     function navigateHome(path: string) {
-        const currentPath = normalizeRootPath(window.location.pathname);
+        const currentPath = toSourcePath(window.location.pathname);
         const currentVersion = findActiveVersion(currentPath, versionPathPrefix);
         if (currentVersion) {
-            window.location.assign(path);
+            window.location.assign(withBase(path));
             return;
         }
         navigateInternal(path);
@@ -945,7 +957,10 @@
         String(resolvedVersioningUi.outdatedVersionMessage || "").trim(),
     );
     const activeDocsVersion = $derived(
-        findActiveVersion(normalizeRootPath(window.location.pathname), versionPathPrefix),
+        findActiveVersion(
+            toSourcePath(window.location.pathname),
+            versionPathPrefix,
+        ),
     );
     const resolvedDefaultVersion = $derived.by(() => {
         if (!versionManifest) return null;
@@ -963,8 +978,8 @@
     const activeMarkdownFetchPath = $derived.by(() => {
         const mdPath = router.activeMarkdownPath;
         if (!mdPath) return null;
-        if (!activeDocsVersion) return mdPath;
-        return normalizeRootPath(`${versionPathPrefix}/${activeDocsVersion}${mdPath}`);
+        if (!activeDocsVersion) return withBase(mdPath);
+        return withBase(`${versionPathPrefix}/${activeDocsVersion}${mdPath}`);
     });
     const showOutdatedVersionNotice = $derived(
         Boolean(
@@ -989,15 +1004,15 @@
         const inLocale = Object.fromEntries(
             Object.entries(frontmatters).filter(([key]) => {
                 if (
-                    key !== currentRootPath + "/index.md" &&
-                    !key.startsWith(currentRootPath + "/")
+                    key !== currentSrcDir + "/index.md" &&
+                    !key.startsWith(currentSrcDir + "/")
                 ) {
                     return false;
                 }
                 // Root locale should not include localized subtrees (e.g. /docs/pl/*).
-                if (currentRootPath === normalizeRootPath(configuredRootPath)) {
-                    const otherLocaleRoots = localeContext.allRootPaths.filter(
-                        (rp) => rp !== currentRootPath,
+                if (currentSrcDir === normalizeSrcDir(configuredSrcDir)) {
+                    const otherLocaleRoots = localeContext.allSrcDirs.filter(
+                        (rp) => rp !== currentSrcDir,
                     );
                     if (
                         otherLocaleRoots.some(
@@ -1019,16 +1034,16 @@
             ? (parseSidebarConfig(
                   sidebar,
                   localeFrontmatters,
-                  currentRootPath,
+                  currentSrcDir,
               ) ??
                   prepareMenu(
                       localeFrontmatters,
-                      currentRootPath,
+                      currentSrcDir,
                       localeFrontmatters,
                   ))
             : prepareMenu(
                   localeFrontmatters,
-                  currentRootPath,
+                  currentSrcDir,
                   localeFrontmatters,
               );
     });
@@ -1037,7 +1052,7 @@
         getLocaleSwitchItems({
             entries: localeContext.entries,
             activePath: routePath,
-            activeRootPath: currentRootPath,
+            activeSrcDir: currentSrcDir,
             activeLocaleKey: localeContext.key,
             frontmatters,
             preservePath: i18nRouting,
@@ -1046,18 +1061,18 @@
     const hasRootLocale = $derived(
         localeContext.entries.some((entry) => entry.key === "/"),
     );
-    const baseDocsRoot = $derived(normalizeRootPath(configuredRootPath));
+    const baseDocsRoot = $derived(normalizeSrcDir(configuredSrcDir));
     const defaultLocaleRoot = $derived(
-        localeContext.entries[0]?.rootPath ?? baseDocsRoot,
+        localeContext.entries[0]?.srcDir ?? baseDocsRoot,
     );
 
     // If every locale is namespaced (e.g. /en/, /pl/), redirect `/` and the
     // base docs root (e.g. /docs) to the first configured locale root.
     $effect(() => {
         if (hasRootLocale) return;
-        if (router.active !== "/" && router.active !== baseDocsRoot) return;
-        if (router.active === defaultLocaleRoot) return;
-        router.navigate(defaultLocaleRoot);
+        if (routePath !== "/" && routePath !== baseDocsRoot) return;
+        if (routePath === defaultLocaleRoot) return;
+        navigateInternal(defaultLocaleRoot);
     });
 
     const langMenuLabel = $derived(
@@ -1271,7 +1286,7 @@
     async function fetchMarkdown(mdPath: string): Promise<string> {
         const res = await fetch(mdPath);
         if (!res.ok)
-            throw new Error(`${res.status} ${res.statusText} — ${mdPath}`);
+            throw new Error(`${res.status} ${res.statusText} ďż˝ ${mdPath}`);
         return res.text();
     }
 
@@ -1280,14 +1295,14 @@
     // `layout` (and any other fields) without loading the full module.
     const activeKey = $derived.by(() => {
         const rel = routePath
-            .replace(currentRootPath, "")
+            .replace(currentSrcDir, "")
             .replace(/^\//, "");
         const candidates: string[] = rel
             ? [
-                  `${currentRootPath}/${rel}.md`,
-                  `${currentRootPath}/${rel}/index.md`,
+                  `${currentSrcDir}/${rel}.md`,
+                  `${currentSrcDir}/${rel}/index.md`,
               ]
-            : [`${currentRootPath}/index.md`, `${currentRootPath}index.md`];
+            : [`${currentSrcDir}/index.md`, `${currentSrcDir}index.md`];
         return candidates.find((c) => c in frontmatters) ?? null;
     });
 
@@ -1295,7 +1310,26 @@
         activeKey ? frontmatters[activeKey] : undefined,
     );
     /** True when the URL is inside the current locale root path but no matching file exists. */
-    const notFound = $derived(activeKey === null && routePath.startsWith(currentRootPath));
+    const notFound = $derived(activeKey === null && routePath.startsWith(currentSrcDir));
+    const notFoundUi = $derived.by(() => {
+        const isPl =
+            localeContext.key === "/pl/" ||
+            String(localeContext.lang || "").toLowerCase().startsWith("pl");
+
+        if (isPl) {
+            return {
+                title: "Strona nie znaleziona",
+                description: "Nie znaleziono strony dla podanego adresu.",
+                backLabel: "Wroc do dokumentacji",
+            };
+        }
+
+        return {
+            title: "Page not found",
+            description: "We could not find a page for this address.",
+            backLabel: "Back to documentation",
+        };
+    });
     const activeLayout = $derived<"doc" | "home" | "page">(
         activeFrontmatter?.layout ?? "doc",
     );
@@ -1383,20 +1417,21 @@
         const hashIdx = href.indexOf("#");
         const pathPart = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
         const hashPart = hashIdx >= 0 ? href.slice(hashIdx + 1) : "";
+        const pathWithoutBase = toSourcePath(pathPart);
 
-        const cleanRootPath = currentRootPath.replace(/\/+$/, "");
+        const cleanSrcDir = currentSrcDir.replace(/\/+$/, "");
 
         let resolvedPath: string;
-        if (pathPart.startsWith("/")) {
-            // In markdown docs, leading "/" is docs-root relative (rootPath),
+        if (pathWithoutBase.startsWith("/")) {
+            // In markdown docs, leading "/" is docs-root relative (srcDir),
             // matching include semantics.
             if (
-                pathPart === cleanRootPath ||
-                pathPart.startsWith(cleanRootPath + "/")
+                pathWithoutBase === cleanSrcDir ||
+                pathWithoutBase.startsWith(cleanSrcDir + "/")
             ) {
-                resolvedPath = pathPart;
+                resolvedPath = pathWithoutBase;
             } else {
-                resolvedPath = cleanRootPath + pathPart;
+                resolvedPath = cleanSrcDir + pathWithoutBase;
             }
         } else {
             try {
@@ -1414,7 +1449,7 @@
 
         resolvedPath = resolvedPath.replace(/\.(md|html)$/i, "");
         resolvedPath =
-            resolvedPath.replace(/\/index$/, "") || currentRootPath;
+            resolvedPath.replace(/\/index$/, "") || currentSrcDir;
 
         event.preventDefault();
         navigateInternalWithAnchor(resolvedPath, hashPart || undefined);
@@ -1433,7 +1468,7 @@
 >
     <a class="skip-link" href="#greg-main-content">{skipToContentLabel}</a>
     <DocsSiteHeader
-        rootPath={currentRootPath}
+        srcDir={currentSrcDir}
         {siteTitle}
         {logo}
         {socialLinks}
@@ -1478,7 +1513,7 @@
             <aside bind:this={sp.aside}>
                 <DocsNavigation
                     {menu}
-                    rootPath={currentRootPath}
+                    srcDir={currentSrcDir}
                     ariaLabel={sidebarMenuLabel}
                     active={routePath}
                     navigate={navigateInternal}
@@ -1521,7 +1556,7 @@
                                 <Breadcrumb
                                     items={breadcrumbItems}
                                     navigate={navigateInternal}
-                                    rootPath={currentRootPath}
+                                    srcDir={currentSrcDir}
                                 />
                             {/if}
                             {@const CompiledPage = compiledModule.default}
@@ -1570,13 +1605,13 @@
                             <Breadcrumb
                                 items={breadcrumbItems}
                                 navigate={navigateInternal}
-                                rootPath={currentRootPath}
+                                srcDir={currentSrcDir}
                             />
                         {/if}
                         <MarkdownRenderer
                             {markdown}
                             baseUrl={activeMarkdownFetchPath || router.activeMarkdownPath}
-                            docsPrefix={currentRootPath}
+                            docsPrefix={withBase(currentSrcDir)}
                             {mermaidTheme}
                             {mermaidThemes}
                             colorTheme={theme}
@@ -1603,7 +1638,7 @@
                             activeLayout === "doc"
                         }
                             {@const editPath = router.activeMarkdownPath
-                                .replace(normalizeRootPath(configuredRootPath), "")
+                                .replace(normalizeSrcDir(configuredSrcDir), "")
                                 .replace(/^\//, "")}
                             <p class="doc-edit-link">
                                 <a
@@ -1622,7 +1657,7 @@
                             activeLayout === "doc"
                         }
                             {@const editPath = router.activeMarkdownPath
-                                .replace(normalizeRootPath(configuredRootPath), "")
+                                .replace(normalizeSrcDir(configuredSrcDir), "")
                                 .replace(/^\//, "")}
                             <p class="doc-edit-link">
                                 <a
@@ -1651,15 +1686,16 @@
             {:else if notFound}
                 <div class="not-found">
                     <p class="not-found-code">404</p>
-                    <h1>Strona nie znaleziona</h1>
+                    <h1>{notFoundUi.title}</h1>
+                    <p>{notFoundUi.description}</p>
                     <p class="not-found-path"><code>{router.active}</code></p>
                     <!-- svelte-ignore a11y_invalid_attribute -->
                     <a
-                        href={currentRootPath}
+                        href={withBase(currentSrcDir)}
                         onclick={(e) => {
                             e.preventDefault();
-                            navigateInternal(currentRootPath);
-                        }}>Wróć do dokumentacji</a
+                            navigateInternal(currentSrcDir);
+                        }}>{notFoundUi.backLabel}</a
                     >
                 </div>
             {:else if title}
@@ -1702,9 +1738,9 @@
             bind:open={searchOpen}
             onClose={() => (searchOpen = false)}
             onNavigate={navigateInternalWithAnchor}
-            localeRootPath={currentRootPath}
-            allLocaleRootPaths={localeContext.allRootPaths}
-            baseRootPath={normalizeRootPath(configuredRootPath)}
+            localeSrcDir={currentSrcDir}
+            allLocaleSrcDirs={localeContext.allSrcDirs}
+            baseSrcDir={normalizeSrcDir(configuredSrcDir)}
             {searchModalLabel}
             {searchPlaceholder}
             {searchLoadingText}

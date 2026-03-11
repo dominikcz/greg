@@ -2,6 +2,7 @@
 	import { Languages, Sun, Moon } from "@lucide/svelte";
 	import SocialLink from "../components/SocialLink.svelte";
 	import DocsVersionSwitcher from "./DocsVersionSwitcher.svelte";
+	import { withBase } from "./common";
 
 	type VersionOption = {
 		version: string;
@@ -16,7 +17,7 @@
 	};
 
 	type Props = {
-		rootPath: string;
+		srcDir: string;
 		siteTitle?: string | false;
 		logo?:
 			| string
@@ -69,7 +70,7 @@
 	}
 
 	let {
-		rootPath,
+		srcDir,
 		siteTitle,
 		logo,
 		socialLinks = [],
@@ -103,7 +104,7 @@
 			| undefined,
 		t: "light" | "dark",
 	): string {
-		if (!img) return t === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg";
+		if (!img) return withBase(t === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg");
 		if (typeof img === "string") return img;
 		if ("src" in img) return img.src;
 		return t === "dark" ? img.dark : img.light;
@@ -130,12 +131,12 @@
 <header class="site-header">
 	<div class="header-left">
 		<a
-			href={rootPath}
+			href={withBase("/")}
 			class="site-title"
 			aria-label={logoAlt}
 			onclick={(e) => {
 				e.preventDefault();
-				navigateHome(rootPath);
+				navigateHome("/");
 			}}
 		>
 			<span
@@ -191,7 +192,7 @@
 								{:else if ri.kind === "header"}
 									{#if ri.item.link}
 										<a
-											href={ri.item.link}
+									href={ri.item.link ? withBase(ri.item.link) : "#"}
 											class="nav-dropdown-group"
 											class:nav-dropdown-group--nested={ri.depth >
 												0}
@@ -227,7 +228,7 @@
 									{/if}
 								{:else}
 									<a
-										href={ri.item.link ?? "#"}
+								href={ri.item.link ? withBase(ri.item.link) : "#"}
 										class="nav-dropdown-item"
 										class:nav-dropdown-item--nested={ri.depth >
 											0}
@@ -262,7 +263,7 @@
 				</div>
 			{:else}
 				<a
-					href={item.link ?? "#"}
+					href={item.link ? withBase(item.link) : "#"}
 					class="nav-link"
 					target={item.target ??
 						(item.link && EXTERNAL_RE.test(item.link)

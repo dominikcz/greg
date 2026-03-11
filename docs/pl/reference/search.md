@@ -2,8 +2,8 @@
 title: Wyszukiwanie
 ---
 
-Greg zawiera wbudowane wyszukiwanie pełnotekstowe oparte na [Fuse.js](https://fusejs.io/).
-Nie wymaga zewnętrznej usługi ani klucza API.
+Greg zawiera wbudowane wyszukiwanie peĹ‚notekstowe oparte na [Fuse.js](https://fusejs.io/).
+Nie wymaga zewnÄ™trznej usĹ‚ugi ani klucza API.
 
 ## Tryby wyszukiwania
 
@@ -16,26 +16,26 @@ search: {
 }
 ```
 
-- `server`: Przeglądarka pyta `GET /api/search?q=...` i otrzymuje gotowe wyniki. Polecane dla dużych zestawów dokumentacji (domyślnie najlepszy wybór).
-- `local`: Przeglądarka pobiera `/search-index.json` i uruchamia Fuse.js lokalnie. Polecane dla małych zestawów dokumentacji.
-- `none`: Wbudowane UI wyszukiwania (przycisk + modal + skróty) jest wyłączone. Polecane dla stron bez wbudowanego search.
+- `server`: PrzeglÄ…darka pyta `GET /api/search?q=...` i otrzymuje gotowe wyniki. Polecane dla duĹĽych zestawĂłw dokumentacji (domyĹ›lnie najlepszy wybĂłr).
+- `local`: PrzeglÄ…darka pobiera `/search-index.json` i uruchamia Fuse.js lokalnie. Polecane dla maĹ‚ych zestawĂłw dokumentacji.
+- `none`: Wbudowane UI wyszukiwania (przycisk + modal + skrĂłty) jest wyĹ‚Ä…czone. Polecane dla stron bez wbudowanego search.
 
-`server` to zwykle najlepszy domyślny wybór dla większych zbiorów dokumentacji.
+`server` to zwykle najlepszy domyĹ›lny wybĂłr dla wiÄ™kszych zbiorĂłw dokumentacji.
 
-## Jak działa indeksowanie
+## Jak dziaĹ‚a indeksowanie
 
 W czasie **builda** `vitePluginSearchIndex` przechodzi po wszystkich plikach `.md`
-w folderze docs, usuwa składnię Markdown, dzieli strony na sekcje (po nagłówkach)
-i zapisuje `/search-index.json` do katalogu wyjściowego Vite.
+w folderze docs, usuwa skĹ‚adniÄ™ Markdown, dzieli strony na sekcje (po nagĹ‚Ăłwkach)
+i zapisuje `/search-index.json` do katalogu wyjĹ›ciowego Vite.
 
-W czasie **działania**:
+W czasie **dziaĹ‚ania**:
 
-- w trybie `local` modal pobiera `/search-index.json` i szuka po stronie przeglądarki,
+- w trybie `local` modal pobiera `/search-index.json` i szuka po stronie przeglÄ…darki,
 - w trybie `server` modal odpytuje endpoint ustawiony w `serverUrl`.
 
 ## Wymagane pluginy Vite
 
-Użyj obu pluginów w `vite.config.js`:
+UĹĽyj obu pluginĂłw w `vite.config.js`:
 
 ```js
 import { vitePluginSearchIndex, vitePluginSearchServer } from '@dominikcz/greg/plugins';
@@ -43,24 +43,24 @@ import { vitePluginSearchIndex, vitePluginSearchServer } from '@dominikcz/greg/p
 export default defineConfig({
   plugins: [
     svelte(),
-    vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
-    vitePluginSearchServer({ docsDir: 'docs', rootPath: '/docs' }),
+    vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/docs' }),
+    vitePluginSearchServer({ docsDir: 'docs', srcDir: '/docs' }),
   ],
 });
 ```
 
-`vitePluginSearchServer` automatycznie wystawia `/api/search` zarówno w `dev`,
+`vitePluginSearchServer` automatycznie wystawia `/api/search` zarĂłwno w `dev`,
 jak i w `preview`.
 
 ## Serwer wyszukiwania w produkcji
 
-Najpierw zbuduj stronę:
+Najpierw zbuduj stronÄ™:
 
 ```bash
 npm run build
 ```
 
-Następnie uruchom osobny serwer wyszukiwania:
+NastÄ™pnie uruchom osobny serwer wyszukiwania:
 
 ```bash
 greg search-server --index dist/search-index.json --port 3100
@@ -75,18 +75,18 @@ search: {
 }
 ```
 
-W produkcji zwykle wystawisz ten serwer za reverse proxy, żeby frontend nadal
-korzystał z `/api/search`.
+W produkcji zwykle wystawisz ten serwer za reverse proxy, ĹĽeby frontend nadal
+korzystaĹ‚ z `/api/search`.
 
-## Własny silnik wyszukiwania
+## WĹ‚asny silnik wyszukiwania
 
-Jeśli chcesz użyć Algolii, Meilisearch, Typesense albo własnego backendu:
+JeĹ›li chcesz uĹĽyÄ‡ Algolii, Meilisearch, Typesense albo wĹ‚asnego backendu:
 
 - ustaw `provider: 'none'` w `greg.config.js`,
 - przekaz prop `searchProvider` do `<MarkdownDocs>`.
 
-Po przekazaniu `searchProvider` Greg ponownie włączy przycisk i modal
-wyszukiwania, a zapytania będą przechodzić przez Twoją funkcję.
+Po przekazaniu `searchProvider` Greg ponownie wĹ‚Ä…czy przycisk i modal
+wyszukiwania, a zapytania bÄ™dÄ… przechodziÄ‡ przez TwojÄ… funkcjÄ™.
 
 Sygnatura `searchProvider`:
 
@@ -94,7 +94,7 @@ Sygnatura `searchProvider`:
 (query: string, limit?: number) => Promise<SearchResult[]>
 ```
 
-Oczekiwany kształt `SearchResult`:
+Oczekiwany ksztaĹ‚t `SearchResult`:
 
 ```ts
 type SearchResult = {
@@ -102,55 +102,55 @@ type SearchResult = {
   title: string;
   titleHtml: string;
   sectionTitle: string;
-  sectionTitleHtml?: string; // opcjonalne, ale zalecane dla spójnego podświetlania nagłówków
+  sectionTitleHtml?: string; // opcjonalne, ale zalecane dla spĂłjnego podĹ›wietlania nagĹ‚ĂłwkĂłw
   sectionAnchor: string;
   excerptHtml: string;
   score: number;
 }
 ```
 
-`sectionTitleHtml` jest teraz używane przez wbudowany modal do renderowania
-podświetleń nagłówków. Jeśli go brakuje, Greg użyje bezpiecznego `sectionTitle`
-bez semantycznych znaczników dopasowania.
+`sectionTitleHtml` jest teraz uĹĽywane przez wbudowany modal do renderowania
+podĹ›wietleĹ„ nagĹ‚ĂłwkĂłw. JeĹ›li go brakuje, Greg uĹĽyje bezpiecznego `sectionTitle`
+bez semantycznych znacznikĂłw dopasowania.
 
 ## Otwieranie wyszukiwarki
 
 | Metoda                                        | Akcja         |
 | --------------------------------------------- | ------------- |
-| Kliknięcie przycisku **Szukaj...** w headerze | Otwiera modal |
+| KlikniÄ™cie przycisku **Szukaj...** w headerze | Otwiera modal |
 | `Ctrl + K`                                    | Otwiera modal |
 | `Cmd + K` (macOS)                             | Otwiera modal |
 
-## Nawigacja klawiaturą w modalu
+## Nawigacja klawiaturÄ… w modalu
 
 | Klawisz   | Akcja                               |
 | --------- | ----------------------------------- |
-| `↑` / `↓` | Wybierz poprzedni / następny wynik  |
-| `Enter`   | Przejdź do zaznaczonego wyniku      |
+| `â†‘` / `â†“` | Wybierz poprzedni / nastÄ™pny wynik  |
+| `Enter`   | PrzejdĹş do zaznaczonego wyniku      |
 | `Esc`     | Zamknij modal                       |
 
-## Ranking wyników
+## Ranking wynikĂłw
 
-Wyniki są oceniane przez Fuse.js na podstawie wag dla pól:
+Wyniki sÄ… oceniane przez Fuse.js na podstawie wag dla pĂłl:
 
 | Pole             | Waga |
 | ---------------- | ---- |
-| Tytuł strony     | 3x   |
-| Nagłówek sekcji  | 2x   |
-| Treść sekcji     | 1x   |
+| TytuĹ‚ strony     | 3x   |
+| NagĹ‚Ăłwek sekcji  | 2x   |
+| TreĹ›Ä‡ sekcji     | 1x   |
 
-Używany jest fuzzy threshold `0.4` (ciaśniejszy niż domyślny), dzięki czemu do
-wyników trafiają głównie rzeczywiste dopasowania. `ignoreLocation: true`
-oznacza, że dopasowanie może wystąpić w dowolnym miejscu tekstu, nie tylko na
-początku.
+UĹĽywany jest fuzzy threshold `0.4` (ciaĹ›niejszy niĹĽ domyĹ›lny), dziÄ™ki czemu do
+wynikĂłw trafiajÄ… gĹ‚Ăłwnie rzeczywiste dopasowania. `ignoreLocation: true`
+oznacza, ĹĽe dopasowanie moĹĽe wystÄ…piÄ‡ w dowolnym miejscu tekstu, nie tylko na
+poczÄ…tku.
 
 ## Wykluczanie stron z indeksu
 
-Pliki, których nazwa zaczyna się od `__` (podwójne podkreślenie), są automatycznie
-pomijane zarówno w routingu, jak i w indeksie wyszukiwania.
+Pliki, ktĂłrych nazwa zaczyna siÄ™ od `__` (podwĂłjne podkreĹ›lenie), sÄ… automatycznie
+pomijane zarĂłwno w routingu, jak i w indeksie wyszukiwania.
 
 ## Ograniczenia
 
-- W trybie `local` duże indeksy mogą znacząco zwiększyć rozmiar payloadu i zużycie pamięci w przeglądarce.
-- W trybie `server` endpoint wyszukiwania musi być osiągalny z klienta (`serverUrl` musi być poprawny dla danego środowiska).
-- Zawartość bloków kodu jest usuwana z indeksu (nie jest przeszukiwalna).
+- W trybie `local` duĹĽe indeksy mogÄ… znaczÄ…co zwiÄ™kszyÄ‡ rozmiar payloadu i zuĹĽycie pamiÄ™ci w przeglÄ…darce.
+- W trybie `server` endpoint wyszukiwania musi byÄ‡ osiÄ…galny z klienta (`serverUrl` musi byÄ‡ poprawny dla danego Ĺ›rodowiska).
+- ZawartoĹ›Ä‡ blokĂłw kodu jest usuwana z indeksu (nie jest przeszukiwalna).

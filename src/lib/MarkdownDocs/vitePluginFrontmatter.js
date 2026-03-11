@@ -5,7 +5,7 @@
  * YAML frontmatter using js-yaml and exposes the result as a virtual module:
  *
  *   import frontmatters from 'virtual:greg-frontmatter';
- *   // → Record<string, { title?, order?, layout?, hero?, features?, ... }>
+ *   // â†’ Record<string, { title?, order?, layout?, hero?, features?, ... }>
  *   // keys are route-prefixed paths, e.g. '/docs/guide/index.md'
  *
  * HMR: when a .md file changes its virtual module is invalidated so the dev
@@ -33,13 +33,13 @@ function parseFrontmatter(content) {
 // ---------------------------------------------------------------------------
 // Plugin
 // ---------------------------------------------------------------------------
-export function vitePluginFrontmatter({ docsDir = 'docs', rootPath = '/docs' } = {}) {
+export function vitePluginFrontmatter({ docsDir = 'docs', srcDir = '/docs' } = {}) {
     let root = process.cwd();
 
     /** Collect all .md paths and return the virtual module source. */
     function buildModule() {
         const absDocsDir = path.resolve(root, docsDir);
-        const normalizedRootPath = '/' + String(rootPath || '/docs').replace(/^\/+|\/+$/g, '');
+        const normalizedSrcDir = '/' + String(srcDir || '/docs').replace(/^\/+|\/+$/g, '');
         const entries = {};
 
         function walk(dir) {
@@ -52,7 +52,7 @@ export function vitePluginFrontmatter({ docsDir = 'docs', rootPath = '/docs' } =
                     walk(full);
                 } else if (item.isFile() && item.name.endsWith('.md') && !item.name.startsWith('__')) {
                     const rel = path.relative(absDocsDir, full).replace(/\\/g, '/');
-                    const viteKey = `${normalizedRootPath}/${rel}`; // e.g. /docs/guide/index.md
+                    const viteKey = `${normalizedSrcDir}/${rel}`; // e.g. /docs/guide/index.md
                     try {
                         const content = fs.readFileSync(full, 'utf8');
                         const stat = fs.statSync(full);

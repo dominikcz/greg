@@ -103,7 +103,7 @@ Uzyj tego trybu, gdy kazda wersja dokumentacji ma pochodzic z katalogu w drzewie
 Ustaw:
 
 1. `strategy: "folders"`
-2. `folders[]` z polami `version`, `dir`, opcjonalnie `rootPath`, `title`
+2. `folders[]` z polami `version`, `dir`, opcjonalnie `srcDir`, `title`
 3. `default` i opcjonalnie `aliases`
 
 Przyklad:

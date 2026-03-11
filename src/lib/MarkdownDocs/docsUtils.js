@@ -57,7 +57,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
     const paths = Object.keys(modules);
     const root = [];
 
-    // Sort so index.md files are processed first — they define the folder nodes
+    // Sort so index.md files are processed first â€” they define the folder nodes
     const sorted = [...paths].sort((a, b) => {
         const aIdx = a.endsWith('index.md') ? 0 : 1;
         const bIdx = b.endsWith('index.md') ? 0 : 1;
@@ -83,7 +83,7 @@ export function prepareMenu(modules, base, frontmatters = {}) {
 
             if (isLast) {
                 if (part === 'index.md') {
-                    // index.md → represents the parent folder (or root if idx === 0)
+                    // index.md -> represents the parent folder (or root if idx === 0)
                     // We must NOT look in currentLevel (folder's own children) — we need
                     // the folder node itself, which is lastFolderNode (or root for top-level).
                     const folderParts = parts.slice(0, idx);
@@ -214,7 +214,7 @@ export function parseSidebarConfig(items, frontmatters, base) {
 
     function convert(item) {
         if (item.auto) {
-            // `auto` is relative to `base` (rootPath), e.g. '/guide' → '/docs/guide'
+            // `auto` is relative to `base` (srcDir), e.g. '/guide' -> '/docs/guide'
             const autoBase = base + item.auto;
             // Only pass paths that belong to this sub-section so stray paths
             // don't become extra folder segments inside prepareMenu.

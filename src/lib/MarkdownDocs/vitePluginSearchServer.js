@@ -14,7 +14,7 @@
  *
  * @param {object} options
  * @param {string} [options.docsDir='docs']        - docs directory (relative to project root)
- * @param {string} [options.rootPath='/docs']      - SPA route prefix
+ * @param {string} [options.srcDir='/docs']      - SPA route prefix
  * @param {string} [options.searchUrl='/api/search'] - URL path for the search endpoint
  */
 
@@ -37,7 +37,7 @@ const FUSE_OPTIONS = {
 
 export function vitePluginSearchServer({
 	docsDir = 'docs',
-	rootPath = '/docs',
+	srcDir = '/docs',
 	searchUrl = '/api/search',
 	fuzzy = {},
 } = {}) {
@@ -69,7 +69,7 @@ export function vitePluginSearchServer({
 	async function loadFuse() {
 		if (fuseCache) return fuseCache;
 		if (!buildPromise) {
-			buildPromise = buildSearchIndex(resolvedDocsDir, rootPath).then(index => {
+			buildPromise = buildSearchIndex(resolvedDocsDir, srcDir).then(index => {
 				fuseCache = new Fuse(index, fuseOptions);
 				return fuseCache;
 			}).catch(err => {

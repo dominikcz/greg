@@ -8,20 +8,20 @@
 	interface DocsNavigationProps {
 		menu: TreeViewItem[];
 		active: string;
-		rootPath?: string;
+		srcDir?: string;
 		ariaLabel?: string;
 		navigate: (path: string) => void;
 	}
 	let {
 		menu,
 		active = "",
-		rootPath = "./",
+		srcDir = "./",
 		ariaLabel = "Menu",
 		navigate,
 	}: DocsNavigationProps = $props();
 
 	// Items to render: root index page excluded; leaves and sections kept in their sorted order
-	let items = $derived(menu.filter((item: any) => item.link !== rootPath));
+	let items = $derived(menu.filter((item: any) => item.link !== srcDir));
 
 	let collapsed = $state(new Set<string>());
 

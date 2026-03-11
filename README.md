@@ -1,6 +1,6 @@
 # Greg
 
-Svelte 5 + Vite-powered documentation engine. Write Markdown, get a beautiful documentation site — hot-reloaded in milliseconds.
+Svelte 5 + Vite-powered documentation engine. Write Markdown, get a beautiful documentation site â€” hot-reloaded in milliseconds.
 
 Inspired by [VitePress](https://vitepress.dev){target="_blank"}, built on Svelte 5.
 
@@ -55,15 +55,15 @@ export default defineConfig({
     plugins: [
         svelte(),
         vitePluginGregConfig(),
-        vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
-        vitePluginSearchServer({ docsDir: 'docs', rootPath: '/docs' }),
-        vitePluginFrontmatter({ docsDir: 'docs', rootPath: '/docs' }),
-        vitePluginCopyDocs({ docsDir: 'docs', rootPath: '/docs' }),
+        vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/docs' }),
+        vitePluginSearchServer({ docsDir: 'docs', srcDir: '/docs' }),
+        vitePluginFrontmatter({ docsDir: 'docs', srcDir: '/docs' }),
+        vitePluginCopyDocs({ docsDir: 'docs', srcDir: '/docs' }),
     ],
 })
 ```
 
-**`svelte.config.js`** (must be `.js` — not `.ts`)
+**`svelte.config.js`** (must be `.js` â€” not `.ts`)
 
 ```js
 export { default } from '@dominikcz/greg/svelte.config'
@@ -74,7 +74,7 @@ export { default } from '@dominikcz/greg/svelte.config'
 ```js
 /** @type {import('@dominikcz/greg').GregConfig} */
 export default {
-    rootPath: '/docs',
+    srcDir: '/docs',
     mainTitle: 'My Docs',
     sidebar: [
         { text: 'Guide', auto: '/guide' },
@@ -99,7 +99,7 @@ export default {
 Greg supports VitePress-style `locales` in `greg.config.js`.
 
 - Locale keys use paths like `'/'`, `'/pl/'`, `'/de/'`
-- They are resolved under `rootPath`
+- They are resolved under `srcDir`
 - Supported per locale: `lang`, `title`, `label`
 - Supported per locale `themeConfig` keys:
     `nav`, `sidebar`, `outline`, `lastUpdatedText`, `langMenuLabel`,
@@ -113,7 +113,7 @@ Greg supports VitePress-style `locales` in `greg.config.js`.
 ```js
 /** @type {import('@dominikcz/greg').GregConfig} */
 export default {
-    rootPath: '/docs',
+    srcDir: '/docs',
     i18nRouting: true,
     locales: {
         '/': {
@@ -233,7 +233,7 @@ Use this when each docs version should come from a directory in the working tree
 What to configure:
 
 1. `versioning.strategy = 'folders'`
-2. `versioning.folders[]` entries with `version`, `dir`, optional `rootPath`, `title`
+2. `versioning.folders[]` entries with `version`, `dir`, optional `srcDir`, `title`
 3. `versioning.default` and optional `versioning.aliases`
 
 Example `versioning` value:
@@ -345,18 +345,18 @@ Output is written to `dist/resolved-markdown` and mirrors the `docs/` structure.
 
 ## TypeScript
 
-Greg ships types at `@dominikcz/greg`. `greg.config.ts` is supported — it is transpiled via esbuild at build time.
+Greg ships types at `@dominikcz/greg`. `greg.config.ts` is supported â€” it is transpiled via esbuild at build time.
 
 ```ts
 import type { GregConfig } from '@dominikcz/greg'
 
 export default {
-    rootPath: '/docs',
+    srcDir: '/docs',
     mainTitle: 'My Docs',
 } satisfies GregConfig
 ```
 
-> **Note:** `svelte.config` must remain a `.js` file — `@sveltejs/vite-plugin-svelte` loads it directly via Node ESM without a TypeScript transform.
+> **Note:** `svelte.config` must remain a `.js` file â€” `@sveltejs/vite-plugin-svelte` loads it directly via Node ESM without a TypeScript transform.
 
 ## Links
 

@@ -13,7 +13,7 @@ Mount it in `src/App.svelte`:
     import MarkdownDocs from '@dominikcz/greg'
 </script>
 
-<MarkdownDocs rootPath="/docs" version="1.0.0" />
+<MarkdownDocs srcDir="/docs" version="1.0.0" />
 ```
 
 
@@ -42,15 +42,15 @@ Language switcher behavior:
 - with `i18nRouting: false`, switches directly to locale root
 - falls back to target locale root when the mapped page does not exist
 
-Locale paths are resolved under `rootPath`:
+Locale paths are resolved under `srcDir`:
 
-- if `rootPath = '/docs'`
+- if `srcDir = '/docs'`
 - locale `'/'` maps to `'/docs'`
 - locale `'/pl/'` maps to `'/docs/pl'`
 
 ```js
 export default {
-  rootPath: '/docs',
+  srcDir: '/docs',
   i18nRouting: true,
   locales: {
     '/': {
@@ -94,16 +94,16 @@ export default {
 }
 ```
 
-### `rootPath`
+### `srcDir`
 
 - **Type:** `string`
 - **Default:** `"/docs"`
 
-URL prefix that maps to the `docs/` folder. Must match the `rootPath` value
+URL prefix that maps to the `docs/` folder. Must match the `srcDir` value
 passed to `vitePluginSearchIndex` in `vite.config.js`.
 
 ```svelte
-<MarkdownDocs rootPath="/documentation" version="1.0.0" />
+<MarkdownDocs srcDir="/documentation" version="1.0.0" />
 ```
 
 ### `version`
@@ -116,7 +116,7 @@ Pass the package version via Vite's `define`:
 
 ```svelte
 <!-- Assuming __VERSION__ is defined in vite.config.js -->
-<MarkdownDocs rootPath="/docs" version={__VERSION__} />
+<MarkdownDocs srcDir="/docs" version={__VERSION__} />
 ```
 
 ### `mainTitle`
@@ -127,12 +127,12 @@ Pass the package version via Vite's `define`:
 Name of the project shown in the top-left header.
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version="1.0.0" mainTitle="My Project" />
+<MarkdownDocs srcDir="/docs" version="1.0.0" mainTitle="My Project" />
 ```
 
 ### `outline`
 
-- **Type:** `false | number | [number, number] | 'deep' | { level?: …, label?: string }`
+- **Type:** `false | number | [number, number] | 'deep' | { level?: â€¦, label?: string }`
 - **Default:** `[2, 3]`
 
 Controls the right-side **Outline** (on-this-page) panel.
@@ -146,7 +146,7 @@ Controls the right-side **Outline** (on-this-page) panel.
 | `{ level: [2,4], label: 'Contents' }` | Custom range and panel label       |
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version="1.0.0" outline="deep" />
+<MarkdownDocs srcDir="/docs" version="1.0.0" outline="deep" />
 ```
 
 ### `carbonAds`
@@ -159,7 +159,7 @@ See the [Carbon Ads reference](/reference/carbon-ads) for details.
 
 ```svelte
 <MarkdownDocs
-  rootPath="/docs"
+  srcDir="/docs"
   version="1.0.0"
   carbonAds={{ code: 'CWYD42JW', placement: 'myprojectdev' }}
 />
@@ -174,9 +174,9 @@ folder URL has no `index.md`). Useful for a custom landing splash or a
 "choose a topic" prompt.
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version="1.0.0">
+<MarkdownDocs srcDir="/docs" version="1.0.0">
   {#snippet children()}
-    <p>👈 Select a page from the sidebar to get started.</p>
+    <p>đź‘ Select a page from the sidebar to get started.</p>
   {/snippet}
 </MarkdownDocs>
 ```
@@ -194,7 +194,7 @@ import { vitePluginSearchIndex } from '@dominikcz/greg/plugins';
 export default defineConfig({
   plugins: [
     svelte(),
-    vitePluginSearchIndex({ docsDir: 'docs', rootPath: '/docs' }),
+    vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/docs' }),
   ],
   resolve: {
     alias: {
@@ -207,7 +207,7 @@ export default defineConfig({
 | Option     | Description                                                        |
 | ---------- | ------------------------------------------------------------------ |
 | `docsDir`  | Folder name relative to the project root that contains `.md` files |
-| `rootPath` | URL prefix — must match the `rootPath` prop                        |
+| `srcDir` | URL prefix â€” must match the `srcDir` prop                        |
 
 
 ## svelte.config.js
@@ -218,7 +218,7 @@ object at the top of the file exposes user-facing options:
 ```js
 const gregConfig = {
   markdown: {
-    math: false,   // set to true to enable $…$ / $$…$$ rendering via MathJax
+    math: false,   // set to true to enable $â€¦$ / $$â€¦$$ rendering via MathJax
   },
 };
 ```

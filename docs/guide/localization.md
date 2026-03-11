@@ -13,7 +13,7 @@ and translated UI text in `themeConfig`.
 
 ```js
 export default {
-  rootPath: '/docs',
+  srcDir: '/docs',
   locales: {
     '/': {
       lang: 'en-US',
@@ -37,7 +37,7 @@ export default {
 };
 ```
 
-For `rootPath: '/docs'`, locale URL mapping is:
+For `srcDir: '/docs'`, locale URL mapping is:
 
 - `'/'` -> `/docs`
 - `'/pl/'` -> `/docs/pl`
@@ -66,7 +66,7 @@ You can also place each locale in its own top-level docs directory.
 
 ```js
 export default {
-  rootPath: '/docs',
+  srcDir: '/docs',
   locales: {
     '/en/': {
       lang: 'en-US',
@@ -107,7 +107,7 @@ When you use only namespaced locales (for example `'/en/'` and `'/pl/'`, with
 no `'/'` locale), Greg automatically redirects:
 
 - `/` -> first configured locale root (for example `/docs/en`)
-- `/docs` (or your configured `rootPath`) -> first configured locale root
+- `/docs` (or your configured `srcDir`) -> first configured locale root
 
 The first entry order in `locales` is therefore treated as the default locale.
 

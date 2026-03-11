@@ -60,7 +60,7 @@ function parseArgs(argv) {
     return out;
 }
 
-function normalizeRootPath(value, fallback = '/docs') {
+function normalizeSrcDir(value, fallback = '/docs') {
     const cleaned = String(value || fallback).trim().replace(/^\/+|\/+$/g, '');
     return '/' + (cleaned || 'docs');
 }
@@ -270,11 +270,11 @@ function ensureBranchDocsSnapshot(args) {
 }
 
 function runViteBuild(args) {
-    const { docsDir, rootPath, outDir, passthrough } = args;
+    const { docsDir, srcDir, outDir, passthrough } = args;
     const env = {
         ...process.env,
         GREG_DOCS_DIR: docsDir,
-        GREG_ROOT_PATH: rootPath,
+        GREG_ROOT_PATH: srcDir,
         PATH:
             path.resolve(PROJECT_ROOT, 'node_modules/.bin') +
             (process.platform === 'win32' ? ';' : ':') +
@@ -292,7 +292,7 @@ function runViteBuild(args) {
     runCommand(process.execPath, [
         staticScript,
         '--docsDir', docsDir,
-        '--rootPath', rootPath,
+        '--srcDir', srcDir,
         '--distDir', outDir,
     ], {
         stdio: 'inherit',
@@ -301,7 +301,7 @@ function runViteBuild(args) {
     });
 }
 
-function resolveFolderEntries(versioning, globalRootPath) {
+function resolveFolderEntries(versioning, globalSrcDir) {
     if (Array.isArray(versioning.folders) && versioning.folders.length > 0) {
         return versioning.folders.map((entry, index) => {
             const version = resolveVersionId(entry, `versioning.folders[${index}]`);
@@ -309,7 +309,7 @@ function resolveFolderEntries(versioning, globalRootPath) {
                 version,
                 title: entry.title ? String(entry.title) : version,
                 docsDir: path.resolve(PROJECT_ROOT, String(entry.dir)),
-                rootPath: normalizeRootPath(entry.rootPath, globalRootPath),
+                srcDir: normalizeSrcDir(entry.srcDir, globalSrcDir),
             };
         });
     }
@@ -325,7 +325,7 @@ function resolveFolderEntries(versioning, globalRootPath) {
                 version: d.name,
                 title: d.name,
                 docsDir,
-                rootPath: normalizeRootPath(globalRootPath, '/docs'),
+                srcDir: normalizeSrcDir(globalSrcDir, '/docs'),
             };
         })
         .filter((entry) => fs.existsSync(entry.docsDir));
@@ -333,7 +333,7 @@ function resolveFolderEntries(versioning, globalRootPath) {
     return entries;
 }
 
-function resolveBranchEntries(versioning, globalRootPath) {
+function resolveBranchEntries(versioning, globalSrcDir) {
     const branchSources = Array.isArray(versioning.branches) ? versioning.branches : [];
     if (branchSources.length > 0) {
         return branchSources.map((entry, index) => {
@@ -343,7 +343,7 @@ function resolveBranchEntries(versioning, globalRootPath) {
                 title: entry.title ? String(entry.title) : version,
                 branch: String(entry.branch),
                 docsDir: String(entry.docsDir || 'docs'),
-                rootPath: normalizeRootPath(entry.rootPath, globalRootPath),
+                srcDir: normalizeSrcDir(entry.srcDir, globalSrcDir),
             };
         });
     }
@@ -354,7 +354,7 @@ function resolveBranchEntries(versioning, globalRootPath) {
         title: 'latest',
         branch: current,
         docsDir: 'docs',
-        rootPath: normalizeRootPath(globalRootPath, '/docs'),
+        srcDir: normalizeSrcDir(globalSrcDir, '/docs'),
     }];
 }
 
@@ -469,7 +469,7 @@ async function main() {
 
     const strategy = args.strategy || versioning.strategy || 'branches';
     validateVersioningConfig(versioning, strategy);
-    const globalRootPath = normalizeRootPath(config.rootPath, '/docs');
+    const globalSrcDir = normalizeSrcDir(config.srcDir, '/docs');
     const siteOutDir = String(config.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
     const siteBase = normalizeBasePath(config.base);
     const defaultOutputRoot = path.join(siteOutDir, DEFAULT_VERSIONS_DIR_NAME);
@@ -507,7 +507,7 @@ async function main() {
     };
 
     if (strategy === 'folders') {
-        const entries = resolveFolderEntries(versioning, globalRootPath);
+        const entries = resolveFolderEntries(versioning, globalSrcDir);
         if (entries.length === 0) {
             throw new Error('No folder versions configured. Set versioning.folders or create versioning.foldersDir children.');
         }
@@ -524,7 +524,7 @@ async function main() {
             console.log(`[greg] versions: building '${entry.version}' from folder ${path.relative(PROJECT_ROOT, entry.docsDir)}`);
             runViteBuild({
                 docsDir: entry.docsDir,
-                rootPath: entry.rootPath,
+                srcDir: entry.srcDir,
                 outDir: tempOut,
                 passthrough: args.passthrough,
             });
@@ -540,7 +540,7 @@ async function main() {
             });
         }
     } else if (strategy === 'branches') {
-        const entries = resolveBranchEntries(versioning, globalRootPath);
+        const entries = resolveBranchEntries(versioning, globalSrcDir);
         if (entries.length === 0) {
             throw new Error('No branch versions configured. Set versioning.branches in greg.config.*');
         }
@@ -566,7 +566,7 @@ async function main() {
                 console.log(`[greg] versions: building '${entry.version}' from ${entry.branch} (${sha.slice(0, 8)})`);
                 runViteBuild({
                     docsDir: snapshot.docsDir,
-                    rootPath: entry.rootPath,
+                    srcDir: entry.srcDir,
                     outDir: buildCache,
                     passthrough: args.passthrough,
                 });

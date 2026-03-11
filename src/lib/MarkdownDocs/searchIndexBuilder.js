@@ -6,7 +6,7 @@
  *   - vitePluginSearchServer (serves /api/search in dev + preview)
  *   - searchServer.js        (standalone production search server)
  *
- * The built index is cached per (docsDir, rootPath) pair so that when both
+ * The built index is cached per (docsDir, srcDir) pair so that when both
  * plugins are active they share a single build pass.
  * Call `invalidateSearchIndexCache()` to clear the cache (e.g. on file change).
  */
@@ -14,7 +14,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
-// ── Per-process cache ─────────────────────────────────────────────────────────
+// â”€â”€ Per-process cache â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 /** @type {Map<string, Promise<SearchEntry[]>>} */
 const _cache = new Map();
 const INCLUDE_RE = /^<!--\s*@include:\s*([^\s]+)\s*-->$/;
@@ -26,7 +26,7 @@ const REGION_RE = /^(.*?)#([^#{]+)$/;
  * @typedef {{ id: string; title: string; sections: SearchSection[] }} SearchEntry
  */
 
-// ── File helpers ──────────────────────────────────────────────────────────────
+// â”€â”€ File helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Recursively collect all *.md files, skipping partial files/folders that start with `__`.
@@ -49,7 +49,7 @@ export function walkDir(dir, fileList = []) {
 }
 
 /**
- * Strip markdown syntax → plain, searchable text.
+ * Strip markdown syntax â†’ plain, searchable text.
  * @param {string} text
  * @returns {string}
  */
@@ -58,9 +58,9 @@ export function cleanMarkdown(text) {
 		.replace(/^---[\s\S]*?---\n?/, '')             // YAML frontmatter
 		.replace(/```[\s\S]*?```/g, '')                // fenced code blocks
 		.replace(/~~~[\s\S]*?~~~/g, '')
-		.replace(/`([^`]+)`/g, '$1')                   // inline code — keep value
+		.replace(/`([^`]+)`/g, '$1')                   // inline code â€” keep value
 		.replace(/!\[.*?\]\(.*?\)/g, '')               // images
-		.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')       // links — keep text
+		.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')       // links â€” keep text
 		.replace(/\[([^\]]+)\]\[.*?\]/g, '$1')
 		.replace(/\*\*\*([^*]+)\*\*\*/g, '$1')         // bold-italic
 		.replace(/\*\*([^*]+)\*\*/g, '$1')             // bold
@@ -315,18 +315,18 @@ export function extractSections(markdown) {
 	return sections.filter(s => s.content || s.heading);
 }
 
-// ── Index builder (cached) ────────────────────────────────────────────────────
+// â”€â”€ Index builder (cached) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /**
  * Build the full search index from all docs in `docsDir`.
- * Results are cached per (docsDir+rootPath) so both Vite plugins share one pass.
+ * Results are cached per (docsDir+srcDir) so both Vite plugins share one pass.
  *
  * @param {string} docsDir  Absolute path to the docs directory.
- * @param {string} rootPath SPA route prefix, e.g. '/docs'.
+ * @param {string} srcDir SPA route prefix, e.g. '/docs'.
  * @returns {Promise<SearchEntry[]>}
  */
-export function buildSearchIndex(docsDir, rootPath) {
-	const key = `${docsDir}::${rootPath}`;
+export function buildSearchIndex(docsDir, srcDir) {
+	const key = `${docsDir}::${srcDir}`;
 	if (_cache.has(key)) return /** @type {Promise<SearchEntry[]>} */ (_cache.get(key));
 
 	const promise = (async () => {
@@ -345,11 +345,11 @@ export function buildSearchIndex(docsDir, rootPath) {
 
 			let routePath;
 			if (relPath === 'index') {
-				routePath = rootPath;
+				routePath = srcDir;
 			} else if (relPath.endsWith('/index')) {
-				routePath = rootPath + '/' + relPath.slice(0, -6);
+				routePath = srcDir + '/' + relPath.slice(0, -6);
 			} else {
-				routePath = rootPath + '/' + relPath;
+				routePath = srcDir + '/' + relPath;
 			}
 
 			const sections = extractSections(content);
@@ -378,7 +378,7 @@ export function invalidateSearchIndexCache() {
 	_cache.clear();
 }
 
-// ── Fuse.js result → SearchResult  ───────────────────────────────────────────
+// â”€â”€ Fuse.js result â†’ SearchResult  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // These helpers run on the server side (inside the Vite plugin / standalone server).
 
 /**
@@ -421,7 +421,7 @@ function highlightText(text, indices) {
 function getExcerptHtml(text, indices, contextLen = 150) {
 	if (!text) return '';
 	if (!indices?.length) {
-		return escapeHtml(text.slice(0, contextLen)) + (text.length > contextLen ? '…' : '');
+		return escapeHtml(text.slice(0, contextLen)) + (text.length > contextLen ? 'â€¦' : '');
 	}
 	const firstMatchStart = indices[0][0];
 	const from = Math.max(0, firstMatchStart - 50);
@@ -432,8 +432,8 @@ function getExcerptHtml(text, indices, contextLen = 150) {
 		.filter(([s, e]) => e >= 0 && s < sliced.length)
 		.map(([s, e]) => [Math.max(0, s), Math.min(sliced.length - 1, e)]);
 
-	const prefix = from > 0 ? '…' : '';
-	const suffix = to < text.length ? '…' : '';
+	const prefix = from > 0 ? 'â€¦' : '';
+	const suffix = to < text.length ? 'â€¦' : '';
 	let html = prefix;
 	let last = 0;
 	for (const [s, e] of adjusted) {

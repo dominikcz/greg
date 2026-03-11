@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { withBase } from "./common";
     type NavItem = { label: string; link: string } | null;
 
     type Props = {
@@ -24,7 +25,7 @@
         <div class="side">
             {#if prev}
                 <a
-                    href={prev.link}
+                    href={withBase(prev.link)}
                     class="link"
                     onclick={(e) => {
                         e.preventDefault();
@@ -39,7 +40,7 @@
         <div class="side right">
             {#if next}
                 <a
-                    href={next.link}
+                    href={withBase(next.link)}
                     class="link"
                     onclick={(e) => {
                         e.preventDefault();

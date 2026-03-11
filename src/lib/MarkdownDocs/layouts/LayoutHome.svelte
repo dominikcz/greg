@@ -2,6 +2,7 @@
     import type { Snippet } from "svelte";
     import Hero from "$components/Hero.svelte";
     import Features from "$components/Features.svelte";
+    import { withBase } from "../common";
 
     type HeroAction = {
         theme?: "brand" | "alt";
@@ -41,11 +42,11 @@
             text={hero.text}
             tagline={hero.tagline}
             image={hero.image as any}
-            actions={hero.actions}
+            actions={hero.actions?.map((a) => ({ ...a, link: withBase(a.link) }))}
         />
     {/if}
     {#if features?.length}
-        <Features {features} />
+        <Features features={features.map((f) => ({ ...f, link: f.link ? withBase(f.link) : f.link }))} />
     {/if}
     {@render children?.()}
 </div>

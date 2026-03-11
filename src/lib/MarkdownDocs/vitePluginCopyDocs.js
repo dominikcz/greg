@@ -10,7 +10,7 @@
  *
  * The `staticDirs` option (default: ['snippets']) lists additional project-root
  * directories whose files should also be served/copied verbatim.  This is
- * needed for `<<< @​/snippets/file.js` style snippet includes.
+ * needed for `<<< @â€‹/snippets/file.js` style snippet includes.
  */
 
 import fs from 'node:fs';
@@ -20,7 +20,7 @@ function trimSlashes(value) {
     return String(value || '').replace(/^\/+|\/+$/g, '');
 }
 
-export function vitePluginCopyDocs({ docsDir = 'docs', rootPath = '/docs', staticDirs = ['snippets'] } = {}) {
+export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticDirs = ['snippets'] } = {}) {
     let root = process.cwd();
     let outDir = 'dist';
 
@@ -47,7 +47,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', rootPath = '/docs', stati
     }
 
     function resolveRootPrefix() {
-        const cleaned = trimSlashes(rootPath) || 'docs';
+        const cleaned = trimSlashes(srcDir) || 'docs';
         return '/' + cleaned;
     }
 
@@ -130,7 +130,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', rootPath = '/docs', stati
                 }
             }
 
-            console.log(`\x1b[32m✓\x1b[0m greg:copy-docs – ${count} files copied to ${path.relative(root, outDir)}/`);
+            console.log(`\x1b[32mâś“\x1b[0m greg:copy-docs â€“ ${count} files copied to ${path.relative(root, outDir)}/`);
         },
     };
 }

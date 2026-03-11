@@ -14,10 +14,10 @@ hero:
   actions:
     - theme: brand
       text: Getting Started
-      link: /docs/guide/getting-started
+      link: /guide/getting-started
     - theme: alt
       text: Markdown Reference
-      link: /docs/guide/markdown
+      link: /guide/markdown
 
 features:
   - icon: 📝

@@ -5,13 +5,13 @@ import { buildSearchIndex, invalidateSearchIndexCache } from './searchIndexBuild
  * Vite plugin: serves /search-index.json in dev and emits it as a build asset.
  *
  * The build is shared with vitePluginSearchServer via the module-level cache
- * in searchIndexBuilder.js — both plugins pay the I/O cost only once.
+ * in searchIndexBuilder.js â€” both plugins pay the I/O cost only once.
  *
  * @param {object} options
  * @param {string} [options.docsDir='docs']   - directory (relative to project root)
- * @param {string} [options.rootPath='/docs'] - SPA route prefix
+ * @param {string} [options.srcDir='/docs'] - SPA route prefix
  */
-export function vitePluginSearchIndex({ docsDir = 'docs', rootPath = '/docs' } = {}) {
+export function vitePluginSearchIndex({ docsDir = 'docs', srcDir = '/docs' } = {}) {
 	let resolvedDocsDir;
 
 	return {
@@ -31,7 +31,7 @@ export function vitePluginSearchIndex({ docsDir = 'docs', rootPath = '/docs' } =
 			server.middlewares.use(async (req, res, next) => {
 				if (req.url !== '/search-index.json' || req.method !== 'GET') return next();
 				try {
-					const index = await buildSearchIndex(resolvedDocsDir, rootPath);
+					const index = await buildSearchIndex(resolvedDocsDir, srcDir);
 					res.writeHead(200, {
 						'Content-Type': 'application/json; charset=utf-8',
 						'Cache-Control': 'no-cache',
@@ -45,7 +45,7 @@ export function vitePluginSearchIndex({ docsDir = 'docs', rootPath = '/docs' } =
 
 		// Production build: emit search-index.json as a static asset
 		async generateBundle() {
-			const index = await buildSearchIndex(resolvedDocsDir, rootPath);
+			const index = await buildSearchIndex(resolvedDocsDir, srcDir);
 			this.emitFile({
 				type: 'asset',
 				fileName: 'search-index.json',

@@ -56,17 +56,17 @@ describe('localeUtils', () => {
         aside: true,
     };
 
-    it('builds locale roots under configured rootPath', () => {
+    it('builds locale roots under configured srcDir', () => {
         expect(getLocaleEntries('/docs', locales)).toEqual([
-            expect.objectContaining({ key: '/', rootPath: '/docs' }),
-            expect.objectContaining({ key: '/pl/', rootPath: '/docs/pl' }),
+            expect.objectContaining({ key: '/', srcDir: '/docs' }),
+            expect.objectContaining({ key: '/pl/', srcDir: '/docs/pl' }),
         ]);
     });
 
     it('resolves the most specific locale and returns locale theme overrides', () => {
         const resolved = resolveLocaleForPath('/docs/pl/guide', '/docs', locales, defaults);
         expect(resolved.key).toBe('/pl/');
-        expect(resolved.rootPath).toBe('/docs/pl');
+        expect(resolved.srcDir).toBe('/docs/pl');
         expect(resolved.mainTitle).toBe('Dokumentacja');
         expect(resolved.lastUpdatedText).toBe('Zaktualizowano:');
         expect(resolved.nav).toEqual([{ text: 'Przewodnik', link: '/docs/pl/guide' }]);
@@ -96,7 +96,7 @@ describe('localeUtils', () => {
         const fromPlGuide = getLocaleSwitchItems({
             entries,
             activePath: '/docs/pl/guide',
-            activeRootPath: '/docs/pl',
+            activeSrcDir: '/docs/pl',
             activeLocaleKey: '/pl/',
             frontmatters,
         });
@@ -108,7 +108,7 @@ describe('localeUtils', () => {
         const fromPlReference = getLocaleSwitchItems({
             entries,
             activePath: '/docs/pl/reference',
-            activeRootPath: '/docs/pl',
+            activeSrcDir: '/docs/pl',
             activeLocaleKey: '/pl/',
             frontmatters,
         });
@@ -129,7 +129,7 @@ describe('localeUtils', () => {
         const switched = getLocaleSwitchItems({
             entries,
             activePath: '/docs/pl/guide',
-            activeRootPath: '/docs/pl',
+            activeSrcDir: '/docs/pl',
             activeLocaleKey: '/pl/',
             frontmatters,
             preservePath: false,
@@ -156,7 +156,7 @@ describe('localeUtils', () => {
         const switched = getLocaleSwitchItems({
             entries,
             activePath: '/docs/guide',
-            activeRootPath: '/docs',
+            activeSrcDir: '/docs',
             activeLocaleKey: '/',
             frontmatters: {
                 '/docs/guide/index.md': {},

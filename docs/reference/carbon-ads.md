@@ -14,7 +14,7 @@ Pass the `carbonAds` prop to `<MarkdownDocs>`:
 
 ```svelte
 <MarkdownDocs
-  rootPath="/docs"
+  srcDir="/docs"
   version="1.0.0"
   carbonAds={{ code: 'CWYD42JW', placement: 'myprojectdev' }}
 />

@@ -11,26 +11,26 @@ Greg uses **file-based routing**. Every `.md` file inside the `docs/` folder
 becomes a page at the corresponding URL path:
 
 ```
-docs/index.md                 →  /docs
-docs/guide/getting-started.md →  /docs/guide/getting-started
-docs/reference/api.md         →  /docs/reference/api
+docs/index.md                 â†’  /docs
+docs/guide/getting-started.md â†’  /docs/guide/getting-started
+docs/reference/api.md         â†’  /docs/reference/api
 ```
 
 `index.md` files map to the parent folder URL:
 
 ```
-docs/guide/index.md  →  /docs/guide
+docs/guide/index.md  â†’  /docs/guide
 ```
 
 
 ## Partial files
 
 Any file whose name starts with `__` (double underscore) is treated as a
-**partial** — it is excluded from routing and the sidebar, but can be
+**partial** â€” it is excluded from routing and the sidebar, but can be
 included in other pages with the `<!--@include:-->` directive.
 
 ```
-docs/guide/__shared-warning.md  ←  not a page, only includable
+docs/guide/__shared-warning.md  â†  not a page, only includable
 ```
 
 
@@ -42,7 +42,7 @@ No manual configuration is required.
 Rules:
 - Folders become collapsible section headers.
 - Files become leaf links.
-- Names are capitalised automatically (`getting-started` → `Getting-started`).
+- Names are capitalised automatically (`getting-started` â†’ `Getting-started`).
 - `index.md` files are attached to their parent folder node.
 - The root `index.md` (`docs/index.md`) is hidden from the sidebar.
 
@@ -93,7 +93,7 @@ order: 2
 
 ## SPA navigation
 
-Greg is a **single-page application** — navigating between pages never triggers
+Greg is a **single-page application** â€” navigating between pages never triggers
 a full page reload. Internal links are intercepted and handled by the built-in
 router:
 
@@ -107,8 +107,8 @@ router:
 Both `.md` and `.html` extensions in links are stripped automatically:
 
 ```md
-[link](./page.md)    →  navigates to /docs/…/page
-[link](./page.html)  →  navigates to /docs/…/page
+[link](./page.md)    â†’  navigates to /docs/â€¦/page
+[link](./page.html)  â†’  navigates to /docs/â€¦/page
 ```
 
 External links (starting with `http://`, `https://`, `//`, etc.) open normally
@@ -118,21 +118,21 @@ If a Markdown link (or HTML anchor in Markdown) has an explicit `target`, Greg
 respects it.
 
 
-## `rootPath` prop
+## `srcDir` prop
 
-The `rootPath` prop of `<MarkdownDocs>` tells the engine where the docs live.
+The `srcDir` prop of `<MarkdownDocs>` tells the engine where the docs live.
 Its default is `/docs`. If your docs are served from a different base path,
 pass the new value:
 
 ```svelte
-<MarkdownDocs rootPath="/documentation" version="2.0.0" />
+<MarkdownDocs srcDir="/documentation" version="2.0.0" />
 ```
 
 The Vite `vitePluginSearchIndex` plug-in must use the same `docsDir`:
 
 ```js
 // vite.config.js
-vitePluginSearchIndex({ docsDir: 'documentation', rootPath: '/documentation' })
+vitePluginSearchIndex({ docsDir: 'documentation', srcDir: '/documentation' })
 ```
 
 
@@ -142,7 +142,7 @@ When a URL matches no Markdown file, the engine displays the folder label as
 a heading and renders any `children` snippet passed to `<MarkdownDocs>`:
 
 ```svelte
-<MarkdownDocs rootPath="/docs" version="1.0.0">
+<MarkdownDocs srcDir="/docs" version="1.0.0">
   {#snippet children()}
     <p>Select a topic from the sidebar.</p>
   {/snippet}

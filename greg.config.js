@@ -8,20 +8,24 @@
  */
 export default {
     /** VitePress-compatible base public path. */
-    base: '/',
+    base: '/greg/',
     /** VitePress-compatible build output directory. */
     outDir: 'dist',
-    /** URL prefix of the docs folder. */
-    rootPath: '/docs',
+    /** VitePress-compatible docs source directory (physical folder). */
+    srcDir: 'docs',
+    /** VitePress-compatible: patterns to exclude from docs source. */
+    srcExclude: [],
+    /** URL prefix for the docs section in the browser (default: 'docs'). */
+    docsBase: 'documentation',
 
     // ── Locales (VitePress-compatible) ─────────────────────────────────────
     /**
      * Optional VitePress-style locale map.
-     * Keys are locale paths ('/', '/pl/', ...), resolved under `rootPath`.
+     * Keys are locale paths ('/', '/pl/', ...), resolved under `docsBase`. Default value is `docs`.
      *
-     * Example for rootPath '/docs':
-     * - '/'    -> '/docs'
-     * - '/pl/' -> '/docs/pl'
+     * Example for docsBase 'documentation':
+     * - '/'    -> '/documentation'
+     * - '/pl/' -> '/documentation/pl'
      */
     locales: {
         '/': {
