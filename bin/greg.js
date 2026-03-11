@@ -63,6 +63,15 @@ function help() {
                             --cors-methods <value> (default "GET, OPTIONS")
                             --cors-headers <value> (default "Content-Type")
                             --cors-max-age <value> (default 86400)
+    ai-server      Start the standalone AI/RAG API server (production)
+                   Options: --index <path>    (default dist/search-index.json)
+                            --port <number>   (default 3200)
+                            --host <addr>     (default localhost)
+                            --url  <path>     (endpoint path, default /api/ai)
+                            --provider <name> (ollama|openai, default ollama)
+                            --model <name>    (LLM model override)
+                            --ollama-url <url>(default http://localhost:11434)
+                            --cors-origin / --cors-methods / --cors-headers / --cors-max-age
 
   Options:
     --version   Show version number
@@ -237,6 +246,12 @@ switch (command) {
         // (no shell needed - it is a Node.js script in the package).
         const serverScript = resolve(__dirname, '../src/lib/MarkdownDocs/searchServer.js');
         const child = fork(serverScript, args, { stdio: 'inherit' });
+        child.on('exit', code => process.exit(code ?? 0));
+        break;
+    }
+    case 'ai-server': {
+        const aiServerScript = resolve(__dirname, '../src/lib/MarkdownDocs/aiServer.js');
+        const child = fork(aiServerScript, args, { stdio: 'inherit' });
         child.on('exit', code => process.exit(code ?? 0));
         break;
     }

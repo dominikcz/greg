@@ -9,6 +9,7 @@ import { vitePluginFrontmatter } from './src/lib/MarkdownDocs/vitePluginFrontmat
 import { vitePluginCopyDocs } from './src/lib/MarkdownDocs/vitePluginCopyDocs.js';
 import { vitePluginGregConfig } from './src/lib/MarkdownDocs/vitePluginGregConfig.js';
 import { vitePluginSearchServer } from './src/lib/MarkdownDocs/vitePluginSearchServer.js';
+import { vitePluginAiServer } from './src/lib/MarkdownDocs/vitePluginAiServer.js';
 import {
   DEFAULT_OUTPUT_BASE_DIR,
   DEFAULT_SITE_BASE,
@@ -81,6 +82,7 @@ export default defineConfig({
     }),
     vitePluginFrontmatter({ docsDir: srcDir, srcDir: docsBase }),
     vitePluginCopyDocs({ docsDir: srcDir, srcDir: docsBase }),
+    vitePluginAiServer({ docsDir: srcDir, srcDir: docsBase, ai: searchConfig.ai }),
   ],
   define: {
     __NAME__: `"${pkg.name}"`,

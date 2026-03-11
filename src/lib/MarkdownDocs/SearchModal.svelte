@@ -3,6 +3,7 @@
     import Fuse from "fuse.js";
     import gregConfig from "virtual:greg-config";
     import { withBase } from "./common";
+    import AiChat from "./AiChat.svelte";
 
     // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -123,6 +124,10 @@
     const mode = $derived<"local" | "server" | "custom" | "none">(
         searchProvider ? "custom" : (cfgSearch.provider ?? "server"),
     );
+    /** Whether the AI assistant is enabled in config. */
+    const aiEnabled = $derived(!!(cfgSearch?.ai?.enabled));
+    /** Which tab is active in the modal: search or AI chat. */
+    let tabMode = $state<"search" | "ai">("search");
     const serverUrl: string = cfgSearch.serverUrl ?? "/api/search";
     const fuzzyCfg = cfgSearch.fuzzy ?? {};
     const localThreshold: number = Number.isFinite(Number(fuzzyCfg.threshold))
@@ -189,6 +194,7 @@
         } else {
             query = "";
             results = [];
+            tabMode = "search";
         }
     });
 
@@ -488,46 +494,87 @@
         aria-label={searchModalLabel}
         tabindex="-1"
     >
-        <div class="search-modal">
-            <!-- Input row -->
-            <div class="search-field">
-                <svg
-                    class="search-icon"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                >
-                    <circle cx="11" cy="11" r="8" /><line
-                        x1="21"
-                        y1="21"
-                        x2="16.65"
-                        y2="16.65"
-                    />
-                </svg>
-                <input
-                    bind:this={inputEl}
-                    bind:value={query}
-                    oninput={handleInput}
-                    onkeydown={handleKeydown}
-                    type="search"
-                    class="search-field-input"
-                    placeholder={searchPlaceholder}
-                    autocomplete="off"
-                    spellcheck="false"
-                />
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <kbd
-                    class="search-esc-hint"
-                    onclick={onClose}
-                    role="button"
-                    tabindex="-1">Esc</kbd
-                >
-            </div>
+        <div class="search-modal" class:ai-mode={aiEnabled && tabMode === "ai"}>
 
-            <!-- Body -->
-            {#if mode === "local" && !indexReady && !indexError}
+            <!-- ── Tab switcher (only when AI is enabled) ── -->
+            {#if aiEnabled}
+                <div class="modal-tabs">
+                    <button
+                        class="modal-tab"
+                        class:active={tabMode === "search"}
+                        onclick={() => { tabMode = "search"; tick().then(() => inputEl?.focus()); }}
+                        type="button"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="modal-tab-icon">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        {searchModalLabel}
+                    </button>
+                    <button
+                        class="modal-tab"
+                        class:active={tabMode === "ai"}
+                        onclick={() => (tabMode = "ai")}
+                        type="button"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="modal-tab-icon">
+                            <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+                        </svg>
+                        Ask AI
+                    </button>
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <kbd
+                        class="search-esc-hint modal-tabs-esc"
+                        onclick={onClose}
+                        role="button"
+                        tabindex="-1">Esc</kbd
+                    >
+                </div>
+            {/if}
+
+            {#if !aiEnabled || tabMode === "search"}
+                <!-- ── Search tab (existing) ── -->
+
+                <!-- Input row -->
+                <div class="search-field">
+                    <svg
+                        class="search-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <circle cx="11" cy="11" r="8" /><line
+                            x1="21"
+                            y1="21"
+                            x2="16.65"
+                            y2="16.65"
+                        />
+                    </svg>
+                    <input
+                        bind:this={inputEl}
+                        bind:value={query}
+                        oninput={handleInput}
+                        onkeydown={handleKeydown}
+                        type="search"
+                        class="search-field-input"
+                        placeholder={searchPlaceholder}
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    {#if !aiEnabled}
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                        <kbd
+                            class="search-esc-hint"
+                            onclick={onClose}
+                            role="button"
+                            tabindex="-1">Esc</kbd
+                        >
+                    {/if}
+                </div>
+
+                <!-- Body -->
+                {#if mode === "local" && !indexReady && !indexError}
                 <div class="search-status">{searchLoadingText}</div>
             {:else if mode === "local" && indexError}
                 <div class="search-status search-error">
@@ -611,6 +658,16 @@
                     {searchStartText}
                 </div>
             {/if}
+
+            {:else}
+                <!-- ── AI Chat tab ── -->
+                <AiChat
+                    {onNavigate}
+                    {onClose}
+                    localeSrcDir={localeSrcDir}
+                />
+            {/if}
+
         </div>
     </div>
 {/if}
@@ -650,6 +707,60 @@
         flex-direction: column;
         max-height: calc(100vh - 8rem);
         animation: slide-in 0.15s ease;
+
+        &.ai-mode {
+            max-height: calc(100vh - 5rem);
+            min-height: min(540px, calc(100vh - 5rem));
+        }
+    }
+
+    /* ── Mode tabs ─────────────────────────────────────────────── */
+    .modal-tabs {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--greg-border-color);
+        background: var(--greg-header-background);
+        flex-shrink: 0;
+    }
+
+    .modal-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--greg-menu-section-color);
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-family: inherit;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: all 0.15s;
+
+        &:hover {
+            color: var(--greg-color);
+            background: var(--greg-menu-hover-background);
+        }
+
+        &.active {
+            color: var(--greg-accent);
+            background: color-mix(in srgb, var(--greg-accent) 10%, transparent);
+            border-color: color-mix(in srgb, var(--greg-accent) 30%, transparent);
+        }
+    }
+
+    .modal-tab-icon {
+        width: 13px;
+        height: 13px;
+        flex-shrink: 0;
+    }
+
+    .modal-tabs-esc {
+        margin-left: auto;
     }
 
     @keyframes slide-in {
