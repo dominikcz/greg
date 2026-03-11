@@ -1,6 +1,6 @@
 {
   "name": "@dominikcz/greg",
-  "version": "0.9.18",
+  "version": "0.9.19",
   "type": "module",
   "types": "./types/index.d.ts",
   "bin": {
