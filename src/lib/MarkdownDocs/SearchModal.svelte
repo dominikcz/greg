@@ -200,9 +200,11 @@
 
     let query = $state("");
     let results = $state<SearchResult[]>([]);
-    let selectedIndex = $state(0);
+    let selectedIndex = $state(-1);
     let inputEl = $state<HTMLInputElement | undefined>(undefined);
     let listEl = $state<HTMLUListElement | undefined>(undefined);
+    /** True when selection was last moved by keyboard — suppresses mouseenter updates. */
+    let usingKeyboard = false;
 
     /** True while a server / custom request is in flight. */
     let isSearching = $state(false);
@@ -248,7 +250,7 @@
     $effect(() => {
         if (open) {
             tick().then(() => inputEl?.focus());
-            selectedIndex = 0;
+            selectedIndex = -1;
         } else {
             query = "";
             results = [];
@@ -276,7 +278,7 @@
         clearTimeout(searchTimer);
         const q = query.trim();
         searchGeneration += 1;
-        selectedIndex = 0;
+        selectedIndex = -1;
         if (!q) {
             abortCtrl?.abort();
             isSearching = false;
@@ -311,7 +313,7 @@
                 .map(buildLocalResult);
             if (generation !== searchGeneration) return;
             results = localResults;
-            selectedIndex = 0;
+            selectedIndex = -1;
             return;
         }
 
@@ -343,7 +345,7 @@
             }
             if (generation !== searchGeneration) return;
             results = raw.slice(0, displayLimit);
-            selectedIndex = 0;
+            selectedIndex = -1;
         } catch (e: any) {
             if (e?.name === "AbortError") return; // superseded by newer query — ignore
             if (generation !== searchGeneration) return;
@@ -499,6 +501,7 @@
     // ── Keyboard navigation ────────────────────────────────────────────────────
 
     function handleKeydown(e: KeyboardEvent) {
+        e.stopPropagation();
         // When query is empty, navigate/activate recent searches
         const inRecent = !query.trim() && recentSearches.length > 0;
         const listSize = inRecent ? recentSearches.length : results.length;
@@ -508,10 +511,12 @@
                 break;
             case "ArrowDown":
                 e.preventDefault();
+                usingKeyboard = true;
                 selectedIndex = Math.min(selectedIndex + 1, listSize - 1);
                 break;
             case "ArrowUp":
                 e.preventDefault();
+                usingKeyboard = true;
                 selectedIndex = Math.max(selectedIndex - 1, 0);
                 break;
             case "Enter":
@@ -671,6 +676,7 @@
                     class="search-results"
                     role="listbox"
                     aria-label={searchResultsAriaLabel}
+                    onpointermove={(e) => { if (e.movementX || e.movementY) usingKeyboard = false; }}
                 >
                     {#each results as result, i}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -680,7 +686,7 @@
                             role="option"
                             aria-selected={i === selectedIndex}
                             onclick={() => goTo(result)}
-                            onmouseenter={() => (selectedIndex = i)}
+                            onmouseenter={() => { if (!usingKeyboard) selectedIndex = i; }}
                         >
                             <div class="result-header">
                                 <svg
@@ -736,7 +742,7 @@
                             <span class="search-recent-label">Recent searches</span>
                             <button class="search-recent-clear" type="button" onclick={clearRecentSearches}>Clear all</button>
                         </div>
-                        <ul class="search-results" role="listbox" aria-label="Recent searches">
+                        <ul class="search-results" role="listbox" aria-label="Recent searches" onpointermove={(e) => { if (e.movementX || e.movementY) usingKeyboard = false; }}>
                             {#each recentSearches as phrase, i}
                                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                                 <li
@@ -745,7 +751,7 @@
                                     role="option"
                                     aria-selected={i === selectedIndex}
                                     onclick={() => { query = phrase; void runSearch(); }}
-                                    onmouseenter={() => (selectedIndex = i)}
+                                    onmouseenter={() => { if (!usingKeyboard) selectedIndex = i; }}
                                 >
                                     <div class="result-header">
                                         <svg class="search-recent-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
