@@ -33,11 +33,11 @@
     "fakeDocsGenerator"
   ],
   "scripts": {
-    "dev": "greg dev",
-    "build": "greg build",
-    "build:static": "greg build:static",
-    "build:markdown": "greg build:markdown",
-    "preview": "greg preview",
+    "dev": "node ./bin/greg.js dev",
+    "build": "node ./bin/greg.js build",
+    "build:static": "node ./bin/greg.js build:static",
+    "build:markdown": "node ./bin/greg.js build:markdown",
+    "preview": "node ./bin/greg.js preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "fakedocs": "node fakeDocsGenerator/generate_docs.js"

@@ -70,7 +70,7 @@ describe('localeUtils', () => {
         expect(resolved.mainTitle).toBe('Dokumentacja');
         expect(resolved.lastUpdatedText).toBe('Zaktualizowano:');
         expect(resolved.nav).toEqual([{ text: 'Przewodnik', link: '/docs/pl/guide' }]);
-        expect(resolved.langMenuLabel).toBe('Change language');
+        expect(resolved.langMenuLabel).toBe('Zmień język');
         expect(resolved.sidebarMenuLabel).toBe('Menu');
         expect(resolved.skipToContentLabel).toBe('Przejdz do tresci');
         expect(resolved.siteTitle).toBe('Greg PL');

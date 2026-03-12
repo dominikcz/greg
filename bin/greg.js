@@ -15,10 +15,10 @@
  */
 import { spawnSync, fork } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { resolve, dirname } from 'node:path';
-import fs from 'node:fs';
 import { DEFAULT_OUTPUT_BASE_DIR } from '../src/lib/MarkdownDocs/versioningDefaults.js';
+import { loadGregConfig } from '../src/lib/MarkdownDocs/loadGregConfig.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -120,36 +120,6 @@ function runNodeScript(scriptPath, extraArgs = [], options = {}) {
 function printElapsedSeconds(startMs) {
     const elapsed = ((Date.now() - startMs) / 1000).toFixed(1);
     console.log(`\n${infoTag()} ${color(`Done in ${elapsed}s`, '32')}`);
-}
-
-function resolveGregConfigPath() {
-    const tsPath = resolve(__dirname, '../greg.config.ts');
-    const jsPath = resolve(__dirname, '../greg.config.js');
-    if (fs.existsSync(tsPath)) return tsPath;
-    if (fs.existsSync(jsPath)) return jsPath;
-    return null;
-}
-
-async function loadTsConfig(configPath) {
-    const { transform } = await import('esbuild');
-    const source = fs.readFileSync(configPath, 'utf8');
-    const { code } = await transform(source, {
-        format: 'esm',
-        loader: 'ts',
-        target: 'node18',
-    });
-    const dataUrl = 'data:text/javascript,' + encodeURIComponent(code);
-    const mod = await import(dataUrl);
-    return mod.default ?? {};
-}
-
-async function loadGregConfig() {
-    const configPath = resolveGregConfigPath();
-    if (!configPath) return {};
-    if (configPath.endsWith('.ts')) return loadTsConfig(configPath);
-    const fileUrl = pathToFileURL(configPath).href + '?t=' + Date.now();
-    const mod = await import(fileUrl);
-    return mod.default ?? {};
 }
 
 async function hasVersioningBuildConfig() {

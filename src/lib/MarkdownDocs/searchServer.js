@@ -31,8 +31,8 @@ import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { statSync } from 'node:fs';
-import { pathToFileURL } from 'node:url';
 import { buildFuseResult } from './searchIndexBuilder.js';
+import { loadGregConfig } from './loadGregConfig.js';
 import Fuse from 'fuse.js';
 
 const startupT0 = process.hrtime.bigint();
@@ -58,36 +58,6 @@ function parseArgs(argv) {
 		}
 	}
 	return args;
-}
-
-function resolveGregConfigPath() {
-	const tsPath = resolve('greg.config.ts');
-	const jsPath = resolve('greg.config.js');
-	if (existsSync(tsPath)) return tsPath;
-	if (existsSync(jsPath)) return jsPath;
-	return null;
-}
-
-async function loadTsConfig(configPath) {
-	const { transform } = await import('esbuild');
-	const source = readFileSync(configPath, 'utf8');
-	const { code } = await transform(source, {
-		format: 'esm',
-		loader: 'ts',
-		target: 'node18',
-	});
-	const dataUrl = 'data:text/javascript,' + encodeURIComponent(code);
-	const mod = await import(dataUrl);
-	return mod.default ?? {};
-}
-
-async function loadGregConfig() {
-	const configPath = resolveGregConfigPath();
-	if (!configPath) return {};
-	if (configPath.endsWith('.ts')) return loadTsConfig(configPath);
-	const fileUrl = pathToFileURL(configPath).href + '?t=' + Date.now();
-	const mod = await import(fileUrl);
-	return mod.default ?? {};
 }
 
 const args = parseArgs(process.argv.slice(2));

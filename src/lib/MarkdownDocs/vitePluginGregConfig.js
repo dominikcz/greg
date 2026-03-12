@@ -22,12 +22,12 @@
  *   locales      Record<string, LocaleConfig> – VitePress-style locale map
  *   sidebar      'auto' | SidebarItem[]
  *
- * HMR: changing greg.config.js triggers a full page reload.
+ * HMR: changing greg.config.* or prv/greg.config.js triggers a full page reload.
  */
 
-import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL, fileURLToPath } from 'node:url';
+import { fileURLToPath } from 'node:url';
+import { loadGregConfig, resolveGregConfigPaths } from './loadGregConfig.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** Absolute path to greg's own components directory (inside the package). */
@@ -36,26 +36,13 @@ const GREG_COMPONENTS_DIR = path.resolve(__dirname, '../components');
 const VIRTUAL_ID = 'virtual:greg-config';
 const RESOLVED_ID = '\0' + VIRTUAL_ID;
 
-/** Prefer greg.config.ts over greg.config.js when both exist. */
-function findConfigPath(root) {
-    const ts = path.join(root, 'greg.config.ts');
-    const js = path.join(root, 'greg.config.js');
-    return fs.existsSync(ts) ? ts : js;
-}
-
-/** Load a TypeScript config file via esbuild (always available as a Vite dep). */
-async function loadTsConfig(configPath) {
-    const { transform } = await import('esbuild');
-    const source = fs.readFileSync(configPath, 'utf-8');
-    const { code } = await transform(source, { format: 'esm', loader: 'ts', target: 'node18' });
-    const dataUrl = 'data:text/javascript,' + encodeURIComponent(code);
-    const mod = await import(dataUrl);
-    return mod.default ?? {};
-}
-
 export function vitePluginGregConfig() {
     let root = process.cwd();
-    let configPath = findConfigPath(root);
+    let { mainConfigPath, prvConfigPath } = resolveGregConfigPaths(root);
+
+    function isWatchedConfig(file) {
+        return file === mainConfigPath || file === prvConfigPath;
+    }
 
     return {
         name: 'greg:config',
@@ -88,7 +75,7 @@ export function vitePluginGregConfig() {
 
         configResolved(config) {
             root = config.root;
-            configPath = findConfigPath(root);
+            ({ mainConfigPath, prvConfigPath } = resolveGregConfigPaths(root));
         },
 
         resolveId(id) {
@@ -97,17 +84,9 @@ export function vitePluginGregConfig() {
 
         async load(id) {
             if (id !== RESOLVED_ID) return;
-            if (!fs.existsSync(configPath)) return `export default {};`;
+            if (!mainConfigPath && !prvConfigPath) return `export default {};`;
             try {
-                let config;
-                if (configPath.endsWith('.ts')) {
-                    config = await loadTsConfig(configPath);
-                } else {
-                    // Append timestamp to bust Node's ESM module cache on each HMR reload.
-                    const fileUrl = pathToFileURL(configPath).href + '?t=' + Date.now();
-                    const mod = await import(fileUrl);
-                    config = mod.default ?? {};
-                }
+                const config = await loadGregConfig(root);
                 return `export default ${JSON.stringify(config)};`;
             } catch (e) {
                 console.warn('[greg] Failed to load config:', e.message);
@@ -116,7 +95,8 @@ export function vitePluginGregConfig() {
         },
 
         handleHotUpdate({ file, server }) {
-            if (file === configPath) {
+            ({ mainConfigPath, prvConfigPath } = resolveGregConfigPaths(root));
+            if (isWatchedConfig(file)) {
                 const mod = server.moduleGraph.getModuleById(RESOLVED_ID);
                 if (mod) {
                     server.moduleGraph.invalidateModule(mod);

@@ -293,7 +293,7 @@ export default {
         ai: {
             enabled: true,
             provider: 'ollama',         // or 'openai'
-            ollama: { model: 'gpt-oss:20b' },
+            ollama: { model: 'gpt-oss' },
             defaultCharacter: 'friendly',
 
             // Which built-in character IDs to show in the selector.

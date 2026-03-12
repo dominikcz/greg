@@ -24,6 +24,9 @@ At the end you only need:
 npm run dev
 ```
 
+In this repository, prefer `npm run ...` scripts for development.
+In consumer projects using Greg, use `greg ...` (typically via npm scripts) or `npx greg ...`.
+
 ## Manual installation
 
 ```sh
@@ -172,6 +175,9 @@ export default {
 ```
 
 ## CLI
+
+For development in this repository, use `npm run ...` scripts (they call the local CLI entrypoint).
+When Greg is installed in a project, the `greg` command is still available via npm scripts and `npx greg ...`.
 
 | Command               | Description                           |
 | --------------------- | ------------------------------------- |
