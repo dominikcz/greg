@@ -229,6 +229,63 @@ Priorytet rozwiazywania tekstow:
 Jesli `versions.json` nie jest dostepny, Greg pokazuje w headerze lokalizowany
 `manifestUnavailableText`.
 
+## Wbudowane napisy UI
+
+Greg zawiera wbudowane tłumaczenia UI dla popularnych języków. Jeśli locale
+definiuje `lang`, Greg automatycznie dobiera pasujące napisy — nie trzeba
+konfigurować tego, co pasuje do wartości domyślnych.
+
+Aktualnie dostępne języki wbudowane:
+
+| `lang` | Język |
+|--------|-------|
+| `en` / `en-US` / `en-GB` … | Angielski |
+| `pl` / `pl-PL` … | Polski |
+
+Wbudowane napisy obejmują wszystkie etykiety UI: etykiety dostępności
+nawigacji, linki stopki strony, etykiety okna wyszukiwania
+i etykiety czatu AI.
+
+**Kolejność rozwiązywania każdego napisu UI:**
+
+1. Wartość jawna w `themeConfig` / `themeConfig.search.locales`
+2. Napis wbudowany dla `lang` locale
+3. Angielska wartość bazowa
+
+### Minimalna konfiguracja wielojęzyczna
+
+Dzięki wbudowanym napisom nie trzeba powtarzać żadnych tekstów UI.
+Pełna konfiguracja dwujęzyczna wygląda tak prosto:
+
+```js
+export default {
+  locales: {
+    '/': {
+      lang: 'en-US',
+      label: 'English',
+      title: 'My Docs',
+      themeConfig: {
+        nav: [{ text: 'Guide', link: '/guide' }],
+        sidebar: [{ text: 'Guide', auto: '/guide' }],
+      },
+    },
+    '/pl/': {
+      lang: 'pl-PL',   // ← wszystkie polskie napisy UI rozwiążą się automatycznie
+      label: 'Polski',
+      title: 'Moja Dokumentacja',
+      themeConfig: {
+        nav: [{ text: 'Przewodnik', link: '/guide' }],
+        sidebar: [{ text: 'Przewodnik', auto: '/guide' }],
+        outline: { level: [2, 3], label: 'Na tej stronie' },
+      },
+    },
+  },
+};
+```
+
+Można nadal nadpisać poszczególne napisy ustawiając je jawnie — jawna wartość
+zawsze ma pierwszeństwo.
+
 ## Rekomendowany workflow
 
 1. Zacznij od struktury stron EN.

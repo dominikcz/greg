@@ -89,6 +89,21 @@ export type LocaleThemeConfig = {
                     loadingScreen?: {
                         loadingText?: string;
                     };
+                    /** AI knowledge-base (Ask AI tab) localization strings. */
+                    ai?: {
+                        /** Text for the "Ask AI" tab button. */
+                        tabLabel?: string;
+                        /** Textarea placeholder. */
+                        placeholder?: string;
+                        /** Introductory hint shown before the first message. */
+                        startText?: string;
+                        /** Spinner / in-progress text while AI generates answer. */
+                        loadingText?: string;
+                        /** Error message shown when the request fails. */
+                        errorText?: string;
+                        /** Label above the list of cited sources. */
+                        sourcesLabel?: string;
+                    };
                 };
             }
         >;
@@ -211,6 +226,85 @@ export type GregVersioningConfig = {
     branchCacheDir?: string;
 };
 
+/** Custom AI persona definition. */
+export type AiCharacterConfig = {
+    /** Unique identifier (used as `character` param in API calls). */
+    id: string;
+    /** Display name shown in the character selector. */
+    name: string;
+    /** Emoji, short string, or image URL shown in the character selector and chat messages. */
+    icon: string;
+    /** Short description visible in the selector tooltip. */
+    description?: string;
+    /** System prompt injected at the start of every conversation for this persona. */
+    systemPrompt: string;
+};
+
+/** RAG / AI knowledge-base configuration (`search.ai`). */
+export type AiConfig = {
+    /**
+     * Enable the AI knowledge base feature.
+     * When true an "Ask AI" tab appears in the search modal.
+     * Default: false.
+     */
+    enabled?: boolean;
+    /** LLM provider. Default: 'ollama'. */
+    provider?: 'ollama' | 'openai' | 'custom';
+    /** Ollama-specific options (used when `provider === 'ollama'`). */
+    ollama?: {
+        /** Base URL of the Ollama HTTP API. Default: 'http://localhost:11434'. */
+        baseUrl?: string;
+        /** Chat completion model name. Default: 'llama3.2'. */
+        model?: string;
+        /** Embedding model name. Default: 'nomic-embed-text'. */
+        embeddingModel?: string;
+    };
+    /** OpenAI-compatible API options (used when `provider === 'openai'`). */
+    openai?: {
+        /** Chat completion model name. Default: 'gpt-4o-mini'. */
+        model?: string;
+        /** Embedding model name. Default: 'text-embedding-3-small'. */
+        embeddingModel?: string;
+        /** Override base URL for compatible APIs (Groq, Together, llama.cpp, …). */
+        baseUrl?: string;
+        /**
+         * API key. Prefer setting `GREG_OPENAI_API_KEY` env var instead of
+         * putting the key in config (which risks committing it to VCS).
+         */
+        apiKey?: string;
+    };
+    /**
+     * Custom LLM provider function (used when `provider === 'custom'`).
+     * Receives the message array and optional options, must return a string.
+     */
+    customProvider?: (messages: Array<{ role: string; content: string }>, options?: Record<string, unknown>) => Promise<string>;
+    /** Chunk store backend. Default: 'memory' (BM25, zero dependencies). */
+    store?: 'memory';
+    /**
+     * Which built-in character IDs to include.
+     * Default: all five built-in characters are active.
+     * Built-in IDs: 'professional', 'friendly', 'pirate', 'sensei', 'concise'.
+     */
+    characters?: string[];
+    /** Default character ID shown in the selector on first open. Default: 'professional'. */
+    defaultCharacter?: string;
+    /** Additional user-defined AI characters merged with the built-in ones. */
+    customCharacters?: AiCharacterConfig[];
+    /** Document chunking settings. */
+    chunking?: {
+        /** Maximum characters per chunk. Default: 1800. */
+        maxChunkSize?: number;
+        /** Overlap in characters between consecutive chunks. Default: 120. */
+        overlap?: number;
+    };
+    /**
+     * URL of the standalone AI server (for production deployments).
+     * Example: 'http://localhost:3200/api/ai'
+     * When omitted, the dev/preview Vite plugin serves the AI API in-process.
+     */
+    serverUrl?: string;
+};
+
 export type GregConfig = {
     /** VitePress-compatible base public path (e.g. '/docs/'). Default: '/'. */
     base?: string;
@@ -318,7 +412,11 @@ export type GregConfig = {
             /** Ignore match position in text. Default: true */
             ignoreLocation?: boolean;
         };
+        /** AI knowledge-base (RAG) configuration. */
+        ai?: AiConfig;
     };
+
+    /**
 
     /**
      * Sidebar configuration.

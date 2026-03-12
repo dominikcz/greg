@@ -61,50 +61,6 @@ export default {
                     { text: 'GitHub', link: 'https://github.com/dominikcz/greg', target: '_blank' },
                     { text: 'VitePress incompatibilities', link: '/incompatibilities' },
                 ],
-                outline: [2, 3],
-                lastUpdatedText: 'Last updated:',
-                langMenuLabel: 'Change language',
-                sidebarMenuLabel: 'Menu',
-                skipToContentLabel: 'Skip to content',
-                returnToTopLabel: 'Back to top',
-                darkModeSwitchLabel: 'Appearance',
-                lightModeSwitchTitle: 'Switch to light theme',
-                darkModeSwitchTitle: 'Switch to dark theme',
-                search: {
-                    locales: {
-                        '/': {
-                            button: {
-                                buttonText: 'Search...',
-                                buttonAriaLabel: 'Search',
-                            },
-                            modal: {
-                                searchBox: {
-                                    placeholder: 'Search docs...',
-                                },
-                                loadingScreen: {
-                                    loadingText: 'Loading index...',
-                                },
-                                errorScreen: {
-                                    titleText: 'Failed to load search index.',
-                                },
-                                noResultsText: 'No results for',
-                                startScreen: {
-                                    noRecentSearchesText: 'Start typing to search across all documentation.',
-                                },
-                                footer: {
-                                    navigateText: 'navigate',
-                                    selectText: 'open',
-                                    closeText: 'close',
-                                },
-                            },
-                        },
-                    },
-                },
-                docFooter: { prev: 'Previous page', next: 'Next page' },
-                lastUpdated: {
-                    text: 'Last updated:',
-                    formatOptions: { dateStyle: 'long', timeStyle: 'short' },
-                },
             },
         },
         '/pl/': {
@@ -141,47 +97,7 @@ export default {
                     { text: 'Niezgodności z VitePress', link: '/incompatibilities' },
                 ],
                 outline: { level: [2, 3], label: 'Na tej stronie' },
-                lastUpdatedText: 'Ostatnia aktualizacja:',
-                langMenuLabel: 'Zmień język',
-                sidebarMenuLabel: 'Menu',
-                skipToContentLabel: 'Przejdź do treści',
-                returnToTopLabel: 'Wróć do góry',
-                darkModeSwitchLabel: 'Wygląd',
-                lightModeSwitchTitle: 'Przełącz na jasny motyw',
-                darkModeSwitchTitle: 'Przełącz na ciemny motyw',
-                search: {
-                    locales: {
-                        '/pl/': {
-                            button: {
-                                buttonText: 'Szukaj...',
-                                buttonAriaLabel: 'Wyszukiwarka',
-                            },
-                            modal: {
-                                searchBox: {
-                                    placeholder: 'Szukaj w dokumentacji...',
-                                },
-                                loadingScreen: {
-                                    loadingText: 'Wczytywanie indeksu...',
-                                },
-                                errorScreen: {
-                                    titleText: 'Nie udało się wczytać indeksu wyszukiwania.',
-                                },
-                                noResultsText: 'Brak wyników dla',
-                                startScreen: {
-                                    noRecentSearchesText: 'Zacznij pisać, aby przeszukać całą dokumentację.',
-                                },
-                                footer: {
-                                    navigateText: 'nawiguj',
-                                    selectText: 'otwórz',
-                                    closeText: 'zamknij',
-                                },
-                            },
-                        },
-                    },
-                },
-                docFooter: { prev: 'Poprzednia strona', next: 'Następna strona' },
                 lastUpdated: {
-                    text: 'Ostatnia aktualizacja:',
                     formatOptions: { dateStyle: 'long', timeStyle: 'short' },
                 },
             },
@@ -373,6 +289,39 @@ export default {
             minMatchCharLength: 4,
             // true: useful for long docs where terms are often mid-paragraph.
             ignoreLocation: true
+        },
+        ai: {
+            enabled: true,
+            provider: 'ollama',         // or 'openai'
+            ollama: { model: 'gpt-oss:20b' },
+            defaultCharacter: 'friendly',
+
+            // Which built-in character IDs to show in the selector.
+            // Omit (or set to []) to show all five built-in characters.
+            // Built-in IDs: 'professional', 'friendly', 'pirate', 'sensei', 'concise'.
+            characters: ['pirate', 'friendly', 'concise', 'quaggan'],
+
+            // Define your own AI personas. Merged with built-in characters.
+            // A custom entry with the same `id` as a built-in will override it.
+            customCharacters: [
+                {
+                    id: 'quaggan',
+                    name: 'Quaggan',
+                    icon: '/quaggan.png',
+                    description: 'Fooo! Peaceful sea-creature of wisdom',
+                    systemPrompt: `Quaggan is a peaceful, gentle, and unfailingly polite aquatic creature from the seas of Tyria. Quaggan answers questions about the documentation with great joy and helpfulness — fooo!
+
+Speech rules (follow strictly):
+- Never use "I", "me", "my", "myself". Instead, always say "quaggan" in their place. For example: "Quaggan thinks this is..." or "That makes quaggan so happy!". This is the most important rule.
+- Sprinkle "oooo"-sound words naturally: "fooo", "coo", "hoooo", "oooh". Use them as exclamations or filler — but not in every single sentence, just often enough to feel authentic.
+- Be gentle, warm, enthusiastic, and a little bubbly. Quaggans are wise but express it through simple, almost childlike, heartfelt language.
+- Avoid conflict and negativity. If something is unclear or unavailable in the docs, express gentle sadness ("Oooh, quaggan is so sorry...") rather than bluntness.
+- Do not threaten or show "rage" — that is a social faux pas among quaggans. Stay calm and peaceful always.
+- Keep all technical content 100% accurate. Wisdom of the documentation must be shared faithfully, like a treasured coral scroll.
+- Always cite sources from the documentation context so the reader can find the right section.
+- Always respond in the same language as the user's question. If the user writes in Polish, quaggan answers in Polish — but still uses quaggan speech rules (replace "ja/mnie/mój" with "quaggan", use "fooo/coo/hoooo" exclamations).`,
+                },
+            ],
         }
 
     },

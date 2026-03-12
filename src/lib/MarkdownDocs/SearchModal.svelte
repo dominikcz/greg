@@ -3,6 +3,7 @@
     import Fuse from "fuse.js";
     import gregConfig from "virtual:greg-config";
     import { withBase } from "./common";
+    import AiChat from "./AiChat.svelte";
 
     // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,14 @@
         searchNavigateText?: string;
         searchSelectText?: string;
         searchCloseText?: string;
+        aiTabLabel?: string;
+        aiPlaceholder?: string;
+        aiLoadingText?: string;
+        aiErrorText?: string;
+        aiStartText?: string;
+        aiSourcesLabel?: string;
+        aiClearChatLabel?: string;
+        aiSendLabel?: string;
     };
 
     let {
@@ -79,6 +88,14 @@
         searchNavigateText = "navigate",
         searchSelectText = "open",
         searchCloseText = "close",
+        aiTabLabel = "Ask AI",
+        aiPlaceholder = "Ask a question about the docs\u2026",
+        aiLoadingText = "Thinking\u2026",
+        aiErrorText = "Something went wrong. Please try again.",
+        aiStartText = "Ask me anything about this documentation. My answers are based exclusively on the docs.",
+        aiSourcesLabel = "Sources",
+        aiClearChatLabel = "Clear chat",
+        aiSendLabel = "Send",
     }: Props = $props();
 
     function normalizePath(path: string): string {
@@ -123,6 +140,10 @@
     const mode = $derived<"local" | "server" | "custom" | "none">(
         searchProvider ? "custom" : (cfgSearch.provider ?? "server"),
     );
+    /** Whether the AI assistant is enabled in config. */
+    const aiEnabled = $derived(!!(cfgSearch?.ai?.enabled));
+    /** Which tab is active in the modal: search or AI chat. */
+    let tabMode = $state<"search" | "ai">("search");
     const serverUrl: string = cfgSearch.serverUrl ?? "/api/search";
     const fuzzyCfg = cfgSearch.fuzzy ?? {};
     const localThreshold: number = Number.isFinite(Number(fuzzyCfg.threshold))
@@ -136,6 +157,46 @@
     const localIgnoreLocation: boolean = fuzzyCfg.ignoreLocation !== false;
 
     // ── State ──────────────────────────────────────────────────────────────────
+
+    // ── Recent searches (localStorage) ───────────────────────────────────
+
+    const RECENT_KEY = 'greg-search-recent';
+    const MAX_RECENT = 8;
+
+    function loadRecentSearches(): string[] {
+        try {
+            const raw = localStorage.getItem(RECENT_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed as string[];
+            }
+        } catch { /* ignore */ }
+        return [];
+    }
+
+    function saveRecentSearches(list: string[]) {
+        try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+    }
+
+    let recentSearches = $state<string[]>(loadRecentSearches());
+
+    function addRecentSearch(phrase: string) {
+        const trimmed = phrase.trim();
+        if (!trimmed) return;
+        const filtered = recentSearches.filter(r => r !== trimmed);
+        recentSearches = [trimmed, ...filtered].slice(0, MAX_RECENT);
+        saveRecentSearches(recentSearches);
+    }
+
+    function removeRecentSearch(phrase: string) {
+        recentSearches = recentSearches.filter(r => r !== phrase);
+        saveRecentSearches(recentSearches);
+    }
+
+    function clearRecentSearches() {
+        recentSearches = [];
+        try { localStorage.removeItem(RECENT_KEY); } catch { /* ignore */ }
+    }
 
     let query = $state("");
     let results = $state<SearchResult[]>([]);
@@ -189,6 +250,7 @@
         } else {
             query = "";
             results = [];
+            tabMode = "search";
         }
     });
 
@@ -212,6 +274,7 @@
         clearTimeout(searchTimer);
         const q = query.trim();
         searchGeneration += 1;
+        selectedIndex = 0;
         if (!q) {
             abortCtrl?.abort();
             isSearching = false;
@@ -430,20 +493,28 @@
     // ── Keyboard navigation ────────────────────────────────────────────────────
 
     function handleKeydown(e: KeyboardEvent) {
+        // When query is empty, navigate/activate recent searches
+        const inRecent = !query.trim() && recentSearches.length > 0;
+        const listSize = inRecent ? recentSearches.length : results.length;
         switch (e.key) {
             case "Escape":
                 onClose();
                 break;
             case "ArrowDown":
                 e.preventDefault();
-                selectedIndex = Math.min(selectedIndex + 1, results.length - 1);
+                selectedIndex = Math.min(selectedIndex + 1, listSize - 1);
                 break;
             case "ArrowUp":
                 e.preventDefault();
                 selectedIndex = Math.max(selectedIndex - 1, 0);
                 break;
             case "Enter":
-                if (results.length > 0) goTo(results[selectedIndex]);
+                if (inRecent && recentSearches[selectedIndex]) {
+                    query = recentSearches[selectedIndex];
+                    void runSearch();
+                } else if (results.length > 0) {
+                    goTo(results[selectedIndex]);
+                }
                 break;
         }
     }
@@ -451,6 +522,7 @@
     function goTo(result: SearchResult) {
         const phrase = query.trim();
         if (phrase) {
+            addRecentSearch(phrase);
             try {
                 sessionStorage.setItem(
                     "greg-search-highlight",
@@ -488,46 +560,87 @@
         aria-label={searchModalLabel}
         tabindex="-1"
     >
-        <div class="search-modal">
-            <!-- Input row -->
-            <div class="search-field">
-                <svg
-                    class="search-icon"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                >
-                    <circle cx="11" cy="11" r="8" /><line
-                        x1="21"
-                        y1="21"
-                        x2="16.65"
-                        y2="16.65"
-                    />
-                </svg>
-                <input
-                    bind:this={inputEl}
-                    bind:value={query}
-                    oninput={handleInput}
-                    onkeydown={handleKeydown}
-                    type="search"
-                    class="search-field-input"
-                    placeholder={searchPlaceholder}
-                    autocomplete="off"
-                    spellcheck="false"
-                />
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <kbd
-                    class="search-esc-hint"
-                    onclick={onClose}
-                    role="button"
-                    tabindex="-1">Esc</kbd
-                >
-            </div>
+        <div class="search-modal" class:ai-mode={aiEnabled && tabMode === "ai"}>
 
-            <!-- Body -->
-            {#if mode === "local" && !indexReady && !indexError}
+            <!-- ── Tab switcher (only when AI is enabled) ── -->
+            {#if aiEnabled}
+                <div class="modal-tabs">
+                    <button
+                        class="modal-tab"
+                        class:active={tabMode === "search"}
+                        onclick={() => { tabMode = "search"; tick().then(() => inputEl?.focus()); }}
+                        type="button"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="modal-tab-icon">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        {searchModalLabel}
+                    </button>
+                    <button
+                        class="modal-tab"
+                        class:active={tabMode === "ai"}
+                        onclick={() => (tabMode = "ai")}
+                        type="button"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="modal-tab-icon">
+                            <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
+                        </svg>
+                        {aiTabLabel}
+                    </button>
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <kbd
+                        class="search-esc-hint modal-tabs-esc"
+                        onclick={onClose}
+                        role="button"
+                        tabindex="-1">Esc</kbd
+                    >
+                </div>
+            {/if}
+
+            {#if !aiEnabled || tabMode === "search"}
+                <!-- ── Search tab (existing) ── -->
+
+                <!-- Input row -->
+                <div class="search-field">
+                    <svg
+                        class="search-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <circle cx="11" cy="11" r="8" /><line
+                            x1="21"
+                            y1="21"
+                            x2="16.65"
+                            y2="16.65"
+                        />
+                    </svg>
+                    <input
+                        bind:this={inputEl}
+                        bind:value={query}
+                        oninput={handleInput}
+                        onkeydown={handleKeydown}
+                        type="search"
+                        class="search-field-input"
+                        placeholder={searchPlaceholder}
+                        autocomplete="off"
+                        spellcheck="false"
+                    />
+                    {#if !aiEnabled}
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                        <kbd
+                            class="search-esc-hint"
+                            onclick={onClose}
+                            role="button"
+                            tabindex="-1">Esc</kbd
+                        >
+                    {/if}
+                </div>
+
+                <!-- Body -->
+                {#if mode === "local" && !indexReady && !indexError}
                 <div class="search-status">{searchLoadingText}</div>
             {:else if mode === "local" && indexError}
                 <div class="search-status search-error">
@@ -607,10 +720,63 @@
                     <span><kbd>Esc</kbd> {searchCloseText}</span>
                 </div>
             {:else if !query.trim()}
-                <div class="search-status search-hint">
-                    {searchStartText}
-                </div>
+                {#if recentSearches.length > 0}
+                    <div class="search-recent">
+                        <div class="search-recent-header">
+                            <span class="search-recent-label">Recent searches</span>
+                            <button class="search-recent-clear" type="button" onclick={clearRecentSearches}>Clear all</button>
+                        </div>
+                        <ul class="search-results" role="listbox" aria-label="Recent searches">
+                            {#each recentSearches as phrase, i}
+                                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                <li
+                                    class="search-result-item search-recent-item"
+                                    class:selected={i === selectedIndex}
+                                    role="option"
+                                    aria-selected={i === selectedIndex}
+                                    onclick={() => { query = phrase; void runSearch(); }}
+                                    onmouseenter={() => (selectedIndex = i)}
+                                >
+                                    <div class="result-header">
+                                        <svg class="search-recent-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        <span class="result-title">{phrase}</span>
+                                    </div>
+                                    <button
+                                        class="search-recent-remove"
+                                        type="button"
+                                        aria-label="Remove from history"
+                                        onclick={(e) => { e.stopPropagation(); removeRecentSearch(phrase); }}
+                                    >×</button>
+                                </li>
+                            {/each}
+                        </ul>
+                    </div>
+                {:else}
+                    <div class="search-status search-hint">
+                        {searchStartText}
+                    </div>
+                {/if}
             {/if}
+
+            {:else}
+                <!-- ── AI Chat tab ── -->
+                <AiChat
+                    {onNavigate}
+                    {onClose}
+                    localeSrcDir={localeSrcDir}
+                    placeholder={aiPlaceholder}
+                    loadingText={aiLoadingText}
+                    errorText={aiErrorText}
+                    startText={aiStartText}
+                    sourcesLabel={aiSourcesLabel}
+                    clearChatLabel={aiClearChatLabel}
+                    sendLabel={aiSendLabel}
+                />
+            {/if}
+
         </div>
     </div>
 {/if}
@@ -650,6 +816,60 @@
         flex-direction: column;
         max-height: calc(100vh - 8rem);
         animation: slide-in 0.15s ease;
+
+        &.ai-mode {
+            max-height: calc(100vh - 5rem);
+            min-height: min(540px, calc(100vh - 5rem));
+        }
+    }
+
+    /* ── Mode tabs ─────────────────────────────────────────────── */
+    .modal-tabs {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--greg-border-color);
+        background: var(--greg-header-background);
+        flex-shrink: 0;
+    }
+
+    .modal-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--greg-menu-section-color);
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-family: inherit;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: all 0.15s;
+
+        &:hover {
+            color: var(--greg-color);
+            background: var(--greg-menu-hover-background);
+        }
+
+        &.active {
+            color: var(--greg-accent);
+            background: color-mix(in srgb, var(--greg-accent) 10%, transparent);
+            border-color: color-mix(in srgb, var(--greg-accent) 30%, transparent);
+        }
+    }
+
+    .modal-tab-icon {
+        width: 13px;
+        height: 13px;
+        flex-shrink: 0;
+    }
+
+    .modal-tabs-esc {
+        margin-left: auto;
     }
 
     @keyframes slide-in {
@@ -867,6 +1087,88 @@
             font-size: 0.68rem;
             font-family: inherit;
             line-height: 1.4;
+        }
+    }
+
+    /* ── Recent searches ───────────────────────────────────────── */
+
+    .search-recent {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .search-recent-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 1rem 0.25rem;
+        flex-shrink: 0;
+    }
+
+    .search-recent-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--greg-menu-section-color);
+    }
+
+    .search-recent-clear {
+        background: none;
+        border: none;
+        font-size: 0.7rem;
+        font-family: inherit;
+        color: var(--greg-menu-section-color);
+        cursor: pointer;
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
+        opacity: 0.7;
+        transition: opacity 0.15s, color 0.15s;
+
+        &:hover {
+            opacity: 1;
+            color: var(--greg-danger-text, #e53e3e);
+        }
+    }
+
+    .search-recent-item {
+        position: relative;
+        padding-right: 2rem;
+    }
+
+    .search-recent-icon {
+        width: 13px;
+        height: 13px;
+        color: var(--greg-menu-section-color);
+        flex-shrink: 0;
+    }
+
+    .search-recent-remove {
+        position: absolute;
+        right: 0.6rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        font-size: 1rem;
+        line-height: 1;
+        color: var(--greg-menu-section-color);
+        cursor: pointer;
+        padding: 0.2rem 0.3rem;
+        border-radius: 3px;
+        opacity: 0;
+        transition: opacity 0.15s, color 0.15s;
+
+        .search-recent-item:hover &,
+        .search-recent-item.selected & {
+            opacity: 0.6;
+        }
+
+        &:hover {
+            opacity: 1 !important;
+            color: var(--greg-danger-text, #e53e3e);
         }
     }
 </style>
