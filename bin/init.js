@@ -231,7 +231,9 @@ async function main() {
     // ── package.json scripts + devDependencies ────────────────────────────────
     // @dominikcz/greg is written to devDependencies directly (never via npm install)
     // so that local `npm link` and future registry installs both work correctly.
-    const { version: gregVersion } = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
+    const gregPkg = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf-8'));
+    const gregVersion = gregPkg.version;
+    const gregDevDeps = gregPkg.devDependencies ?? {};
     const { spec: gregDependencySpec, source: gregDependencySource } = resolveGregDependencySpec(gregVersion);
     {
         const pkgPath = join(cwd, 'package.json');
@@ -245,9 +247,9 @@ async function main() {
                         if (!pkg.scripts[k]) { pkg.scripts[k] = v; changed = true; }
                     }
                 }
-                // Greg scaffold uses ESM config files (vite/svelte/greg), so add
-                // package type when missing to avoid Node typeless-module warnings.
-                if (!pkg.type) {
+                // Greg scaffold uses ESM config files (vite/svelte/greg), so enforce
+                // package type to avoid Node CJS/typeless-module config loading errors.
+                if (!pkg.type || pkg.type === 'commonjs') {
                     pkg.type = 'module';
                     changed = true;
                 }
@@ -281,9 +283,9 @@ async function main() {
     // ── Install dependencies ──────────────────────────────────────────────────
     // @dominikcz/greg is already in package.json devDependencies — install only peer deps.
     const peerDepsArr = [
-        '@sveltejs/vite-plugin-svelte',
-        'svelte',
-        'vite',
+        `@sveltejs/vite-plugin-svelte@${gregDevDeps['@sveltejs/vite-plugin-svelte'] ?? '^6'}`,
+        `svelte@${gregDevDeps.svelte ?? '^5'}`,
+        `vite@${gregDevDeps.vite ?? '^7'}`,
         ...(useTS ? ['typescript'] : []),
     ];
     const pm = detectPm();
