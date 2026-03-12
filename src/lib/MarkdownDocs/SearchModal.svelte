@@ -206,6 +206,8 @@
 
     /** True while a server / custom request is in flight. */
     let isSearching = $state(false);
+    /** True when the last server/custom search ended with a network/HTTP error. */
+    let searchFailed = $state(false);
     /** For local mode: true once the full JSON index has been downloaded. */
     let indexReady = $state(false);
     let indexError = $state(false);
@@ -278,6 +280,7 @@
         if (!q) {
             abortCtrl?.abort();
             isSearching = false;
+            searchFailed = false;
             results = [];
             return;
         }
@@ -291,6 +294,7 @@
         const q = query.trim();
         if (!q) {
             results = [];
+            searchFailed = false;
             isSearching = false;
             return;
         }
@@ -315,6 +319,7 @@
         abortCtrl?.abort();
         abortCtrl = new AbortController();
         isSearching = true;
+        searchFailed = false;
         try {
             let raw: SearchResult[];
             if (mode === "custom" && searchProvider) {
@@ -343,6 +348,7 @@
             if (e?.name === "AbortError") return; // superseded by newer query — ignore
             if (generation !== searchGeneration) return;
             console.error("[Search]", e);
+            searchFailed = true;
             results = [];
         } finally {
             if (generation === searchGeneration) {
@@ -651,6 +657,10 @@
                     <span class="search-spinner" aria-hidden="true"></span>
                     {searchSearchingText}
                 </div>
+            {:else if searchFailed && query.trim()}
+                <div class="search-status search-error">
+                    {searchErrorText}
+                </div>
             {:else if query.trim() && results.length === 0}
                 <div class="search-status">
                     {searchNoResultsText} <strong>"{query}"</strong>
@@ -701,7 +711,7 @@
                                         <polyline points="9 18 15 12 9 6" />
                                     </svg>
                                     <span class="result-section"
-                                        >”ş {@html result.sectionTitleHtml ??
+                                        >{@html result.sectionTitleHtml ??
                                             escapeHtml(result.sectionTitle)}</span
                                     >
                                 {/if}

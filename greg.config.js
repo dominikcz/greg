@@ -279,7 +279,7 @@ export default {
         // to greg search-server (recommended for production).
         // Use full URL only when the search server is on a different origin:
         // serverUrl: 'http://127.0.0.1:3100/api/search',
-        serverUrl: '/api/search',
+        serverUrl: 'http://localhost:3100/api/search',
 
         // Suggested strict preset for docs-heavy projects.
         fuzzy: {
