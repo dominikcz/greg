@@ -102,6 +102,14 @@ export type LocaleThemeConfig = {
                     loadingScreen?: {
                         loadingText?: string;
                     };
+                    ai?: {
+                        tabLabel?: string;
+                        placeholder?: string;
+                        startText?: string;
+                        loadingText?: string;
+                        errorText?: string;
+                        sourcesLabel?: string;
+                    };
                 };
             }
         >;
@@ -171,9 +179,168 @@ type ResolveDefaults = {
     searchNavigateText?: string;
     searchSelectText?: string;
     searchCloseText?: string;
+    aiTabLabel?: string;
+    aiPlaceholder?: string;
+    aiLoadingText?: string;
+    aiErrorText?: string;
+    aiStartText?: string;
+    aiSourcesLabel?: string;
+    aiClearChatLabel?: string;
+    aiSendLabel?: string;
 };
 
 const EXTERNAL_LINK_RE = /^(?:[a-z][a-z\d+\-.]*:|\/\/)/i;
+
+// ── Built-in locale strings ──────────────────────────────────────────────────
+// Provides default UI translations per language tag so users don't need to
+// repeat common strings in their greg.config.js.
+// Keys: lowercase BCP-47 language tag (full e.g. "en-us" or base e.g. "en").
+// Lookup order: full tag → base tag → empty (falls through to defaults).
+//
+// Structure mirrors LocaleThemeConfig. The `search` key holds the per-locale
+// search config (button + modal) without the `locales[key]` wrapping — that
+// wrapping is injected dynamically in getBuiltInThemeConfig() using the actual
+// locale key, so the data stays key-agnostic.
+
+type SearchLocaleModal = {
+    noResultsText?: string;
+    footer?: {
+        selectText?: string;
+        navigateText?: string;
+        closeText?: string;
+    };
+    searchBox?: { placeholder?: string };
+    startScreen?: { noRecentSearchesText?: string };
+    errorScreen?: { titleText?: string };
+    loadingScreen?: { loadingText?: string };
+    /** Greg-specific: "Searching…" status text. */
+    searchingText?: string;
+    /** Greg-specific: aria-label for the results list. */
+    resultsAriaLabel?: string;
+    ai?: {
+        tabLabel?: string;
+        placeholder?: string;
+        startText?: string;
+        loadingText?: string;
+        errorText?: string;
+        sourcesLabel?: string;
+        clearChatLabel?: string;
+        sendLabel?: string;
+    };
+};
+
+type SearchLocaleEntry = {
+    button?: { buttonText?: string; buttonAriaLabel?: string };
+    modal?: SearchLocaleModal;
+};
+
+/** LocaleThemeConfig shape, but with `search` stored one level shallower
+ *  (the locale key is unknown at definition time and injected on retrieval). */
+type BuiltInLocaleThemeConfig = Omit<LocaleThemeConfig, "search"> & {
+    search?: SearchLocaleEntry;
+};
+
+const BUILT_IN_LOCALE_STRINGS: Record<string, BuiltInLocaleThemeConfig> = {
+    en: {
+        langMenuLabel: "Change language",
+        sidebarMenuLabel: "Menu",
+        skipToContentLabel: "Skip to content",
+        returnToTopLabel: "Back to top",
+        darkModeSwitchLabel: "Appearance",
+        lightModeSwitchTitle: "Switch to light theme",
+        darkModeSwitchTitle: "Switch to dark theme",
+        lastUpdatedText: "Last updated:",
+        docFooter: { prev: "Previous page", next: "Next page" },
+        search: {
+            button: { buttonText: "Search...", buttonAriaLabel: "Search" },
+            modal: {
+                searchBox: { placeholder: "Search docs..." },
+                loadingScreen: { loadingText: "Loading index..." },
+                errorScreen: { titleText: "Failed to load search index." },
+                noResultsText: "No results for",
+                startScreen: { noRecentSearchesText: "Start typing to search across all documentation." },
+                footer: { navigateText: "navigate", selectText: "open", closeText: "close" },
+                searchingText: "Searching...",
+                resultsAriaLabel: "Search results",
+                ai: {
+                    tabLabel: "Ask AI",
+                    placeholder: "Ask a question about the docs\u2026",
+                    loadingText: "Thinking\u2026",
+                    errorText: "Something went wrong. Please try again.",
+                    startText: "Ask me anything about this documentation. My answers are based exclusively on the docs.",
+                    sourcesLabel: "Sources",
+                    clearChatLabel: "Clear chat",
+                    sendLabel: "Send",
+                },
+            },
+        },
+    },
+    pl: {
+        langMenuLabel: "Zmień język",
+        sidebarMenuLabel: "Menu",
+        skipToContentLabel: "Przejdź do treści",
+        returnToTopLabel: "Wróć do góry",
+        darkModeSwitchLabel: "Wygląd",
+        lightModeSwitchTitle: "Przełącz na jasny motyw",
+        darkModeSwitchTitle: "Przełącz na ciemny motyw",
+        lastUpdatedText: "Ostatnia aktualizacja:",
+        docFooter: { prev: "Poprzednia strona", next: "Następna strona" },
+        search: {
+            button: { buttonText: "Szukaj...", buttonAriaLabel: "Wyszukiwarka" },
+            modal: {
+                searchBox: { placeholder: "Szukaj w dokumentacji..." },
+                loadingScreen: { loadingText: "Wczytywanie indeksu..." },
+                errorScreen: { titleText: "Nie udało się wczytać indeksu wyszukiwania." },
+                noResultsText: "Brak wyników dla",
+                startScreen: { noRecentSearchesText: "Zacznij pisać, aby przeszukać całą dokumentację." },
+                footer: { navigateText: "nawiguj", selectText: "otwórz", closeText: "zamknij" },
+                searchingText: "Szukam...",
+                resultsAriaLabel: "Wyniki wyszukiwania",
+                ai: {
+                    tabLabel: "Zapytaj AI",
+                    placeholder: "Zadaj pytanie o dokumentację\u2026",
+                    loadingText: "Myślę\u2026",
+                    errorText: "Coś poszło nie tak. Spróbuj ponownie.",
+                    startText: "Zapytaj mnie o cokolwiek z tej dokumentacji. Moje odpowiedzi bazują wyłącznie na dokumentacji.",
+                    sourcesLabel: "Źródła",
+                    clearChatLabel: "Wyczyść czat",
+                    sendLabel: "Wyślij",
+                },
+            },
+        },
+    },
+};
+
+/** Returns built-in locale strings as a proper LocaleThemeConfig, with the
+ *  search locale entry nested under the given localeKey. */
+function getBuiltInThemeConfig(lang?: string, localeKey = "/"): LocaleThemeConfig {
+    if (!lang) return {};
+    const normalized = lang.toLowerCase();
+    const base = normalized.split("-")[0];
+    const data = BUILT_IN_LOCALE_STRINGS[normalized] ?? BUILT_IN_LOCALE_STRINGS[base];
+    if (!data) return {};
+    const { search, ...rest } = data;
+    if (!search) return rest;
+    return { ...rest, search: { locales: { [localeKey]: search } } };
+}
+
+/** Deep-merges `override` into `base` (explicit values win). Arrays are
+ *  replaced wholesale; plain objects are merged recursively. */
+function deepMerge<T>(base: T, override: T): T {
+    if (override === undefined || override === null) return base;
+    if (base === undefined || base === null) return override;
+    if (typeof override !== "object" || typeof base !== "object") return override;
+    if (Array.isArray(override) || Array.isArray(base)) {
+        return (Array.isArray(override) ? override : base) as T;
+    }
+    const result: Record<string, unknown> = { ...(base as Record<string, unknown>) };
+    for (const key of Object.keys(override as Record<string, unknown>)) {
+        const ov = (override as Record<string, unknown>)[key];
+        if (ov === undefined) continue;
+        result[key] = deepMerge(result[key], ov);
+    }
+    return result as T;
+}
 
 function splitPathAndSuffix(raw: string): { path: string; suffix: string } {
     const value = String(raw || "").trim();
@@ -370,7 +537,13 @@ export function resolveLocaleForPath(
               },
           )
         : (themeConfig.sidebar ?? defaults.sidebar);
-    const searchLocale = resolveSearchLocaleConfig(themeConfig, matched.key);
+    // Deep-merge built-in defaults under explicit themeConfig — explicit always wins.
+    const builtInThemeConfig = getBuiltInThemeConfig(matched.config.lang, matched.key);
+    const mergedThemeConfig = deepMerge(builtInThemeConfig, themeConfig);
+    const searchLocale = resolveSearchLocaleConfig(mergedThemeConfig, matched.key);
+    // Narrow to SearchLocaleModal so we can access Greg-specific extensions
+    // (searchingText, resultsAriaLabel) without type errors.
+    const modal = searchLocale?.modal as (SearchLocaleModal | undefined);
     return {
         key: matched.key,
         lang: matched.config.lang,
@@ -380,65 +553,44 @@ export function resolveLocaleForPath(
         mainTitle: matched.config.title ?? defaults.mainTitle,
         nav: normalizedNav,
         sidebar: normalizedSidebar,
-        outline: themeConfig.outline ?? defaults.outline,
-        lastUpdatedText: themeConfig.lastUpdatedText,
-        langMenuLabel: themeConfig.langMenuLabel ?? defaults.langMenuLabel,
-        sidebarMenuLabel:
-            themeConfig.sidebarMenuLabel ?? defaults.sidebarMenuLabel,
-        skipToContentLabel:
-            themeConfig.skipToContentLabel ?? defaults.skipToContentLabel,
-        returnToTopLabel:
-            themeConfig.returnToTopLabel ?? defaults.returnToTopLabel,
-        darkModeSwitchLabel:
-            themeConfig.darkModeSwitchLabel ?? defaults.darkModeSwitchLabel,
-        lightModeSwitchTitle:
-            themeConfig.lightModeSwitchTitle ?? defaults.lightModeSwitchTitle,
-        darkModeSwitchTitle:
-            themeConfig.darkModeSwitchTitle ?? defaults.darkModeSwitchTitle,
-        docFooter: themeConfig.docFooter ?? defaults.docFooter,
-        siteTitle: themeConfig.siteTitle ?? defaults.siteTitle,
-        logo: themeConfig.logo ?? defaults.logo,
-        socialLinks: themeConfig.socialLinks ?? defaults.socialLinks,
-        editLink: themeConfig.editLink ?? defaults.editLink,
-        footer: themeConfig.footer ?? defaults.footer,
-        aside: themeConfig.aside ?? defaults.aside,
-        lastUpdated: themeConfig.lastUpdated ?? defaults.lastUpdated,
-        externalLinkIcon:
-            themeConfig.externalLinkIcon ?? defaults.externalLinkIcon,
-        searchButtonLabel:
-            searchLocale?.button?.buttonText ??
-            defaults.searchButtonLabel,
-        searchModalLabel:
-            searchLocale?.button?.buttonAriaLabel ??
-            defaults.searchModalLabel,
-        searchPlaceholder:
-            searchLocale?.modal?.searchBox?.placeholder ??
-            defaults.searchPlaceholder,
-        searchLoadingText:
-            searchLocale?.modal?.loadingScreen?.loadingText ??
-            defaults.searchLoadingText,
-        searchErrorText:
-            searchLocale?.modal?.errorScreen?.titleText ??
-            defaults.searchErrorText,
-        searchSearchingText:
-            defaults.searchSearchingText,
-        searchNoResultsText:
-            searchLocale?.modal?.noResultsText ??
-            defaults.searchNoResultsText,
-        searchStartText:
-            searchLocale?.modal?.startScreen?.noRecentSearchesText ??
-            defaults.searchStartText,
-        searchResultsAriaLabel:
-            defaults.searchResultsAriaLabel,
-        searchNavigateText:
-            searchLocale?.modal?.footer?.navigateText ??
-            defaults.searchNavigateText,
-        searchSelectText:
-            searchLocale?.modal?.footer?.selectText ??
-            defaults.searchSelectText,
-        searchCloseText:
-            searchLocale?.modal?.footer?.closeText ??
-            defaults.searchCloseText,
+        outline: mergedThemeConfig.outline ?? defaults.outline,
+        lastUpdatedText: mergedThemeConfig.lastUpdatedText,
+        langMenuLabel: mergedThemeConfig.langMenuLabel ?? defaults.langMenuLabel,
+        sidebarMenuLabel: mergedThemeConfig.sidebarMenuLabel ?? defaults.sidebarMenuLabel,
+        skipToContentLabel: mergedThemeConfig.skipToContentLabel ?? defaults.skipToContentLabel,
+        returnToTopLabel: mergedThemeConfig.returnToTopLabel ?? defaults.returnToTopLabel,
+        darkModeSwitchLabel: mergedThemeConfig.darkModeSwitchLabel ?? defaults.darkModeSwitchLabel,
+        lightModeSwitchTitle: mergedThemeConfig.lightModeSwitchTitle ?? defaults.lightModeSwitchTitle,
+        darkModeSwitchTitle: mergedThemeConfig.darkModeSwitchTitle ?? defaults.darkModeSwitchTitle,
+        docFooter: mergedThemeConfig.docFooter ?? defaults.docFooter,
+        siteTitle: mergedThemeConfig.siteTitle ?? defaults.siteTitle,
+        logo: mergedThemeConfig.logo ?? defaults.logo,
+        socialLinks: mergedThemeConfig.socialLinks ?? defaults.socialLinks,
+        editLink: mergedThemeConfig.editLink ?? defaults.editLink,
+        footer: mergedThemeConfig.footer ?? defaults.footer,
+        aside: mergedThemeConfig.aside ?? defaults.aside,
+        lastUpdated: mergedThemeConfig.lastUpdated ?? defaults.lastUpdated,
+        externalLinkIcon: mergedThemeConfig.externalLinkIcon ?? defaults.externalLinkIcon,
+        searchButtonLabel: searchLocale?.button?.buttonText ?? defaults.searchButtonLabel,
+        searchModalLabel: searchLocale?.button?.buttonAriaLabel ?? defaults.searchModalLabel,
+        searchPlaceholder: modal?.searchBox?.placeholder ?? defaults.searchPlaceholder,
+        searchLoadingText: modal?.loadingScreen?.loadingText ?? defaults.searchLoadingText,
+        searchErrorText: modal?.errorScreen?.titleText ?? defaults.searchErrorText,
+        searchSearchingText: modal?.searchingText ?? defaults.searchSearchingText,
+        searchNoResultsText: modal?.noResultsText ?? defaults.searchNoResultsText,
+        searchStartText: modal?.startScreen?.noRecentSearchesText ?? defaults.searchStartText,
+        searchResultsAriaLabel: modal?.resultsAriaLabel ?? defaults.searchResultsAriaLabel,
+        searchNavigateText: modal?.footer?.navigateText ?? defaults.searchNavigateText,
+        searchSelectText: modal?.footer?.selectText ?? defaults.searchSelectText,
+        searchCloseText: modal?.footer?.closeText ?? defaults.searchCloseText,
+        aiTabLabel: modal?.ai?.tabLabel ?? defaults.aiTabLabel,
+        aiPlaceholder: modal?.ai?.placeholder ?? defaults.aiPlaceholder,
+        aiLoadingText: modal?.ai?.loadingText ?? defaults.aiLoadingText,
+        aiErrorText: modal?.ai?.errorText ?? defaults.aiErrorText,
+        aiStartText: modal?.ai?.startText ?? defaults.aiStartText,
+        aiSourcesLabel: modal?.ai?.sourcesLabel ?? defaults.aiSourcesLabel,
+        aiClearChatLabel: modal?.ai?.clearChatLabel ?? defaults.aiClearChatLabel,
+        aiSendLabel: modal?.ai?.sendLabel ?? defaults.aiSendLabel,
         entries,
     };
 }

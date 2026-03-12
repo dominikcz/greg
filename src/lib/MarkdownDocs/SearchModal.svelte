@@ -59,6 +59,14 @@
         searchNavigateText?: string;
         searchSelectText?: string;
         searchCloseText?: string;
+        aiTabLabel?: string;
+        aiPlaceholder?: string;
+        aiLoadingText?: string;
+        aiErrorText?: string;
+        aiStartText?: string;
+        aiSourcesLabel?: string;
+        aiClearChatLabel?: string;
+        aiSendLabel?: string;
     };
 
     let {
@@ -80,6 +88,14 @@
         searchNavigateText = "navigate",
         searchSelectText = "open",
         searchCloseText = "close",
+        aiTabLabel = "Ask AI",
+        aiPlaceholder = "Ask a question about the docs\u2026",
+        aiLoadingText = "Thinking\u2026",
+        aiErrorText = "Something went wrong. Please try again.",
+        aiStartText = "Ask me anything about this documentation. My answers are based exclusively on the docs.",
+        aiSourcesLabel = "Sources",
+        aiClearChatLabel = "Clear chat",
+        aiSendLabel = "Send",
     }: Props = $props();
 
     function normalizePath(path: string): string {
@@ -141,6 +157,46 @@
     const localIgnoreLocation: boolean = fuzzyCfg.ignoreLocation !== false;
 
     // ── State ──────────────────────────────────────────────────────────────────
+
+    // ── Recent searches (localStorage) ───────────────────────────────────
+
+    const RECENT_KEY = 'greg-search-recent';
+    const MAX_RECENT = 8;
+
+    function loadRecentSearches(): string[] {
+        try {
+            const raw = localStorage.getItem(RECENT_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed as string[];
+            }
+        } catch { /* ignore */ }
+        return [];
+    }
+
+    function saveRecentSearches(list: string[]) {
+        try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch { /* ignore */ }
+    }
+
+    let recentSearches = $state<string[]>(loadRecentSearches());
+
+    function addRecentSearch(phrase: string) {
+        const trimmed = phrase.trim();
+        if (!trimmed) return;
+        const filtered = recentSearches.filter(r => r !== trimmed);
+        recentSearches = [trimmed, ...filtered].slice(0, MAX_RECENT);
+        saveRecentSearches(recentSearches);
+    }
+
+    function removeRecentSearch(phrase: string) {
+        recentSearches = recentSearches.filter(r => r !== phrase);
+        saveRecentSearches(recentSearches);
+    }
+
+    function clearRecentSearches() {
+        recentSearches = [];
+        try { localStorage.removeItem(RECENT_KEY); } catch { /* ignore */ }
+    }
 
     let query = $state("");
     let results = $state<SearchResult[]>([]);
@@ -218,6 +274,7 @@
         clearTimeout(searchTimer);
         const q = query.trim();
         searchGeneration += 1;
+        selectedIndex = 0;
         if (!q) {
             abortCtrl?.abort();
             isSearching = false;
@@ -436,20 +493,28 @@
     // ── Keyboard navigation ────────────────────────────────────────────────────
 
     function handleKeydown(e: KeyboardEvent) {
+        // When query is empty, navigate/activate recent searches
+        const inRecent = !query.trim() && recentSearches.length > 0;
+        const listSize = inRecent ? recentSearches.length : results.length;
         switch (e.key) {
             case "Escape":
                 onClose();
                 break;
             case "ArrowDown":
                 e.preventDefault();
-                selectedIndex = Math.min(selectedIndex + 1, results.length - 1);
+                selectedIndex = Math.min(selectedIndex + 1, listSize - 1);
                 break;
             case "ArrowUp":
                 e.preventDefault();
                 selectedIndex = Math.max(selectedIndex - 1, 0);
                 break;
             case "Enter":
-                if (results.length > 0) goTo(results[selectedIndex]);
+                if (inRecent && recentSearches[selectedIndex]) {
+                    query = recentSearches[selectedIndex];
+                    void runSearch();
+                } else if (results.length > 0) {
+                    goTo(results[selectedIndex]);
+                }
                 break;
         }
     }
@@ -457,6 +522,7 @@
     function goTo(result: SearchResult) {
         const phrase = query.trim();
         if (phrase) {
+            addRecentSearch(phrase);
             try {
                 sessionStorage.setItem(
                     "greg-search-highlight",
@@ -519,7 +585,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" class="modal-tab-icon">
                             <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>
                         </svg>
-                        Ask AI
+                        {aiTabLabel}
                     </button>
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <kbd
@@ -654,9 +720,45 @@
                     <span><kbd>Esc</kbd> {searchCloseText}</span>
                 </div>
             {:else if !query.trim()}
-                <div class="search-status search-hint">
-                    {searchStartText}
-                </div>
+                {#if recentSearches.length > 0}
+                    <div class="search-recent">
+                        <div class="search-recent-header">
+                            <span class="search-recent-label">Recent searches</span>
+                            <button class="search-recent-clear" type="button" onclick={clearRecentSearches}>Clear all</button>
+                        </div>
+                        <ul class="search-results" role="listbox" aria-label="Recent searches">
+                            {#each recentSearches as phrase, i}
+                                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                                <li
+                                    class="search-result-item search-recent-item"
+                                    class:selected={i === selectedIndex}
+                                    role="option"
+                                    aria-selected={i === selectedIndex}
+                                    onclick={() => { query = phrase; void runSearch(); }}
+                                    onmouseenter={() => (selectedIndex = i)}
+                                >
+                                    <div class="result-header">
+                                        <svg class="search-recent-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <circle cx="12" cy="12" r="10"/>
+                                            <polyline points="12 6 12 12 16 14"/>
+                                        </svg>
+                                        <span class="result-title">{phrase}</span>
+                                    </div>
+                                    <button
+                                        class="search-recent-remove"
+                                        type="button"
+                                        aria-label="Remove from history"
+                                        onclick={(e) => { e.stopPropagation(); removeRecentSearch(phrase); }}
+                                    >×</button>
+                                </li>
+                            {/each}
+                        </ul>
+                    </div>
+                {:else}
+                    <div class="search-status search-hint">
+                        {searchStartText}
+                    </div>
+                {/if}
             {/if}
 
             {:else}
@@ -665,6 +767,13 @@
                     {onNavigate}
                     {onClose}
                     localeSrcDir={localeSrcDir}
+                    placeholder={aiPlaceholder}
+                    loadingText={aiLoadingText}
+                    errorText={aiErrorText}
+                    startText={aiStartText}
+                    sourcesLabel={aiSourcesLabel}
+                    clearChatLabel={aiClearChatLabel}
+                    sendLabel={aiSendLabel}
                 />
             {/if}
 
@@ -978,6 +1087,88 @@
             font-size: 0.68rem;
             font-family: inherit;
             line-height: 1.4;
+        }
+    }
+
+    /* ── Recent searches ───────────────────────────────────────── */
+
+    .search-recent {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+    }
+
+    .search-recent-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 1rem 0.25rem;
+        flex-shrink: 0;
+    }
+
+    .search-recent-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--greg-menu-section-color);
+    }
+
+    .search-recent-clear {
+        background: none;
+        border: none;
+        font-size: 0.7rem;
+        font-family: inherit;
+        color: var(--greg-menu-section-color);
+        cursor: pointer;
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
+        opacity: 0.7;
+        transition: opacity 0.15s, color 0.15s;
+
+        &:hover {
+            opacity: 1;
+            color: var(--greg-danger-text, #e53e3e);
+        }
+    }
+
+    .search-recent-item {
+        position: relative;
+        padding-right: 2rem;
+    }
+
+    .search-recent-icon {
+        width: 13px;
+        height: 13px;
+        color: var(--greg-menu-section-color);
+        flex-shrink: 0;
+    }
+
+    .search-recent-remove {
+        position: absolute;
+        right: 0.6rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        font-size: 1rem;
+        line-height: 1;
+        color: var(--greg-menu-section-color);
+        cursor: pointer;
+        padding: 0.2rem 0.3rem;
+        border-radius: 3px;
+        opacity: 0;
+        transition: opacity 0.15s, color 0.15s;
+
+        .search-recent-item:hover &,
+        .search-recent-item.selected & {
+            opacity: 0.6;
+        }
+
+        &:hover {
+            opacity: 1 !important;
+            color: var(--greg-danger-text, #e53e3e);
         }
     }
 </style>

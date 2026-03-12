@@ -154,3 +154,103 @@ pomijane zarówno w routingu, jak i w indeksie wyszukiwania.
 - W trybie `local` duże indeksy mogą znacząco zwiększyć rozmiar payloadu i zużycie pamięci w przeglądarce.
 - W trybie `server` endpoint wyszukiwania musi być osiągalny z klienta (`serverUrl` musi być poprawny dla danego środowiska).
 - Zawartość bloków kodu jest usuwana z indeksu (nie jest przeszukiwalna).
+
+
+## Baza wiedzy AI
+
+Funkcja AI dodaje zakładkę **Zapytaj AI** do modalu wyszukiwania. Wykorzystuje
+pipeline RAG (retrieval-augmented generation): dokumenty są porcjowane i
+wektoryzowane podczas builda, a pasujące fragmenty są dołączane jako kontekst
+do każdego zapytania do modelu językowego.
+
+Włącz w `greg.config.js`:
+
+```js
+search: {
+  ai: {
+    enabled: true,
+    provider: 'ollama', // lub 'openai'
+    ollama: { model: 'phi4' },
+  }
+}
+```
+
+Wymagany plugin Vite (`vitePluginAiServer`) oraz konfiguracja serwera AI w
+produkcji opisane są w [Przewodniku po rozpoczęciu pracy](/docs/pl/guide/getting-started).
+
+
+### Postaci AI (persony)
+
+Greg zawiera pięć wbudowanych person, które użytkownik może wybrać w interfejsie czatu:
+
+| ID             | Nazwa        | Ikona | Opis                                    |
+| -------------- | ------------ | ----- | --------------------------------------- |
+| `professional` | Professional | 👔    | Precyzyjne, formalne, techniczne odpowiedzi |
+| `friendly`     | Friendly     | 😊    | Ciepłe, przystępne wyjaśnienia          |
+| `pirate`       | Pirate       | 🏴‍☠️    | Arr! Wiedza na falach kodu!              |
+| `sensei`       | Sensei       | 🥋    | Cierpliwy nauczyciel, krok po kroku     |
+| `concise`      | Concise      | ✂️    | Maksimum treści, minimum słów           |
+
+#### Ograniczenie dostępnych postaci
+
+Przekaż tablicę ID, aby pokazać tylko wybrane persony:
+
+```js
+ai: {
+  characters: ['professional', 'friendly', 'concise'],
+}
+```
+
+Pusta tablica (lub brak klucza) oznacza, że dostępne są wszystkie pięć postaci.
+
+#### Ustawienie domyślnej postaci
+
+```js
+ai: {
+  defaultCharacter: 'friendly',
+}
+```
+
+Jeśli nie podano, domyślnie wybrana jest `'professional'`.
+
+#### Definiowanie własnych postaci
+
+Dodaj własne persony przez `customCharacters`.
+Własny wpis z tym samym `id` co wbudowana postać **nadpisuje** wbudowaną.
+
+```js
+import { aiCharacters } from '@dominikcz/greg/plugins';
+
+ai: {
+  // Możesz sprawdzić wbudowane ID przez wyeksportowaną tablicę aiCharacters.
+  // console.log(aiCharacters.map(c => c.id));
+
+  customCharacters: [
+    {
+      id: 'mybot',
+      name: 'Mój Bot',
+      icon: '🤖',
+      description: 'Asystent dostosowany do tego projektu',
+      systemPrompt: 'Jesteś pomocnym asystentem specjalizującym się w tym projekcie. Zawsze odpowiadaj w języku pytania użytkownika.',
+    },
+  ],
+  // Opcjonalnie ogranicz do własnej postaci i jednej wbudowanej:
+  characters: ['professional', 'mybot'],
+}
+```
+
+`customCharacters` jest scalane z listą wbudowaną przed zastosowaniem filtra `characters`.
+Eksport `aiCharacters` służy głównie do podglądu — możesz sprawdzić ID wbudowanych
+person lub programowo rozszerzyć ich system prompty.
+
+Typ `AiCharacterConfig` (z `@dominikcz/greg/types`):
+
+```ts
+type AiCharacterConfig = {
+  id: string;
+  name: string;
+  icon: string;
+  description?: string;
+  systemPrompt: string;
+};
+```

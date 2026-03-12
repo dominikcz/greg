@@ -162,3 +162,102 @@ from both routing and the search index.
 - In `server` mode, your search endpoint must be reachable from the client
   (`serverUrl` must be correct for your environment).
 - Code block content is stripped from the index (not searchable).
+
+
+## AI knowledge base
+
+The AI feature adds an **Ask AI** tab to the search modal. It uses a retrieval-augmented
+generation (RAG) pipeline: your docs are chunked and embedded at build time, then the
+top matching chunks are injected as context into each LLM call.
+
+Enable it in `greg.config.js`:
+
+```js
+search: {
+  ai: {
+    enabled: true,
+    provider: 'ollama', // or 'openai'
+    ollama: { model: 'phi4' },
+  }
+}
+```
+
+See the [Getting started guide](/docs/guide/getting-started) for the required Vite plugin
+(`vitePluginAiServer`) and the production AI server setup.
+
+
+### AI characters (personas)
+
+Greg ships five built-in personas that users can pick in the chat UI:
+
+| ID             | Name         | Icon | Description                        |
+| -------------- | ------------ | ---- | ---------------------------------- |
+| `professional` | Professional | 👔   | Precise, formal, technical answers |
+| `friendly`     | Friendly     | 😊   | Warm, approachable explanations    |
+| `pirate`       | Pirate       | 🏴‍☠️   | Arr! Knowledge on the high seas!   |
+| `sensei`       | Sensei       | 🥋   | Patient teacher, step-by-step      |
+| `concise`      | Concise      | ✂️   | Maximum density, minimum words     |
+
+#### Limiting which characters are available
+
+Pass an array of IDs to show only a subset:
+
+```js
+ai: {
+  characters: ['professional', 'friendly', 'concise'],
+}
+```
+
+An empty array (or omitting the key) makes all five characters available.
+
+#### Setting the default character
+
+```js
+ai: {
+  defaultCharacter: 'friendly',
+}
+```
+
+If omitted, `'professional'` is selected by default.
+
+#### Defining custom characters
+
+Add your own personas via `customCharacters`.
+A custom entry with the same `id` as a built-in will **override** the built-in.
+
+```js
+import { aiCharacters } from '@dominikcz/greg/plugins';
+
+ai: {
+  // You can reference built-in character IDs via the exported aiCharacters array.
+  // console.log(aiCharacters.map(c => c.id));
+
+  customCharacters: [
+    {
+      id: 'mybot',
+      name: 'My Bot',
+      icon: '🤖',
+      description: 'Tailored assistant for this project',
+      systemPrompt: 'You are a helpful assistant specialized in this project. Always respond in the same language as the user\'s question.',
+    },
+  ],
+  // Optionally restrict to only your custom character plus one built-in:
+  characters: ['professional', 'mybot'],
+}
+```
+
+`customCharacters` is merged with the built-in list before the `characters` filter is applied.
+The `aiCharacters` export is provided for reference — you can inspect built-in IDs or
+re-use/extend built-in system prompts programmatically.
+
+`AiCharacterConfig` type (from `@dominikcz/greg/types`):
+
+```ts
+type AiCharacterConfig = {
+  id: string;
+  name: string;
+  icon: string;
+  description?: string;
+  systemPrompt: string;
+};
+```

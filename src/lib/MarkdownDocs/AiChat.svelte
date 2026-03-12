@@ -47,6 +47,8 @@
         startText?: string;
         sourcesLabel?: string;
         aiLabel?: string;
+        clearChatLabel?: string;
+        sendLabel?: string;
     };
 
     let {
@@ -59,6 +61,8 @@
         startText = "Ask me anything about this documentation. My answers are based exclusively on the docs.",
         sourcesLabel = "Sources",
         aiLabel = "Ask AI",
+        clearChatLabel = "Clear chat",
+        sendLabel = "Send",
     }: Props = $props();
 
     // ── Config ─────────────────────────────────────────────────────────────────
@@ -68,36 +72,119 @@
 
     // ── State ──────────────────────────────────────────────────────────────────
 
+    const STORAGE_KEY = 'greg-ai-chat-history';
+    const MAX_STORED_MESSAGES = 100;
+    const CHARACTER_KEY = 'greg-ai-character';
+
+    function loadStoredCharacter(): string {
+        try {
+            return localStorage.getItem(CHARACTER_KEY) ?? '';
+        } catch { return ''; }
+    }
+
+    function saveCharacter(id: string) {
+        try { localStorage.setItem(CHARACTER_KEY, id); } catch { /* ignore */ }
+    }
+
+    function loadStoredMessages(): ChatMessage[] {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw) as ChatMessage[];
+                if (Array.isArray(parsed)) return parsed;
+            }
+        } catch { /* ignore */ }
+        return [];
+    }
+
+    function saveMessages(msgs: ChatMessage[]) {
+        try {
+            // Never persist error messages or excess entries
+            const toSave = msgs
+                .filter(m => !m.error)
+                .slice(-MAX_STORED_MESSAGES);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+        } catch { /* storage unavailable */ }
+    }
+
     let characters = $state<AiCharacter[]>([]);
-    let selectedCharacter = $state<string>(aiCfg.defaultCharacter ?? "professional");
+    let selectedCharacter = $state<string>(loadStoredCharacter() || (aiCfg.defaultCharacter ?? "professional"));
     let query = $state("");
-    let messages = $state<ChatMessage[]>([]);
+    const _storedMessages = loadStoredMessages();
+    let messages = $state<ChatMessage[]>(_storedMessages);
     let isLoading = $state(false);
     let inputEl = $state<HTMLTextAreaElement | undefined>(undefined);
     let messagesEl = $state<HTMLDivElement | undefined>(undefined);
-    let counter = 0;
+    let counter = _storedMessages.length > 0 ? Math.max(..._storedMessages.map(m => m.id)) : 0;
+
+    // ── Query history (arrow-key navigation) ───────────────────────────────────
+
+    const QUERY_HISTORY_KEY = 'greg-ai-query-history';
+    const MAX_QUERY_HISTORY = 50;
+
+    function loadQueryHistory(): string[] {
+        try {
+            const raw = localStorage.getItem(QUERY_HISTORY_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed as string[];
+            }
+        } catch { /* ignore */ }
+        return [];
+    }
+
+    function saveQueryHistory(history: string[]) {
+        try { localStorage.setItem(QUERY_HISTORY_KEY, JSON.stringify(history)); } catch { /* ignore */ }
+    }
+
+    let queryHistory: string[] = loadQueryHistory();
+    let historyIdx = -1;  // -1 = editing fresh draft
+    let historyDraft = ''; // text saved on entering history navigation
+
+    // ── Icon helpers ─────────────────────────────────────────────────────────────
+
+    /** Returns true when the icon string looks like an image URL / path. */
+    function isImageIcon(icon: string): boolean {
+        return (
+            /^(?:https?:\/\/|\/|\.\/|data:image\/)/.test(icon) ||
+            /\.(?:png|jpe?g|gif|webp|svg|avif)$/i.test(icon)
+        );
+    }
 
     // ── Load available characters on mount ─────────────────────────────────────
 
     onMount(async () => {
+        // Focus the textarea immediately so arrow-key history works on open
+        inputEl?.focus();
         try {
             const res = await fetch(withBase(`${aiUrl}/characters`));
             if (res.ok) {
                 const data = await res.json();
                 characters = data.characters ?? [];
-                // Keep selectedCharacter if it exists in the list; otherwise use first
-                if (
-                    characters.length > 0 &&
-                    !characters.find(c => c.id === selectedCharacter)
-                ) {
-                    selectedCharacter = characters[0].id;
+                // Restore saved character if it exists, else fall back to defaultCharacter or first
+                const savedChar = loadStoredCharacter();
+                const preferred = savedChar || aiCfg.defaultCharacter;
+                if (characters.length > 0) {
+                    if (preferred && characters.find(c => c.id === preferred)) {
+                        selectedCharacter = preferred;
+                    } else {
+                        selectedCharacter = characters[0].id;
+                    }
                 }
             }
         } catch {
             // Characters list unavailable — the selector will be hidden
         }
-        // Focus the textarea once characters are loaded
-        inputEl?.focus();
+    });
+
+    // Persist messages to localStorage whenever they change
+    $effect(() => {
+        saveMessages(messages);
+    });
+
+    // Persist selected character whenever it changes
+    $effect(() => {
+        saveCharacter(selectedCharacter);
     });
 
     // Scroll to bottom whenever a new message appears
@@ -117,6 +204,14 @@
     async function submit() {
         const q = query.trim();
         if (!q || isLoading) return;
+
+        // Save to history (avoid consecutive duplicates)
+        if (q !== queryHistory[queryHistory.length - 1]) {
+            queryHistory = [...queryHistory, q].slice(-MAX_QUERY_HISTORY);
+            saveQueryHistory(queryHistory);
+        }
+        historyIdx = -1;
+        historyDraft = '';
 
         query = "";
         messages = [...messages, { id: ++counter, role: "user", content: q }];
@@ -168,10 +263,57 @@
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
             submit();
+            return;
         }
         if (e.key === "Escape") {
             onClose();
+            return;
         }
+
+        // Arrow-key history navigation
+        if ((e.key === "ArrowUp" || e.key === "ArrowDown") && queryHistory.length > 0) {
+            const ta = inputEl;
+            const atTopLine = !ta || ta.selectionStart === 0 ||
+                !ta.value.slice(0, ta.selectionStart).includes('\n');
+            const atBottomLine = !ta || ta.selectionEnd === ta.value.length ||
+                !ta.value.slice(ta.selectionEnd).includes('\n');
+
+            if (e.key === "ArrowUp" && (atTopLine || historyIdx >= 0)) {
+                e.preventDefault();
+                if (historyIdx === -1) {
+                    historyDraft = query;
+                    historyIdx = 0;
+                } else if (historyIdx < queryHistory.length - 1) {
+                    historyIdx++;
+                }
+                query = queryHistory[queryHistory.length - 1 - historyIdx];
+                requestAnimationFrame(() => {
+                    if (inputEl) inputEl.setSelectionRange(0, inputEl.value.length);
+                });
+                return;
+            }
+
+            if (e.key === "ArrowDown" && historyIdx >= 0 && atBottomLine) {
+                e.preventDefault();
+                if (historyIdx === 0) {
+                    historyIdx = -1;
+                    query = historyDraft;
+                } else {
+                    historyIdx--;
+                    query = queryHistory[queryHistory.length - 1 - historyIdx];
+                }
+                requestAnimationFrame(() => {
+                    if (inputEl) inputEl.setSelectionRange(inputEl.value.length, inputEl.value.length);
+                });
+                return;
+            }
+        }
+    }
+
+    function clearHistory() {
+        messages = [];
+        try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+        requestAnimationFrame(() => inputEl?.focus());
     }
 
     function navigateTo(source: AiSource) {
@@ -182,11 +324,110 @@
     function currentCharacter(): AiCharacter | undefined {
         return characters.find(c => c.id === selectedCharacter);
     }
+
+    function characterById(id?: string): AiCharacter | undefined {
+        return characters.find(c => c.id === id);
+    }
+
+    // ── Markdown answer renderer ────────────────────────────────────────────────
+
+    function escHtml(s: string): string {
+        return s
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    /** Sanitize a URL from LLM output: allow relative paths and http(s), normalize //. */
+    function sanitizeUrl(url: string): string {
+        const trimmed = url.trim();
+        if (/^https?:\/\//i.test(trimmed)) return trimmed;
+        if (/^\//.test(trimmed)) return trimmed.replace(/\/\/+/g, '/');
+        if (/^#/.test(trimmed)) return trimmed;
+        return '#';
+    }
+
+    /** Apply inline markdown (bold, italic, code) and links to an already-HTML-escaped string. */
+    function processInlineEscaped(escaped: string): string {
+        // Bold **text** or __text__
+        let r = escaped
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/__(.+?)__/g, '<strong>$1</strong>');
+        // Italic *text* (not ** boundary)
+        r = r.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+        // Inline code `code`
+        r = r.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+        return r;
+    }
+
+    /** Process a line of text: handle links first (before escaping) then escape+inline. */
+    function renderLine(line: string): string {
+        let result = '';
+        let pos = 0;
+        // Match markdown links: [text](url)
+        const linkRe = /\[([^\]\n]+)\]\(([^)\n]+)\)/g;
+        let m: RegExpExecArray | null;
+
+        while ((m = linkRe.exec(line)) !== null) {
+            // Process the plain text segment before this link
+            result += processInlineEscaped(escHtml(line.slice(pos, m.index)));
+
+            const linkText = m[1];
+            const url = sanitizeUrl(m[2]);
+            const isExternal = /^https?:\/\//i.test(url);
+            result += `<a href="${escHtml(url)}"${
+                isExternal
+                    ? ' target="_blank" rel="noopener noreferrer"'
+                    : ' data-nav="1"'
+            }>${escHtml(linkText)}</a>`;
+            pos = m.index + m[0].length;
+        }
+        result += processInlineEscaped(escHtml(line.slice(pos)));
+        return result;
+    }
+
+    /**
+     * Convert LLM markdown answer to safe HTML.
+     * Handles: paragraphs, **bold**, *italic*, `code`, [links](url).
+     * Lists and headings are rendered as paragraphs with basic formatting.
+     */
+    function renderAnswer(text: string): string {
+        // Split on blank lines into paragraph blocks
+        const blocks = text.split(/\n{2,}/);
+        return blocks.map(block => {
+            const lines = block.split('\n');
+            const rendered = lines.map(line => renderLine(line)).join('<br>');
+            return `<p>${rendered}</p>`;
+        }).join('');
+    }
+
+    /** Handle clicks on internal navigation links inside `.ai-answer`. */
+    function handleAnswerClick(e: MouseEvent) {
+        const anchor = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-nav]');
+        if (!anchor) return;
+        e.preventDefault();
+        const href = anchor.getAttribute('href') ?? '';
+        if (!href) return;
+        const hashIdx = href.indexOf('#');
+        const path = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
+        const section = hashIdx >= 0 ? href.slice(hashIdx + 1) : undefined;
+        onNavigate(path, section || undefined);
+        onClose();
+    }
 </script>
 
 <div class="ai-chat">
-    <!-- ── Character selector ──────────────────────────────────────────── -->
-    {#if characters.length > 1}
+{#snippet iconDisplay(ic: string, cls: string)}
+    {#if isImageIcon(ic)}
+        <img class="{cls} icon-img" src={ic} alt="" aria-hidden="true" />
+    {:else}
+        <span class={cls} aria-hidden="true">{ic}</span>
+    {/if}
+{/snippet}
+
+    <!-- ── Header: character selector + clear button ──────────────────── -->
+    {#if characters.length > 1 || messages.length > 0}
         <div class="ai-character-bar" role="group" aria-label="AI character">
             {#each characters as char}
                 <button
@@ -197,10 +438,21 @@
                     aria-pressed={selectedCharacter === char.id}
                     type="button"
                 >
-                    <span class="char-icon" aria-hidden="true">{char.icon}</span>
+                    {@render iconDisplay(char.icon, 'char-icon')}
                     <span class="char-name">{char.name}</span>
                 </button>
             {/each}
+            {#if messages.length > 0}
+                <button class="ai-clear-btn" type="button" onclick={clearHistory} title={clearChatLabel}>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                    {clearChatLabel}
+                </button>
+            {/if}
         </div>
     {/if}
 
@@ -209,9 +461,7 @@
         {#if messages.length === 0}
             <div class="ai-start-hint">
                 {#if currentCharacter()}
-                    <span class="ai-start-icon" aria-hidden="true"
-                        >{currentCharacter()!.icon}</span
-                    >
+                    {@render iconDisplay(currentCharacter()!.icon, 'ai-start-icon')}
                 {/if}
                 <p>{startText}</p>
             </div>
@@ -224,21 +474,25 @@
                     class:error={msg.error}
                     role={msg.role === "assistant" ? "article" : undefined}
                 >
-                    {#if msg.role === "assistant" && currentCharacter()}
-                        <span class="ai-msg-icon" aria-hidden="true"
-                            >{currentCharacter()!.icon}</span
-                        >
+                    {#if msg.role === "assistant"}
+                        {@const msgChar = characterById(msg.character)}
+                        {#if msgChar}
+                            {@render iconDisplay(msgChar.icon, 'ai-msg-icon')}
+                        {/if}
                     {/if}
 
                     <div class="ai-message-body">
                         {#if msg.role === "user"}
                             <p class="ai-user-text">{msg.content}</p>
                         {:else}
-                            <!-- Answer rendered as pre-formatted markdown text.
-                                 Full markdown rendering would require mdsvex runtime
-                                 which is only available at build time. The LLM is
-                                 instructed to keep answers readable as plain text too. -->
-                            <div class="ai-answer">{msg.content}</div>
+                            <!-- Render answer with markdown links as clickable elements -->
+                            <!-- svelte-ignore a11y_click_events_have_key_events -->
+                            <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+                            <div
+                                class="ai-answer"
+                                onclick={handleAnswerClick}
+                                role="article"
+                            >{@html renderAnswer(msg.content)}</div>
 
                             {#if msg.sources && msg.sources.length > 0}
                                 <div class="ai-sources">
@@ -298,9 +552,7 @@
             {#if isLoading}
                 <div class="ai-message assistant">
                     {#if currentCharacter()}
-                        <span class="ai-msg-icon" aria-hidden="true"
-                            >{currentCharacter()!.icon}</span
-                        >
+                        {@render iconDisplay(currentCharacter()!.icon, 'ai-msg-icon')}
                     {/if}
                     <div class="ai-loading">
                         <span class="ai-spinner" aria-hidden="true"></span>
@@ -330,7 +582,8 @@
             onclick={submit}
             disabled={!query.trim() || isLoading}
             type="button"
-            aria-label="Send"
+            title={sendLabel}
+            aria-label={sendLabel}
         >
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -354,6 +607,36 @@
         flex: 1;
         min-height: 0;
         overflow: hidden;
+    }
+
+    /* ── Clear button (inside character bar) ────────────────────── */
+
+    .ai-clear-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: none;
+        border: none;
+        color: var(--greg-menu-section-color);
+        font-size: 0.7rem;
+        font-family: inherit;
+        cursor: pointer;
+        padding: 0.15rem 0.3rem;
+        border-radius: 4px;
+        opacity: 0.6;
+        transition: opacity 0.15s, color 0.15s;
+        margin-left: auto;
+        flex-shrink: 0;
+
+        svg {
+            width: 11px;
+            height: 11px;
+        }
+
+        &:hover {
+            opacity: 1;
+            color: var(--greg-danger-text, #e53e3e);
+        }
     }
 
     /* ── Character selector ──────────────────────────────────── */
@@ -403,7 +686,7 @@
     }
 
     .char-icon {
-        font-size: 0.85rem;
+        font-size: 2rem;
         line-height: 1;
     }
 
@@ -442,7 +725,7 @@
     }
 
     .ai-start-icon {
-        font-size: 2.2rem;
+        font-size: 3.2rem;
         line-height: 1;
     }
 
@@ -461,9 +744,9 @@
     }
 
     .ai-msg-icon {
-        font-size: 1.1rem;
+        font-size: 3rem;
         line-height: 1;
-        padding-top: 0.15rem;
+        padding-top: 0.1rem;
         flex-shrink: 0;
     }
 
@@ -489,12 +772,38 @@
         font-size: 0.875rem;
         line-height: 1.65;
         color: var(--greg-color);
-        white-space: pre-wrap;
         word-break: break-word;
         background: var(--greg-menu-hover-background);
         padding: 0.65rem 0.9rem;
         border-radius: 2px 12px 12px 12px;
-        border-left: 3px solid var(--greg-accent);
+
+        :global(p) {
+            margin: 0 0 0.45em;
+            &:last-child { margin-bottom: 0; }
+        }
+
+        :global(strong) { font-weight: 700; }
+        :global(em) { font-style: italic; }
+
+        :global(code) {
+            font-family: var(--vp-font-family-mono, 'Fira Code', 'Cascadia Code', monospace);
+            font-size: 0.82em;
+            background: var(--greg-code-block-bg, rgba(0, 0, 0, 0.06));
+            padding: 0.1em 0.3em;
+            border-radius: 3px;
+        }
+
+        :global(a[data-nav]) {
+            color: var(--greg-accent);
+            text-decoration: underline;
+            cursor: pointer;
+            &:hover { opacity: 0.8; }
+        }
+
+        :global(a[target='_blank']) {
+            color: var(--greg-accent);
+            text-decoration: underline;
+        }
     }
 
     .error .ai-answer {
@@ -625,7 +934,8 @@
 
     .ai-send-btn {
         width: 36px;
-        height: 36px;
+        align-self: stretch;
+        min-height: 36px;
         border-radius: 8px;
         border: none;
         background: var(--greg-accent);
@@ -650,5 +960,15 @@
         &:not(:disabled):hover {
             opacity: 0.82;
         }
+    }
+
+    /* ── Image icons ──────────────────────────────────────────── */
+
+    .icon-img {
+        width: 1em;
+        height: 1em;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
     }
 </style>

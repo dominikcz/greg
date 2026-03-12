@@ -10,6 +10,7 @@
  *     vitePluginAiServer,
  *     vitePluginFrontmatter,
  *     vitePluginCopyDocs,
+ *     aiCharacters,
  *   } from '@dominikcz/greg/plugins';
  */
 export { vitePluginGregConfig } from './vitePluginGregConfig.js';
@@ -18,3 +19,4 @@ export { vitePluginSearchServer } from './vitePluginSearchServer.js';
 export { vitePluginAiServer } from './vitePluginAiServer.js';
 export { vitePluginFrontmatter } from './vitePluginFrontmatter.js';
 export { vitePluginCopyDocs } from './vitePluginCopyDocs.js';
+export { aiCharacters } from './ai/characters.js';

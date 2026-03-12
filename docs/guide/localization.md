@@ -225,6 +225,62 @@ Resolution order:
 If `versions.json` is unavailable, Greg shows the locale-resolved
 `manifestUnavailableText` in the header.
 
+## Built-in locale strings
+
+Greg ships with built-in UI translations for common languages. When a locale
+defines `lang`, Greg automatically resolves the matching built-in strings —
+so you only need to configure what differs from the defaults.
+
+Currently built-in languages:
+
+| `lang` | Language |
+|--------|----------|
+| `en` / `en-US` / `en-GB` … | English |
+| `pl` / `pl-PL` … | Polish |
+
+Built-in strings cover all UI labels: navigation accessibility labels,
+doc footer links, search modal labels, and AI chat labels.
+
+**Resolution order for every UI string:**
+
+1. Explicit value in `themeConfig` / `themeConfig.search.locales`
+2. Built-in string for the locale's `lang`
+3. Hard-coded English fallback
+
+### Minimal multilingual config
+
+With built-in strings you don't need to repeat any UI text. A full
+two-language setup is as simple as:
+
+```js
+export default {
+  locales: {
+    '/': {
+      lang: 'en-US',
+      label: 'English',
+      title: 'My Docs',
+      themeConfig: {
+        nav: [{ text: 'Guide', link: '/guide' }],
+        sidebar: [{ text: 'Guide', auto: '/guide' }],
+      },
+    },
+    '/pl/': {
+      lang: 'pl-PL',   // ← all Polish UI text is resolved automatically
+      label: 'Polski',
+      title: 'Moja Dokumentacja',
+      themeConfig: {
+        nav: [{ text: 'Przewodnik', link: '/guide' }],
+        sidebar: [{ text: 'Przewodnik', auto: '/guide' }],
+        outline: { level: [2, 3], label: 'Na tej stronie' },
+      },
+    },
+  },
+};
+```
+
+You can still override individual strings by setting them explicitly — the
+explicit value always takes precedence.
+
 ## Recommended workflow
 
 1. Start from English docs structure.

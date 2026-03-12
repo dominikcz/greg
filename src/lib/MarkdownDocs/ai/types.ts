@@ -52,7 +52,7 @@ export type AiCharacter = {
 	id: string;
 	/** Display name shown in the UI */
 	name: string;
-	/** Emoji or short icon string */
+	/** Emoji, short string, or image URL shown in the character selector and chat messages. */
 	icon: string;
 	/** One-line description shown in character selector */
 	description?: string;

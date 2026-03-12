@@ -89,6 +89,21 @@ export type LocaleThemeConfig = {
                     loadingScreen?: {
                         loadingText?: string;
                     };
+                    /** AI knowledge-base (Ask AI tab) localization strings. */
+                    ai?: {
+                        /** Text for the "Ask AI" tab button. */
+                        tabLabel?: string;
+                        /** Textarea placeholder. */
+                        placeholder?: string;
+                        /** Introductory hint shown before the first message. */
+                        startText?: string;
+                        /** Spinner / in-progress text while AI generates answer. */
+                        loadingText?: string;
+                        /** Error message shown when the request fails. */
+                        errorText?: string;
+                        /** Label above the list of cited sources. */
+                        sourcesLabel?: string;
+                    };
                 };
             }
         >;
@@ -217,7 +232,7 @@ export type AiCharacterConfig = {
     id: string;
     /** Display name shown in the character selector. */
     name: string;
-    /** Emoji or short icon string shown in the character selector button. */
+    /** Emoji, short string, or image URL shown in the character selector and chat messages. */
     icon: string;
     /** Short description visible in the selector tooltip. */
     description?: string;

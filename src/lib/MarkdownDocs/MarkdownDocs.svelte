@@ -630,6 +630,14 @@
             searchNavigateText: "navigate",
             searchSelectText: "open",
             searchCloseText: "close",
+            aiTabLabel: "Ask AI",
+            aiPlaceholder: "Ask a question about the docs\u2026",
+            aiLoadingText: "Thinking\u2026",
+            aiErrorText: "Something went wrong. Please try again.",
+            aiStartText: "Ask me anything about this documentation. My answers are based exclusively on the docs.",
+            aiSourcesLabel: "Sources",
+            aiClearChatLabel: "Clear chat",
+            aiSendLabel: "Send",
             docFooter: globalDocFooter,
             externalLinkIcon: globalExternalLinkIcon,
             siteTitle: globalSiteTitle,
@@ -687,6 +695,14 @@
             searchNavigateText: "navigate",
             searchSelectText: "open",
             searchCloseText: "close",
+            aiTabLabel: "Ask AI",
+            aiPlaceholder: "Ask a question about the docs\u2026",
+            aiLoadingText: "Thinking\u2026",
+            aiErrorText: "Something went wrong. Please try again.",
+            aiStartText: "Ask me anything about this documentation. My answers are based exclusively on the docs.",
+            aiSourcesLabel: "Sources",
+            aiClearChatLabel: "Clear chat",
+            aiSendLabel: "Send",
             docFooter: globalDocFooter,
             externalLinkIcon: globalExternalLinkIcon,
             siteTitle: globalSiteTitle,
@@ -1153,6 +1169,30 @@
     );
     const searchCloseText = $derived(
         localeContext.searchCloseText ?? "close",
+    );
+    const aiTabLabel = $derived(
+        localeContext.aiTabLabel ?? "Ask AI",
+    );
+    const aiPlaceholder = $derived(
+        localeContext.aiPlaceholder ?? "Ask a question about the docs\u2026",
+    );
+    const aiLoadingText = $derived(
+        localeContext.aiLoadingText ?? "Thinking\u2026",
+    );
+    const aiErrorText = $derived(
+        localeContext.aiErrorText ?? "Something went wrong. Please try again.",
+    );
+    const aiStartText = $derived(
+        localeContext.aiStartText ?? "Ask me anything about this documentation. My answers are based exclusively on the docs.",
+    );
+    const aiSourcesLabel = $derived(
+        localeContext.aiSourcesLabel ?? "Sources",
+    );
+    const aiClearChatLabel = $derived(
+        localeContext.aiClearChatLabel ?? "Clear chat",
+    );
+    const aiSendLabel = $derived(
+        localeContext.aiSendLabel ?? "Send",
     );
     const docFooterPrevLabel = $derived(
         localeContext.docFooter?.prev ?? "Previous",
@@ -1831,6 +1871,14 @@
             {searchNavigateText}
             {searchSelectText}
             {searchCloseText}
+            {aiTabLabel}
+            {aiPlaceholder}
+            {aiLoadingText}
+            {aiErrorText}
+            {aiStartText}
+            {aiSourcesLabel}
+            {aiClearChatLabel}
+            {aiSendLabel}
             {searchProvider}
         />
     {/if}
