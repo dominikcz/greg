@@ -46,20 +46,20 @@ export function vitePluginFrontmatter({ docsDir = 'docs', srcDir = '/docs' } = {
 
     /** Collect all .md paths and return the virtual module source. */
     function buildModule() {
-        const absDocsDir = path.resolve(root, docsDir);
+        const absDirs = (Array.isArray(docsDir) ? docsDir : [docsDir]).map(d => path.resolve(root, d));
         const normalizedSrcDir = normalizeSrcDir(srcDir);
         const entries = {};
 
-        function walk(dir) {
+        function walk(dir, baseDir) {
             let items;
             try { items = fs.readdirSync(dir, { withFileTypes: true }); }
             catch { return; }
             for (const item of items) {
                 const full = path.join(dir, item.name);
                 if (item.isDirectory()) {
-                    walk(full);
+                    walk(full, baseDir);
                 } else if (item.isFile() && item.name.endsWith('.md') && !item.name.startsWith('__')) {
-                    const rel = path.relative(absDocsDir, full).replace(/\\/g, '/');
+                    const rel = path.relative(baseDir, full).replace(/\\/g, '/');
                     const viteKey = normalizedSrcDir === '/'
                         ? `/${rel}`
                         : `${normalizedSrcDir}/${rel}`; // e.g. /docs/guide/index.md
@@ -75,7 +75,9 @@ export function vitePluginFrontmatter({ docsDir = 'docs', srcDir = '/docs' } = {
             }
         }
 
-        walk(absDocsDir);
+        for (const absDocsDir of absDirs) {
+            walk(absDocsDir, absDocsDir);
+        }
         return `export default ${JSON.stringify(entries)};`;
     }
 

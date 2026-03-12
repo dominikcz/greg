@@ -114,6 +114,17 @@ export default {
 }
 ```
 
+`srcDir` może też być tablicą, jeśli źródła Markdown są podzielone na kilka folderów:
+
+```js
+export default {
+  srcDir: ['docs', 'api-docs', 'handbook'],
+  docsBase: '',
+}
+```
+
+W takim wariancie Greg skanuje wszystkie wskazane katalogi i zbiera z nich pliki `.md`.
+
 **`svelte.config.js`** — re-eksportuj wbudowaną konfigurację Svelte z Greg
 (zawiera mdsvex do przetwarzania Markdown):
 
@@ -134,7 +145,7 @@ import {
     vitePluginCopyDocs,
 } from '@dominikcz/greg/plugins'
 
-const docsDir = 'docs'
+const docsDir = ['docs', 'api-docs', 'handbook']
 const docsBase = ''
 
 export default defineConfig({
@@ -148,6 +159,8 @@ export default defineConfig({
     ],
 })
 ```
+
+  `docsDir` w pluginach Vite Greg przyjmuje `string` (jeden folder) albo `string[]` (wiele folderów).
 
 **`index.html`** — minimalny punkt wejścia HTML:
 

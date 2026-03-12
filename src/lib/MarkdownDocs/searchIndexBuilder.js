@@ -318,52 +318,56 @@ export function extractSections(markdown) {
 // ── Index builder (cached) ────────────────────────────────────────────────────
 
 /**
- * Build the full search index from all docs in `docsDir`.
+ * Build the full search index from all docs in `docsDir` (or multiple dirs).
  * Results are cached per (docsDir+srcDir) so both Vite plugins share one pass.
  *
- * @param {string} docsDir  Absolute path to the docs directory.
+ * @param {string | string[]} docsDir  Absolute path(s) to the docs directory/directories.
  * @param {string} srcDir SPA route prefix, e.g. '/docs'.
  * @returns {Promise<SearchEntry[]>}
  */
 export function buildSearchIndex(docsDir, srcDir) {
-	const key = `${docsDir}::${srcDir}`;
+	const dirs = Array.isArray(docsDir) ? docsDir : [docsDir];
+	const key = dirs.join('|') + '::' + srcDir;
 	if (_cache.has(key)) return /** @type {Promise<SearchEntry[]>} */ (_cache.get(key));
 
 	const promise = (async () => {
-		const files = walkDir(docsDir);
 		const index = [];
-		const sourceRoot = resolve(docsDir, '..');
 
-		for (const filePath of files) {
-			let content;
-			try { content = readFileSync(filePath, 'utf-8'); } catch { continue; }
-			content = resolveMarkdownIncludes(content, dirname(filePath), docsDir, sourceRoot, [filePath]);
+		for (const dir of dirs) {
+			const files = walkDir(dir);
+			const sourceRoot = resolve(dir, '..');
 
-			const relPath = relative(docsDir, filePath)
-				.replace(/\\/g, '/')
-				.replace(/\.md$/, '');
+			for (const filePath of files) {
+				let content;
+				try { content = readFileSync(filePath, 'utf-8'); } catch { continue; }
+				content = resolveMarkdownIncludes(content, dirname(filePath), dir, sourceRoot, [filePath]);
 
-			let routePath;
-			if (relPath === 'index') {
-				routePath = srcDir;
-			} else if (relPath.endsWith('/index')) {
-				routePath = srcDir + '/' + relPath.slice(0, -6);
-			} else {
-				routePath = srcDir + '/' + relPath;
+				const relPath = relative(dir, filePath)
+					.replace(/\\/g, '/')
+					.replace(/\.md$/, '');
+
+				let routePath;
+				if (relPath === 'index') {
+					routePath = srcDir;
+				} else if (relPath.endsWith('/index')) {
+					routePath = srcDir + '/' + relPath.slice(0, -6);
+				} else {
+					routePath = srcDir + '/' + relPath;
+				}
+
+				const sections = extractSections(content);
+				const title =
+					sections[0]?.heading ||
+					relPath.split('/').pop()
+						.replace(/-/g, ' ')
+						.replace(/\b\w/g, c => c.toUpperCase());
+
+				index.push({
+					id: routePath,
+					title,
+					sections: sections.map(({ heading, anchor, content }) => ({ heading, anchor, content })),
+				});
 			}
-
-			const sections = extractSections(content);
-			const title =
-				sections[0]?.heading ||
-				relPath.split('/').pop()
-					.replace(/-/g, ' ')
-					.replace(/\b\w/g, c => c.toUpperCase());
-
-			index.push({
-				id: routePath,
-				title,
-				sections: sections.map(({ heading, anchor, content }) => ({ heading, anchor, content })),
-			});
 		}
 
 		return index;

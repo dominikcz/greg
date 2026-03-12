@@ -144,6 +144,8 @@
     const aiEnabled = $derived(!!(cfgSearch?.ai?.enabled));
     /** Which tab is active in the modal: search or AI chat. */
     let tabMode = $state<"search" | "ai">("search");
+    /** Exposed handle from AiChat — gives access to clear() and hasMessages. */
+    let aiChatHandle = $state<{ clear: () => void; hasMessages: boolean } | undefined>(undefined);
     const serverUrl: string = cfgSearch.serverUrl ?? "/api/search";
     const fuzzyCfg = cfgSearch.fuzzy ?? {};
     const localThreshold: number = Number.isFinite(Number(fuzzyCfg.threshold))
@@ -598,13 +600,26 @@
                         </svg>
                         {aiTabLabel}
                     </button>
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <kbd
-                        class="search-esc-hint modal-tabs-esc"
-                        onclick={onClose}
-                        role="button"
-                        tabindex="-1">Esc</kbd
-                    >
+                    <div class="modal-tabs-end">
+                        {#if tabMode === "ai" && aiChatHandle?.hasMessages}
+                            <button class="ai-clear-btn" type="button" onclick={() => aiChatHandle?.clear()} title={aiClearChatLabel}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                    <path d="M10 11v6M14 11v6"/>
+                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                </svg>
+                                {aiClearChatLabel}
+                            </button>
+                        {/if}
+                        <!-- svelte-ignore a11y_click_events_have_key_events -->
+                        <kbd
+                            class="search-esc-hint"
+                            onclick={onClose}
+                            role="button"
+                            tabindex="-1">Esc</kbd
+                        >
+                    </div>
                 </div>
             {/if}
 
@@ -790,6 +805,7 @@
                     sourcesLabel={aiSourcesLabel}
                     clearChatLabel={aiClearChatLabel}
                     sendLabel={aiSendLabel}
+                    bind:chatHandle={aiChatHandle}
                 />
             {/if}
 
@@ -825,7 +841,7 @@
         border: 1px solid var(--greg-border-color);
         border-radius: 12px;
         width: 100%;
-        max-width: 660px;
+        max-width: 700px;
         box-shadow: 0 24px 64px rgba(0, 0, 0, 0.35);
         overflow: hidden;
         display: flex;
@@ -884,8 +900,43 @@
         flex-shrink: 0;
     }
 
-    .modal-tabs-esc {
+    /* ── Right-side group (clear + Esc) ────────────────────── */
+
+    .modal-tabs-end {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
         margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    /* ── Clear chat button (in modal-tabs) ──────────────────── */
+
+    .ai-clear-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        background: none;
+        border: none;
+        color: var(--greg-menu-section-color);
+        font-size: 0.7rem;
+        font-family: inherit;
+        cursor: pointer;
+        padding: 0.15rem 0.3rem;
+        border-radius: 4px;
+        opacity: 0.6;
+        transition: opacity 0.15s, color 0.15s;
+        flex-shrink: 0;
+
+        svg {
+            width: 11px;
+            height: 11px;
+        }
+
+        &:hover {
+            opacity: 1;
+            color: var(--greg-danger-text, #e53e3e);
+        }
     }
 
     @keyframes slide-in {

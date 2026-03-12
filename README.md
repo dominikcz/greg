@@ -365,6 +365,20 @@ export default {
 } satisfies GregConfig
 ```
 
+`srcDir` can also be an array when your docs are split across multiple folders:
+
+```ts
+import type { GregConfig } from '@dominikcz/greg'
+
+export default {
+    srcDir: ['docs', 'api-docs', 'handbook'],
+    docsBase: '',
+} satisfies GregConfig
+```
+
+When multiple folders contain the same relative path (for example `guide/index.md`),
+the later entry in the `srcDir` array overrides the earlier one.
+
 > **Note:** `svelte.config` must remain a `.js` file — `@sveltejs/vite-plugin-svelte` loads it directly via Node ESM without a TypeScript transform.
 
 ## Links

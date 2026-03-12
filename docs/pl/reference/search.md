@@ -213,6 +213,12 @@ ai: {
 
 Jeśli nie podano, domyślnie wybrana jest `'professional'`.
 
+#### Zachowanie UI czatu AI
+
+- Przycisk **Wyczyść czat** pojawia się w pasku zakładek modala (obok `Esc`), gdy aktywna jest zakładka AI i rozmowa zawiera wiadomości.
+- Lista postaci zawija się do kolejnych wierszy, gdy nie mieści się w szerokości okna.
+- Maksymalna szerokość modala w trybie AI to `700px`.
+
 #### Definiowanie własnych postaci
 
 Dodaj własne persony przez `customCharacters`.

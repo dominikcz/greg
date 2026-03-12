@@ -12,13 +12,14 @@ import { buildSearchIndex, invalidateSearchIndexCache } from './searchIndexBuild
  * @param {string} [options.srcDir='/docs'] - SPA route prefix
  */
 export function vitePluginSearchIndex({ docsDir = 'docs', srcDir = '/docs' } = {}) {
-	let resolvedDocsDir;
+	let resolvedDocsDirs;
 
 	return {
 		name: 'vite-plugin-search-index',
 
 		configResolved(config) {
-			resolvedDocsDir = resolve(config.root, docsDir);
+			const dirs = Array.isArray(docsDir) ? docsDir : [docsDir];
+			resolvedDocsDirs = dirs.map(d => resolve(config.root, d));
 		},
 
 		// Dev-server: answer GET /search-index.json with the cached index
@@ -31,7 +32,7 @@ export function vitePluginSearchIndex({ docsDir = 'docs', srcDir = '/docs' } = {
 			server.middlewares.use(async (req, res, next) => {
 				if (req.url !== '/search-index.json' || req.method !== 'GET') return next();
 				try {
-					const index = await buildSearchIndex(resolvedDocsDir, srcDir);
+					const index = await buildSearchIndex(resolvedDocsDirs, srcDir);
 					res.writeHead(200, {
 						'Content-Type': 'application/json; charset=utf-8',
 						'Cache-Control': 'no-cache',
@@ -45,7 +46,7 @@ export function vitePluginSearchIndex({ docsDir = 'docs', srcDir = '/docs' } = {
 
 		// Production build: emit search-index.json as a static asset
 		async generateBundle() {
-			const index = await buildSearchIndex(resolvedDocsDir, srcDir);
+			const index = await buildSearchIndex(resolvedDocsDirs, srcDir);
 			this.emitFile({
 				type: 'asset',
 				fileName: 'search-index.json',

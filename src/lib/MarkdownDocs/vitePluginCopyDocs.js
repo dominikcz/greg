@@ -92,11 +92,13 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
                     : url.startsWith('/') && url.endsWith('.md');
                 if (isDocsMarkdown) {
                     const rel = url.slice(rootPrefix.length).replace(/^\//, '');
-                    const filePath = path.resolve(root, docsDir, rel);
-                    if (fs.existsSync(filePath)) {
-                        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                        res.end(fs.readFileSync(filePath, 'utf8'));
-                        return;
+                    for (const dir of (Array.isArray(docsDir) ? docsDir : [docsDir])) {
+                        const filePath = path.resolve(root, dir, rel);
+                        if (fs.existsSync(filePath)) {
+                            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                            res.end(fs.readFileSync(filePath, 'utf8'));
+                            return;
+                        }
                     }
                 }
 
@@ -121,14 +123,16 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
             let count = 0;
             const rootPrefix = trimSlashes(resolveRootPrefix());
 
-            // Copy markdown docs
-            const docsRoot = path.resolve(root, docsDir);
-            for (const srcFile of walkMd(docsRoot)) {
-                const rel = toPosix(path.relative(docsRoot, srcFile));
-                const destFile = path.join(outDir, rootPrefix, rel);
-                fs.mkdirSync(path.dirname(destFile), { recursive: true });
-                fs.copyFileSync(srcFile, destFile);
-                count++;
+            // Copy markdown docs from all source dirs
+            for (const dir of (Array.isArray(docsDir) ? docsDir : [docsDir])) {
+                const docsRoot = path.resolve(root, dir);
+                for (const srcFile of walkMd(docsRoot)) {
+                    const rel = toPosix(path.relative(docsRoot, srcFile));
+                    const destFile = path.join(outDir, rootPrefix, rel);
+                    fs.mkdirSync(path.dirname(destFile), { recursive: true });
+                    fs.copyFileSync(srcFile, destFile);
+                    count++;
+                }
             }
 
             // Copy extra static dirs

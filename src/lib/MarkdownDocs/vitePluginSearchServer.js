@@ -170,7 +170,8 @@ export function vitePluginSearchServer({
 		name: 'greg:search-server',
 
 		configResolved(config) {
-			resolvedDocsDir = path.resolve(config.root, docsDir);
+			const dirs = Array.isArray(docsDir) ? docsDir : [docsDir];
+			resolvedDocsDir = dirs.map(d => path.resolve(config.root, d));
 			viteBase = config.base ?? '/';
 		},
 

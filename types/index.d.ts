@@ -310,8 +310,13 @@ export type GregConfig = {
     base?: string;
     /** VitePress-compatible build output directory. Default: 'dist'. */
     outDir?: string;
-    /** URL prefix of the docs folder (e.g. '/docs'). Default: '/docs'. */
-    srcDir?: string;
+    /**
+     * Physical docs source directory (or directories), relative to project root.
+     * - String: single folder, e.g. `'docs'`
+     * - Array: multiple folders scanned and merged, e.g. `['docs', 'extra-docs']`
+     * Default: `'docs'`
+     */
+    srcDir?: string | string[];
     /** Version badge shown in the header. Empty string = hidden. */
     version?: string;
     /** Site title shown in the header. */

@@ -49,6 +49,8 @@
         aiLabel?: string;
         clearChatLabel?: string;
         sendLabel?: string;
+        /** Exposed handle so the parent can read hasMessages and call clear(). */
+        chatHandle?: { clear: () => void; hasMessages: boolean };
     };
 
     let {
@@ -63,6 +65,7 @@
         aiLabel = "Ask AI",
         clearChatLabel = "Clear chat",
         sendLabel = "Send",
+        chatHandle = $bindable<{ clear: () => void; hasMessages: boolean } | undefined>(undefined),
     }: Props = $props();
 
     // ── Config ─────────────────────────────────────────────────────────────────
@@ -185,6 +188,11 @@
     // Persist selected character whenever it changes
     $effect(() => {
         saveCharacter(selectedCharacter);
+    });
+
+    // Expose handle to parent (hasMessages + clear fn)
+    $effect(() => {
+        chatHandle = { clear: clearHistory, hasMessages: messages.length > 0 };
     });
 
     // Scroll to bottom whenever a new message appears
@@ -426,8 +434,8 @@
     {/if}
 {/snippet}
 
-    <!-- ── Header: character selector + clear button ──────────────────── -->
-    {#if characters.length > 1 || messages.length > 0}
+    <!-- ── Header: character selector (only when > 1 character) ──────────────────── -->
+    {#if characters.length > 1}
         <div class="ai-character-bar" role="group" aria-label="AI character">
             {#each characters as char}
                 <button
@@ -442,17 +450,6 @@
                     <span class="char-name">{char.name}</span>
                 </button>
             {/each}
-            {#if messages.length > 0}
-                <button class="ai-clear-btn" type="button" onclick={clearHistory} title={clearChatLabel}>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                        <polyline points="3 6 5 6 21 6"/>
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                        <path d="M10 11v6M14 11v6"/>
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                    </svg>
-                    {clearChatLabel}
-                </button>
-            {/if}
         </div>
     {/if}
 
@@ -609,50 +606,15 @@
         overflow: hidden;
     }
 
-    /* ── Clear button (inside character bar) ────────────────────── */
-
-    .ai-clear-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-        background: none;
-        border: none;
-        color: var(--greg-menu-section-color);
-        font-size: 0.7rem;
-        font-family: inherit;
-        cursor: pointer;
-        padding: 0.15rem 0.3rem;
-        border-radius: 4px;
-        opacity: 0.6;
-        transition: opacity 0.15s, color 0.15s;
-        margin-left: auto;
-        flex-shrink: 0;
-
-        svg {
-            width: 11px;
-            height: 11px;
-        }
-
-        &:hover {
-            opacity: 1;
-            color: var(--greg-danger-text, #e53e3e);
-        }
-    }
-
     /* ── Character selector ──────────────────────────────────── */
 
     .ai-character-bar {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.3rem;
         padding: 0.5rem 0.75rem;
         border-bottom: 1px solid var(--greg-border-color);
-        overflow-x: auto;
         flex-shrink: 0;
-        scrollbar-width: none;
-
-        &::-webkit-scrollbar {
-            display: none;
-        }
     }
 
     .ai-character-btn {

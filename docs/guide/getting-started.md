@@ -115,6 +115,17 @@ export default {
 }
 ```
 
+`srcDir` can also be an array if your markdown sources are split across folders:
+
+```js
+export default {
+  srcDir: ['docs', 'api-docs', 'handbook'],
+  docsBase: '',
+}
+```
+
+In that case, Greg scans all listed folders for `.md` files.
+
 **`svelte.config.js`** — re-export Greg's bundled Svelte config (includes
 mdsvex for Markdown processing):
 
@@ -135,7 +146,7 @@ import {
     vitePluginCopyDocs,
 } from '@dominikcz/greg/plugins'
 
-const docsDir = 'docs'
+const docsDir = ['docs', 'api-docs', 'handbook']
 const docsBase = ''
 
 export default defineConfig({
@@ -149,6 +160,8 @@ export default defineConfig({
     ],
 })
 ```
+
+  `docsDir` in Greg Vite plugins accepts either a string (single folder) or a string array (multiple folders).
 
 **`index.html`** — minimal HTML entry point:
 
