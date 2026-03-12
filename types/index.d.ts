@@ -240,6 +240,25 @@ export type AiCharacterConfig = {
     systemPrompt: string;
 };
 
+/** SQLite store configuration (`search.ai.sqlite`). */
+export type SqliteStoreConfig = {
+    /** Path to the SQLite database file. Default: 'docs.db'. */
+    dbPath?: string;
+    /**
+     * Embedding vector dimensions. Required for vector search.
+     * Common values: 1536 (OpenAI text-embedding-3-small), 768 (nomic-embed-text).
+     * Omit or set to 0 for BM25-only mode.
+     */
+    embeddingDimensions?: number;
+    /** Texts per embedding API call. Default: 64. */
+    embeddingBatchSize?: number;
+    /**
+     * BM25 weight in hybrid ranking (0–1). Default: 0.3.
+     * Vector weight = 1 − bm25Weight. Only relevant with vector search.
+     */
+    bm25Weight?: number;
+};
+
 /** RAG / AI knowledge-base configuration (`search.ai`). */
 export type AiConfig = {
     /**
@@ -279,7 +298,9 @@ export type AiConfig = {
      */
     customProvider?: (messages: Array<{ role: string; content: string }>, options?: Record<string, unknown>) => Promise<string>;
     /** Chunk store backend. Default: 'memory' (BM25, zero dependencies). */
-    store?: 'memory';
+    store?: 'memory' | 'sqlite';
+    /** SQLite store options (used when `store === 'sqlite'`). */
+    sqlite?: SqliteStoreConfig;
     /**
      * Which built-in character IDs to include.
      * Default: all five built-in characters are active.
