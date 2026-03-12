@@ -218,12 +218,6 @@ ai: {
 }
 ```
 
-#### AI chat UI behavior
-
-- The **Clear chat** button is shown in the modal tab bar (next to `Esc`) when the AI tab is active and the conversation has messages.
-- The character list wraps to additional lines when there is not enough horizontal space (instead of clipping items).
-- The search modal maximum width in AI mode is `700px`.
-
 If omitted, `'professional'` is selected by default.
 
 #### Defining custom characters
