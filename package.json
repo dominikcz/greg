@@ -44,7 +44,10 @@
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/js-yaml": "^4.0.9",
+    "better-sqlite3": "^12.6.2",
+    "sqlite-vec": "^0.1.7-alpha.2",
     "svelte": "^5.53.7",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
@@ -69,6 +72,18 @@
     "shiki": "^4.0.1",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.1.0"
+  },
+  "peerDependencies": {
+    "better-sqlite3": "^11.0.0",
+    "sqlite-vec": "^0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "better-sqlite3": {
+      "optional": true
+    },
+    "sqlite-vec": {
+      "optional": true
+    }
   },
   "overrides": {
     "dompurify": ">=3.3.2",

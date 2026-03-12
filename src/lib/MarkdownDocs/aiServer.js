@@ -33,11 +33,27 @@
 import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { buildChunks } from './ai/chunker.js';
 import { MemoryStore } from './ai/stores/memoryStore.js';
 import { resolveCharacters } from './ai/characters.js';
 import { RagPipeline } from './ai/ragPipeline.js';
+import { loadGregConfig } from './loadGregConfig.js';
+
+/** @param {string} storeType @param {object} aiCfg @param {import('./ai/aiProvider.js').AiProvider} [provider] */
+async function createStore(storeType, aiCfg, provider) {
+	if (storeType === 'sqlite') {
+		const { SqliteStore } = await import('./ai/stores/sqliteStore.js');
+		const sqliteCfg = aiCfg?.sqlite ?? {};
+		return new SqliteStore({
+			dbPath: sqliteCfg.dbPath ?? 'docs.db',
+			embeddingDimensions: sqliteCfg.embeddingDimensions ?? 0,
+			provider: sqliteCfg.embeddingDimensions ? provider : undefined,
+			embeddingBatchSize: sqliteCfg.embeddingBatchSize,
+			bm25Weight: sqliteCfg.bm25Weight,
+		});
+	}
+	return new MemoryStore();
+}
 
 const startupT0 = process.hrtime.bigint();
 
@@ -63,34 +79,6 @@ function parseArgs(argv) {
 		}
 	}
 	return args;
-}
-
-// ── Config loading (same pattern as searchServer.js) ─────────────────────────
-
-function resolveGregConfigPath() {
-	const tsPath = resolve('greg.config.ts');
-	const jsPath = resolve('greg.config.js');
-	if (existsSync(tsPath)) return tsPath;
-	if (existsSync(jsPath)) return jsPath;
-	return null;
-}
-
-async function loadTsConfig(configPath) {
-	const { transform } = await import('esbuild');
-	const source = readFileSync(configPath, 'utf8');
-	const { code } = await transform(source, { format: 'esm', loader: 'ts', target: 'node18' });
-	const dataUrl = 'data:text/javascript,' + encodeURIComponent(code);
-	const mod = await import(dataUrl);
-	return mod.default ?? {};
-}
-
-async function loadGregConfig() {
-	const configPath = resolveGregConfigPath();
-	if (!configPath) return {};
-	if (configPath.endsWith('.ts')) return loadTsConfig(configPath);
-	const fileUrl = pathToFileURL(configPath).href + '?t=' + Date.now();
-	const mod = await import(fileUrl);
-	return mod.default ?? {};
 }
 
 // ── Resolve configuration ─────────────────────────────────────────────────────
@@ -181,17 +169,19 @@ const chunkT0 = process.hrtime.bigint();
 const chunks = buildChunks(indexData, aiConfig?.chunking ?? {});
 const chunkMs = msSince(chunkT0);
 
-const storeT0 = process.hrtime.bigint();
-const store = new MemoryStore();
-await store.index(chunks);
-const storeMs = msSince(storeT0);
-
 const characters = resolveCharacters(
 	aiConfig?.characters,
 	aiConfig?.customCharacters ?? [],
 );
 
 const provider = await createProvider();
+
+const storeType = String(cliArgs.store ?? process.env.GREG_AI_STORE ?? aiConfig?.store ?? 'memory');
+const storeT0 = process.hrtime.bigint();
+const store = await createStore(storeType, aiConfig, provider);
+await store.index(chunks);
+const storeMs = msSince(storeT0);
+
 const pipeline = new RagPipeline(provider, store, characters);
 
 // ── HTTP server helpers ───────────────────────────────────────────────────────
@@ -282,10 +272,10 @@ server.listen(port, host, () => {
 	console.log(`[greg-ai] Listening on http://${host}:${port}${url}`);
 	console.log(
 		`[greg-ai] Startup: load=${fmtMs(loadMs)}, chunk=${fmtMs(chunkMs)}, ` +
-		`bm25-index=${fmtMs(storeMs)}, total=${fmtMs(startupMs)}`,
+		`store-index=${fmtMs(storeMs)}, total=${fmtMs(startupMs)}`,
 	);
 	console.log(
-		`[greg-ai] Docs: ${indexData.length} pages | Chunks: ${store.size()} | Provider: ${providerType}`,
+		`[greg-ai] Docs: ${indexData.length} pages | Chunks: ${store.size()} | Store: ${storeType} | Provider: ${providerType}`,
 	);
 	console.log(`[greg-ai] Characters: ${characters.map(c => `${c.icon} ${c.id}`).join(', ')}`);
 	console.log(
