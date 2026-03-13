@@ -50,6 +50,7 @@ import {
     vitePluginGregConfig,
     vitePluginSearchIndex,
     vitePluginSearchServer,
+    vitePluginAiServer,
     vitePluginFrontmatter,
     vitePluginCopyDocs,
 } from '@dominikcz/greg/plugins'
@@ -60,6 +61,7 @@ export default defineConfig({
         vitePluginGregConfig(),
         vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/' }),
         vitePluginSearchServer({ docsDir: 'docs', srcDir: '/' }),
+        vitePluginAiServer({ docsDir: 'docs', srcDir: '/' }),
         vitePluginFrontmatter({ docsDir: 'docs', srcDir: '/' }),
         vitePluginCopyDocs({ docsDir: 'docs', srcDir: '/' }),
     ],

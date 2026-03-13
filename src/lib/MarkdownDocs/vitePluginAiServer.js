@@ -24,6 +24,7 @@ import { buildChunks } from './ai/chunker.js';
 import { MemoryStore } from './ai/stores/memoryStore.js';
 import { resolveCharacters } from './ai/characters.js';
 import { RagPipeline } from './ai/ragPipeline.js';
+import { loadGregConfig } from './loadGregConfig.js';
 
 /** @typedef {import('../../../types/index.js').AiConfig} AiConfig */
 
@@ -33,10 +34,9 @@ export function vitePluginAiServer({
 	aiUrl = '/api/ai',
 	ai = /** @type {AiConfig} */ ({}),
 } = {}) {
-	// Return a no-op plugin when AI is disabled — zero overhead
-	if (!ai?.enabled) {
-		return { name: 'greg:ai-server' };
-	}
+	const hasExplicitAiConfig = ai && typeof ai === 'object' && Object.keys(ai).length > 0;
+	/** @type {AiConfig} */
+	let resolvedAi = hasExplicitAiConfig ? ai : /** @type {AiConfig} */ ({});
 
 	let resolvedDocsDir;
 	let viteBase = '/';
@@ -47,15 +47,15 @@ export function vitePluginAiServer({
 	let buildPromise = null;
 
 	async function buildPipeline() {
-		const provider = await createProvider(ai);
+		const provider = await createProvider(resolvedAi);
 		const index = await buildSearchIndex(resolvedDocsDir, srcDir);
-		const chunks = buildChunks(index, ai?.chunking ?? {});
+		const chunks = buildChunks(index, resolvedAi?.chunking ?? {});
 		const store = new MemoryStore();
 		await store.index(chunks);
 
 		const characters = resolveCharacters(
-			ai?.characters,
-			ai?.customCharacters ?? [],
+			resolvedAi?.characters,
+			resolvedAi?.customCharacters ?? [],
 		);
 
 		return new RagPipeline(provider, store, characters);
@@ -91,6 +91,11 @@ export function vitePluginAiServer({
 
 	function middleware() {
 		return async (req, res, next) => {
+			if (!resolvedAi?.enabled) {
+				next();
+				return;
+			}
+
 			const urlStr = req.url ?? '';
 			const qIdx = urlStr.indexOf('?');
 			const rawPathname = qIdx >= 0 ? urlStr.slice(0, qIdx) : urlStr;
@@ -128,7 +133,7 @@ export function vitePluginAiServer({
 						return;
 					}
 
-					const characterId = String(body.character ?? ai?.defaultCharacter ?? 'professional');
+					const characterId = String(body.character ?? resolvedAi?.defaultCharacter ?? 'professional');
 					const locale = String(body.locale ?? '');
 
 					const pipeline = await loadPipeline();
@@ -156,10 +161,19 @@ export function vitePluginAiServer({
 	return {
 		name: 'greg:ai-server',
 
-		configResolved(config) {
+		async configResolved(config) {
 			const dirs = Array.isArray(docsDir) ? docsDir : [docsDir];
 			resolvedDocsDir = dirs.map(d => path.resolve(config.root, d));
 			viteBase = config.base ?? '/';
+
+			if (!hasExplicitAiConfig) {
+				try {
+					const gregConfig = await loadGregConfig();
+					resolvedAi = gregConfig?.search?.ai ?? {};
+				} catch {
+					resolvedAi = {};
+				}
+			}
 		},
 
 		configureServer(server) {
