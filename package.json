@@ -4,7 +4,7 @@
   "type": "module",
   "types": "./types/index.d.ts",
   "bin": {
-    "greg": "./bin/greg.js"
+    "greg": "bin/greg.js"
   },
   "exports": {
     ".": {
