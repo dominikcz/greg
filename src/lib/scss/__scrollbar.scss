@@ -6,6 +6,12 @@ body,
     scrollbar-color: var(--greg-accent) transparent;
 }
 
+.greg,
+.greg * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--greg-accent) transparent;
+}
+
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
 .greg::-webkit-scrollbar {
@@ -40,6 +46,11 @@ body::-webkit-scrollbar-thumb:hover,
 }
 
 .markdown-body *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.greg *::-webkit-scrollbar {
     width: 6px;
     height: 6px;
 }
