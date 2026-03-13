@@ -12,11 +12,13 @@ import rehypeCodeTitle from "./rehypeCodeTitle.js";
 import { remarkCodeMeta } from "./remarkCodeMeta.js";
 import { remarkCustomAnchors } from "./remarkCustomAnchors.js";
 import { remarkInlineAttrs } from "./remarkInlineAttrs.js";
+import { remarkFlexRow } from "./remarkFlexRow.js";
 import { remarkImportsBrowser } from "./remarkImportsBrowser.js";
 
 import Badge from "../components/Badge.svelte";
 import Button from "../components/Button.svelte";
 import Image from "../components/Image.svelte";
+import MarkdownImagePreview from "../components/MarkdownImagePreview.svelte";
 import Link from "../components/Link.svelte";
 import CodeGroup from "../components/CodeGroup.svelte";
 import Hero from "../components/Hero.svelte";
@@ -170,6 +172,10 @@ export const COMPONENT_REGISTRY: Record<string, ComponentHydrationEntry> = {
         component: Image,
         buildProps: buildPropsFromAttributes,
     },
+    markdownimage: {
+        component: MarkdownImagePreview,
+        buildProps: buildPropsFromAttributes,
+    },
     link: {
         component: Link,
         buildProps: buildPropsFromAttributes,
@@ -252,6 +258,7 @@ export function getRemarkPluginEntries(
     return [
         { name: "remark-parse", plugin: remarkParse },
         { name: "remark-gfm", plugin: remarkGfm },
+        { name: "remark-flex-row", plugin: remarkFlexRow },
         { name: "remark-inline-attrs", plugin: remarkInlineAttrs },
         {
             name: "remark-imports-browser",
@@ -278,6 +285,7 @@ export function getRemarkPluginEntries(
 export function getRehypePluginEntries(deps: {
     rehypeStepsWrapper: any;
     rehypeMermaid: any;
+    rehypeMarkdownImageThumbs: any;
     rehypeShiki: any;
 }): PluginEntry[] {
     return [
@@ -289,6 +297,10 @@ export function getRehypePluginEntries(deps: {
         },
         { name: "rehype-steps-wrapper", plugin: deps.rehypeStepsWrapper },
         { name: "rehype-mermaid", plugin: deps.rehypeMermaid },
+        {
+            name: "rehype-markdown-image-thumbs",
+            plugin: deps.rehypeMarkdownImageThumbs,
+        },
         { name: "rehype-shiki", plugin: deps.rehypeShiki },
         { name: "rehype-containers", plugin: rehypeContainers },
         { name: "rehype-code-group", plugin: rehypeCodeGroup },

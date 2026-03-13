@@ -342,6 +342,8 @@ export type GregConfig = {
     version?: string;
     /** Site title shown in the header. */
     mainTitle?: string;
+    /** Render markdown images as thumbnails with click-to-preview overlay. Default: true. */
+    markdownImagePreview?: boolean;
     /**
      * VitePress-compatible outline setting.
      *   false       – disable outline

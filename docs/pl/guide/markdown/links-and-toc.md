@@ -58,3 +58,19 @@ Output:
 [[toc]]
 
 Domyślnie zawiera nagłówki `h2` i `h3`. Alternatywnie możesz używać stałego panelu Outline po prawej stronie.
+
+## Lista flex - `[[ ... ]]`
+
+Użyj `[[ ... ]]`, aby wyrenderować wiele bloków markdown w jednym poziomym,
+zawijanym rzędzie. Każda niepusta linia wewnątrz bloku to osobny element flex.
+
+```md
+[[
+![Mroźnia A](/know-how/gastro-orlen/mroznia/freezer-a.webp)
+![Mroźnia B](/know-how/gastro-orlen/mroznia/freezer-b.webp)
+![Mroźnia C](/know-how/gastro-orlen/mroznia/freezer-c.webp)
+]]
+```
+
+Elementy rozdzielaj enterami (nowymi liniami). Składnia z klamrami (`{...}`)
+oraz jednolinijkowa składnia z samymi przecinkami (np. `[[One, Two]]`) nie są wspierane.

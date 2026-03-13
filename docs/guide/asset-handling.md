@@ -18,6 +18,21 @@ Relative paths are resolved from the location of the `.md` file:
 ![diagram](./images/diagram.png)
 ```
 
+By default, Markdown images are rendered as thumbnails. Click an image to open
+the full-size preview.
+
+When preview is enabled, a caption is rendered under the thumbnail:
+- uses `title` when present,
+- otherwise falls back to `alt` text.
+
+You can disable this behavior globally in `greg.config.js`:
+
+```js
+export default {
+  markdownImagePreview: false,
+}
+```
+
 Absolute paths are resolved from the project root's `public/` directory:
 
 ```md

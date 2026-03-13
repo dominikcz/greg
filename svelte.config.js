@@ -11,6 +11,7 @@ import { remarkImports } from './src/lib/MarkdownDocs/remarkImports.js';
 import { remarkGlobalComponents } from './src/lib/MarkdownDocs/remarkGlobalComponents.js';
 import { remarkCustomAnchors } from './src/lib/MarkdownDocs/remarkCustomAnchors.js';
 import { remarkInlineAttrs } from './src/lib/MarkdownDocs/remarkInlineAttrs.js';
+import { remarkFlexRow } from './src/lib/MarkdownDocs/remarkFlexRow.js';
 import { remarkEscapeSvelte } from './src/lib/MarkdownDocs/remarkEscapeSvelte.js';
 import { remarkMathToHtml } from './src/lib/MarkdownDocs/remarkMathToHtml.js';
 import { parseCodeDirectives, decorateHighlightedCodeHtml } from './src/lib/MarkdownDocs/codeDirectives.js';
@@ -103,6 +104,7 @@ const mdsvexOptions = {
 		},
 	},
 	remarkPlugins: [
+		remarkFlexRow,
 		remarkInlineAttrs,
 		remarkGlobalComponents,
 		remarkCodeMeta,

@@ -144,6 +144,13 @@ export default {
     /** Site title shown in the header. */
     mainTitle: 'Greg',
 
+    /**
+     * Render markdown images as thumbnails with click-to-preview overlay.
+     * true  - thumbnails + modal preview on click (default)
+     * false - regular inline images without preview modal
+     */
+    markdownImagePreview: true,
+
     // ── Outline panel ─────────────────────────────────────────────────────
     /**
      * VitePress-compatible outline setting.

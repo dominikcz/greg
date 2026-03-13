@@ -17,6 +17,21 @@ Greg korzysta z Vite, więc obowiązują standardowe reguły obsługi assetów z
 ![diagram](./images/diagram.png)
 ```
 
+Domyślnie obrazy w Markdown są renderowane jako miniatury. Kliknij obraz,
+aby otworzyć podgląd w pełnym rozmiarze.
+
+Gdy podgląd jest włączony, pod miniaturą pojawia się podpis:
+- najpierw z `title`,
+- a jeśli `title` brak, z tekstu `alt`.
+
+Możesz globalnie wyłączyć to zachowanie w `greg.config.js`:
+
+```js
+export default {
+  markdownImagePreview: false,
+}
+```
+
 Ścieżki absolutne są liczone od katalogu `public/`:
 
 ```md

@@ -164,6 +164,8 @@
          * { id, title, titleHtml, sectionTitle, sectionTitleHtml?, sectionAnchor, excerptHtml, score }
          */
         searchProvider?: (query: string, limit?: number) => Promise<any[]>;
+        /** Render markdown images as thumbnails with click-to-preview overlay. */
+        markdownImagePreview?: boolean;
     };
 
     type VersionManifestEntry = {
@@ -209,6 +211,7 @@
             (gregConfig as any).outline ?? ([2, 3] as [number, number]),
         mermaidTheme = (gregConfig as any).mermaidTheme,
         mermaidThemes,
+        markdownImagePreview = (gregConfig as any).markdownImagePreview ?? true,
         breadcrumb = (gregConfig as any).breadcrumb ?? false,
         backToTop = (gregConfig as any).backToTop ?? false,
         lastModified: globalLastModified = (gregConfig as any).lastModified ?? false,
@@ -1733,6 +1736,7 @@
                             docsPrefix={withBase(currentSrcDir)}
                             {mermaidTheme}
                             {mermaidThemes}
+                            enableImagePreview={markdownImagePreview}
                             colorTheme={theme}
                         />
                         {#if lastModified && activeFrontmatter?._mtime}

@@ -147,6 +147,57 @@ describe('rehypeTocPlaceholder — [[TOC]]', () => {
 	});
 });
 
+describe('remarkFlexRow — [[ line\nline ]]', () => {
+	it('renders top-level flex container with wrapped items', async () => {
+		const html = await processMarkdown('[[\nOne\nTwo\nThree\n]]');
+		expect(html).toContain('class="markdown-flex-row"');
+		expect((html.match(/class="markdown-flex-item"/g) ?? []).length).toBe(3);
+		expect(html).toContain('>One<');
+		expect(html).toContain('>Two<');
+		expect(html).toContain('>Three<');
+	});
+
+	it('supports markdown content inside line items', async () => {
+		const html = await processMarkdown('[[\n**Bold**\n[Link](https://example.com)\n]]');
+		expect(html).toContain('<strong>Bold</strong>');
+		expect(html).toContain('<a href="https://example.com">Link</a>');
+	});
+
+	it('accepts newline-delimited items without commas', async () => {
+		const html = await processMarkdown('[[\nOne\nTwo\n]]');
+		expect(html).toContain('class="markdown-flex-row"');
+		expect((html.match(/class="markdown-flex-item"/g) ?? []).length).toBe(2);
+		expect(html).toContain('>One<');
+		expect(html).toContain('>Two<');
+	});
+
+	it('works inside list items', async () => {
+		const html = await processMarkdown('- [[\n  A\n  B\n  ]]');
+		expect(html).toContain('class="markdown-flex-row"');
+		expect((html.match(/class="markdown-flex-item"/g) ?? []).length).toBe(2);
+	});
+
+	it('supports image markdown inside items', async () => {
+		const html = await processMarkdown('[[\n![one](/one.png)\n![two](/two.png)\n]]');
+		expect(html).toContain('src="/one.png"');
+		expect(html).toContain('src="/two.png"');
+	});
+
+	it('supports multiline syntax with optional trailing commas', async () => {
+		const html = await processMarkdown('[[\n![one](/one.png),\n![two](/two.png)\n]]');
+		expect(html).toContain('class="markdown-flex-row"');
+		expect((html.match(/class="markdown-flex-item"/g) ?? []).length).toBe(2);
+		expect(html).toContain('src="/one.png"');
+		expect(html).toContain('src="/two.png"');
+	});
+
+	it('does not parse one-line comma-separated syntax', async () => {
+		const html = await processMarkdown('[[One, Two]]');
+		expect(html).not.toContain('class="markdown-flex-row"');
+		expect(html).toContain('[[One, Two]]');
+	});
+});
+
 // ─── Custom Containers ─────────────────────────────────────────────────────────
 
 describe('remarkContainers — ::: info', () => {

@@ -73,6 +73,27 @@
         margin: 1rem 0 0.4rem 0;
     }
 
+    .markdown-flex-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: flex-start;
+        margin: 1rem 0;
+    }
+
+    .markdown-flex-item {
+        min-width: 0;
+        flex: 0 1 auto;
+    }
+
+    .markdown-flex-item > :first-child {
+        margin-top: 0;
+    }
+
+    .markdown-flex-item > :last-child {
+        margin-bottom: 0;
+    }
+
     img {
         max-width: 100%;
         border-style: none;

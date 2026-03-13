@@ -167,6 +167,8 @@ declare module 'virtual:greg-config' {
         docsBase?: string;
         version?: string;
         mainTitle?: string;
+        /** Render markdown images as thumbnails with click-to-preview overlay. Default: true. */
+        markdownImagePreview?: boolean;
         outline?: OutlineOption | boolean;
         mermaidTheme?: string;
         carbonAds?: { code: string; placement: string };

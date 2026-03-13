@@ -11,6 +11,7 @@ import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeCodeGroup from '../rehypeCodeGroup.js';
 import rehypeCodeTitle from '../rehypeCodeTitle.js';
 import { remarkContainers, rehypeContainers } from '../remarkContainers.js';
+import { remarkFlexRow } from '../remarkFlexRow.js';
 import { rehypeTocPlaceholder } from '../rehypeToc.js';
 import { remarkCodeMeta } from '../remarkCodeMeta.js';
 import { remarkImports } from '../remarkImports.js';
@@ -26,6 +27,7 @@ async function getProcessor(opts = {}) {
 	if (opts.containers || opts.toc || opts.imports) {
 		return unified()
 			.use(remarkParse)
+			.use(remarkFlexRow)
 			.use(remarkImports, opts.imports ?? defaultImportsOptions)
 			.use(remarkCodeMeta)
 			.use(remarkContainers, opts.containers ?? {})
@@ -41,6 +43,7 @@ async function getProcessor(opts = {}) {
 	if (!_processor) {
 		_processor = unified()
 			.use(remarkParse)
+			.use(remarkFlexRow)
 			.use(remarkImports, defaultImportsOptions)
 			.use(remarkCodeMeta)
 			.use(remarkContainers)

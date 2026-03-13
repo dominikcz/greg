@@ -203,6 +203,8 @@
          * When `'dark'`, automatically selects `mermaidTheme + '-dark'` if available.
          */
         colorTheme?: "light" | "dark";
+        /** Enable markdown image thumbnails + click-to-preview overlay. */
+        enableImagePreview?: boolean;
     };
     let {
         markdown,
@@ -211,6 +213,7 @@
         mermaidTheme = DEFAULT_MERMAID_THEME,
         mermaidThemes: extraThemes = {},
         colorTheme,
+        enableImagePreview = true,
     }: Props = $props();
 
     /** Combined theme map: built-ins overridden/extended by user-supplied themes. */
@@ -284,6 +287,19 @@
                 node.value = node.value
                     .replace(/<\s*steps\b[^>]*>/gi, '<div class="greg-steps">')
                     .replace(/<\s*\/\s*steps\s*>/gi, "</div>");
+            });
+        };
+    }
+
+    // ── Rehype plugin: markdown image component hydration ──────────────────────
+    // Replaces plain markdown <img> with <markdownimage> so runtime hydration can
+    // mount a Svelte component (thumbnail + modal + caption logic).
+    function rehypeMarkdownImageThumbs() {
+        return (tree: any) => {
+            if (!enableImagePreview) return;
+            visit(tree, "element", (node: any) => {
+                if (node.tagName !== "img") return;
+                node.tagName = "markdownimage";
             });
         };
     }
@@ -421,6 +437,7 @@
             getRehypePluginEntries({
                 rehypeStepsWrapper,
                 rehypeMermaid,
+                rehypeMarkdownImageThumbs,
                 rehypeShiki,
             }),
         );
@@ -482,6 +499,9 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="markdown-renderer markdown-body" bind:this={containerEl}>
+<div
+    class="markdown-renderer markdown-body"
+    bind:this={containerEl}
+>
     {@html html}
 </div>

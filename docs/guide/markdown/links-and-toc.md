@@ -62,3 +62,19 @@ Output:
 By default h2 and h3 headings are included. The right-side **Outline** panel is
 a persistent alternative. See `outline` prop in the
 [`<MarkdownDocs>` reference](/reference/markdowndocs).
+
+## Flex row list - `[[ ... ]]`
+
+Use `[[ ... ]]` to render multiple markdown blocks in a horizontal wrapping row.
+Each non-empty line inside the block becomes one flex item.
+
+```md
+[[
+![Freezer A](/know-how/gastro-orlen/mroznia/freezer-a.webp)
+![Freezer B](/know-how/gastro-orlen/mroznia/freezer-b.webp)
+![Freezer C](/know-how/gastro-orlen/mroznia/freezer-c.webp)
+]]
+```
+
+Use line breaks (Enter) to separate items. Brace syntax (`{...}`) and one-line
+comma-only syntax (for example `[[One, Two]]`) are not supported.
