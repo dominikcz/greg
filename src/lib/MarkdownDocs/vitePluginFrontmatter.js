@@ -44,6 +44,16 @@ export function vitePluginFrontmatter({ docsDir = 'docs', srcDir = '/docs' } = {
         return cleaned ? `/${cleaned}` : '/';
     }
 
+    function isTraversableDirectory(entry, fullPath) {
+        if (entry.isDirectory()) return true;
+        if (!entry.isSymbolicLink()) return false;
+        try {
+            return fs.statSync(fullPath).isDirectory();
+        } catch {
+            return false;
+        }
+    }
+
     /** Collect all .md paths and return the virtual module source. */
     function buildModule() {
         const absDirs = (Array.isArray(docsDir) ? docsDir : [docsDir]).map(d => path.resolve(root, d));
@@ -56,7 +66,7 @@ export function vitePluginFrontmatter({ docsDir = 'docs', srcDir = '/docs' } = {
             catch { return; }
             for (const item of items) {
                 const full = path.join(dir, item.name);
-                if (item.isDirectory()) {
+                if (isTraversableDirectory(item, full)) {
                     walk(full, baseDir);
                 } else if (item.isFile() && item.name.endsWith('.md') && !item.name.startsWith('__')) {
                     const rel = path.relative(baseDir, full).replace(/\\/g, '/');

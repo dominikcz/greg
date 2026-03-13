@@ -1,7 +1,7 @@
 /**
  * vitePluginCopyDocs
  *
- * Copies docs/**\/*.md (and optional extra static dirs) to the build output
+ * Copies docs/** files (and optional extra static dirs) to the build output
  * directory as-is, so they can be fetched at runtime by the browser without
  * being compiled by mdsvex/rollup.
  *
@@ -10,7 +10,7 @@
  *
  * The `staticDirs` option (default: ['snippets']) lists additional project-root
  * directories whose files should also be served/copied verbatim.  This is
- * needed for `<<< @”‹/snippets/file.js` style snippet includes.
+ * needed for snippet include syntax that references files from static dirs.
  */
 
 import fs from 'node:fs';
@@ -25,11 +25,21 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
     let outDir = 'dist';
     let viteBase = '/';
 
+    function isTraversableDirectory(entry, fullPath) {
+        if (entry.isDirectory()) return true;
+        if (!entry.isSymbolicLink()) return false;
+        try {
+            return fs.statSync(fullPath).isDirectory();
+        } catch {
+            return false;
+        }
+    }
+
     function* walkAll(dir) {
         if (!fs.existsSync(dir)) return;
         for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
             const full = path.join(dir, entry.name);
-            if (entry.isDirectory()) {
+            if (isTraversableDirectory(entry, full)) {
                 yield* walkAll(full);
             } else if (entry.isFile()) {
                 yield full;
@@ -37,14 +47,27 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
         }
     }
 
-    function* walkMd(dir) {
-        for (const full of walkAll(dir)) {
-            if (full.endsWith('.md')) yield full;
-        }
-    }
-
     function toPosix(value) {
         return String(value).replace(/\\/g, '/');
+    }
+
+    function getContentType(filePath) {
+        const ext = path.extname(filePath).toLowerCase();
+        switch (ext) {
+        case '.md': return 'text/plain; charset=utf-8';
+        case '.txt': return 'text/plain; charset=utf-8';
+        case '.json': return 'application/json; charset=utf-8';
+        case '.js': return 'text/javascript; charset=utf-8';
+        case '.css': return 'text/css; charset=utf-8';
+        case '.svg': return 'image/svg+xml';
+        case '.png': return 'image/png';
+        case '.jpg':
+        case '.jpeg': return 'image/jpeg';
+        case '.webp': return 'image/webp';
+        case '.gif': return 'image/gif';
+        case '.pdf': return 'application/pdf';
+        default: return 'application/octet-stream';
+        }
     }
 
     function resolveRootPrefix() {
@@ -62,7 +85,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
         },
 
         /**
-         * In dev mode: serve .md files and staticDirs files as plain text.
+         * In dev mode: serve docs files and staticDirs files.
          * Vite doesn't auto-serve project files outside public/ as raw assets.
          */
         configureServer(server) {
@@ -86,17 +109,17 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
                     ? '/' + rawUrl.slice(base.length).replace(/^\/+/, '')
                     : rawUrl;
 
-                // Docs markdown files
-                const isDocsMarkdown = rootPrefix
-                    ? (url === rootPrefix || url.startsWith(rootPrefix + '/')) && url.endsWith('.md')
-                    : url.startsWith('/') && url.endsWith('.md');
-                if (isDocsMarkdown) {
+                // Docs files (markdown + local assets like images/pdf)
+                const isDocsPath = rootPrefix
+                    ? (url === rootPrefix || url.startsWith(rootPrefix + '/'))
+                    : url.startsWith('/');
+                if (isDocsPath) {
                     const rel = url.slice(rootPrefix.length).replace(/^\//, '');
                     for (const dir of (Array.isArray(docsDir) ? docsDir : [docsDir])) {
                         const filePath = path.resolve(root, dir, rel);
-                        if (fs.existsSync(filePath)) {
-                            res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-                            res.end(fs.readFileSync(filePath, 'utf8'));
+                        if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+                            res.setHeader('Content-Type', getContentType(filePath));
+                            res.end(fs.readFileSync(filePath));
                             return;
                         }
                     }
@@ -118,15 +141,15 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
             });
         },
 
-        /** After bundle is written, copy .md files and staticDirs verbatim. */
+        /** After bundle is written, copy docs files and staticDirs verbatim. */
         writeBundle() {
             let count = 0;
             const rootPrefix = trimSlashes(resolveRootPrefix());
 
-            // Copy markdown docs from all source dirs
+            // Copy docs files from all source dirs
             for (const dir of (Array.isArray(docsDir) ? docsDir : [docsDir])) {
                 const docsRoot = path.resolve(root, dir);
-                for (const srcFile of walkMd(docsRoot)) {
+                for (const srcFile of walkAll(docsRoot)) {
                     const rel = toPosix(path.relative(docsRoot, srcFile));
                     const destFile = path.join(outDir, rootPrefix, rel);
                     fs.mkdirSync(path.dirname(destFile), { recursive: true });
