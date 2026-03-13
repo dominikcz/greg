@@ -186,8 +186,9 @@ async function main() {
 
     // ── Derive values ─────────────────────────────────────────────────────────
     const docsDir  = docsPath.replace(/^\.\//, '').replace(/\/$/, '');
+    const rootPath = '/' + docsDir.replace(/\\/g, '/').replace(/^\/+/, '');
     const ext      = useTS ? 'ts' : 'js';
-    const vars     = { TITLE: title, DESCRIPTION: desc, DOCS_DIR: docsDir, EXT: ext };
+    const vars     = { TITLE: title, DESCRIPTION: desc, DOCS_DIR: docsDir, ROOT_PATH: rootPath, EXT: ext };
 
     p.log.step('Creating files…');
 
