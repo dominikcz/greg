@@ -4,7 +4,7 @@ export default {
     // VitePress-compatible build options:
     // base: '/',
     // outDir: 'dist',
-    srcDir: '{{DOCS_DIR}}',
+    srcDir: '',
     docsBase: '',
     mainTitle: '{{TITLE}}',
     sidebar: 'auto',

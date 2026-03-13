@@ -9,7 +9,7 @@ import {
 } from '@dominikcz/greg/plugins'
 
 const docsDir = process.env.GREG_DOCS_DIR || '{{DOCS_DIR}}'
-const docsBase = process.env.GREG_DOCS_BASE || '{{ROOT_PATH}}'
+const docsBase = process.env.GREG_DOCS_BASE || ''
 
 export default defineConfig({
     plugins: [
