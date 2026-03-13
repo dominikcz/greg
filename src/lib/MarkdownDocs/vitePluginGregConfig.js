@@ -28,6 +28,11 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadGregConfig, resolveGregConfigPaths } from './loadGregConfig.js';
+import {
+    DEFAULT_OUTPUT_BASE_DIR,
+    DEFAULT_SITE_BASE,
+    normalizeBasePath,
+} from './versioningDefaults.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** Absolute path to greg's own components directory (inside the package). */
@@ -47,8 +52,8 @@ export function vitePluginGregConfig() {
     return {
         name: 'greg:config',
 
-        config() {
-            return {
+        async config() {
+            const viteConfig = {
                 resolve: {
                     alias: {
                         '$components': GREG_COMPONENTS_DIR,
@@ -71,6 +76,23 @@ export function vitePluginGregConfig() {
                     ],
                 },
             };
+
+            try {
+                const resolved = await loadGregConfig(root);
+                const hasBase = Object.prototype.hasOwnProperty.call(resolved, 'base');
+                const hasOutDir = Object.prototype.hasOwnProperty.call(resolved, 'outDir');
+                if (hasBase) {
+                    viteConfig.base = normalizeBasePath(resolved.base, DEFAULT_SITE_BASE);
+                }
+                if (hasOutDir) {
+                    const outDir = String(resolved.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
+                    viteConfig.build = { outDir };
+                }
+            } catch {
+                // Ignore config parse issues here; runtime virtual module load will report details.
+            }
+
+            return viteConfig;
         },
 
         configResolved(config) {
