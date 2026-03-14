@@ -73,7 +73,6 @@ export function vitePluginGregConfig() {
                         '@dominikcz/greg > rehype-slug',
                         '@dominikcz/greg > rehype-autolink-headings',
                         '@dominikcz/greg > unist-util-visit',
-                        '@dominikcz/greg > shiki',
                         '@dominikcz/greg > fuse.js',
                         '@dominikcz/greg > mermaid',
                     ],
