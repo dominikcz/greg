@@ -251,6 +251,7 @@ function runViteBuild(args) {
         GREG_DOCS_DIR: docsDir,
         GREG_DOCS_BASE: srcDir,
         GREG_ROOT_PATH: srcDir,
+        GREG_OUT_DIR: outDir,
         PATH:
             path.resolve(PROJECT_ROOT, 'node_modules/.bin') +
             (process.platform === 'win32' ? ';' : ':') +
@@ -258,7 +259,7 @@ function runViteBuild(args) {
     };
 
     console.log(`[greg] versions: vite build -> ${path.relative(PROJECT_ROOT, outDir)}`);
-    runCommand('vite', ['build', '--outDir', outDir, ...passthrough], {
+    runCommand('vite', ['build', ...passthrough], {
         stdio: 'inherit',
         shell: true,
         env,

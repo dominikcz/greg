@@ -19,7 +19,7 @@ console.log('Version:', pkg.version);
 
 const gregConfig = await loadGregConfig();
 const base = normalizeBasePath(gregConfig.base, DEFAULT_SITE_BASE);
-const outDir = String(gregConfig.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
+const outDir = process.env.GREG_OUT_DIR || String(gregConfig.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
 const srcDir = process.env.GREG_DOCS_DIR ?? gregConfig.srcDir ?? 'docs';
 const docsBaseValue = process.env.GREG_DOCS_BASE !== undefined
   ? process.env.GREG_DOCS_BASE

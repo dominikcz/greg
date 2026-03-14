@@ -83,7 +83,10 @@ export function vitePluginGregConfig() {
                 if (hasBase) {
                     viteConfig.base = normalizeBasePath(resolved.base, DEFAULT_SITE_BASE);
                 }
-                if (hasOutDir) {
+                const outDirOverride = process.env.GREG_OUT_DIR;
+                if (outDirOverride) {
+                    viteConfig.build = { outDir: outDirOverride };
+                } else if (hasOutDir) {
                     const outDir = String(resolved.outDir || DEFAULT_OUTPUT_BASE_DIR).trim() || DEFAULT_OUTPUT_BASE_DIR;
                     viteConfig.build = { outDir };
                 }
