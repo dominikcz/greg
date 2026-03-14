@@ -10,7 +10,6 @@
  *   srcDir       string           – physical docs source directory, relative to project root (default: 'docs')
  *   srcExclude   string[]         – glob patterns to exclude from docs source (VitePress-compatible, default: [])
  *   docsBase     string           – URL prefix for the docs section, e.g. 'docs' → URLs like /docs/guide (default: 'docs')
- *   srcDir     string           – @deprecated, use docsBase instead
  *   version      string           – version badge text
  *   mainTitle    string           – site title shown in the header
  *   outline      OutlineOption    – global outline setting (VitePress-compatible)
@@ -22,12 +21,12 @@
  *   locales      Record<string, LocaleConfig> – VitePress-style locale map
  *   sidebar      'auto' | SidebarItem[]
  *
- * HMR: changing greg.config.* or prv/greg.config.js triggers a full page reload.
+ * HMR: changing greg.config.* triggers a full page reload.
  */
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadGregConfig, resolveGregConfigPaths } from './loadGregConfig.js';
+import { loadGregConfig, resolveMainGregConfigPath } from './loadGregConfig.js';
 import {
     DEFAULT_OUTPUT_BASE_DIR,
     DEFAULT_SITE_BASE,
@@ -43,10 +42,10 @@ const RESOLVED_ID = '\0' + VIRTUAL_ID;
 
 export function vitePluginGregConfig() {
     let root = process.cwd();
-    let { mainConfigPath, prvConfigPath } = resolveGregConfigPaths(root);
+    let mainConfigPath = resolveMainGregConfigPath(root);
 
     function isWatchedConfig(file) {
-        return file === mainConfigPath || file === prvConfigPath;
+        return file === mainConfigPath;
     }
 
     return {
@@ -97,7 +96,7 @@ export function vitePluginGregConfig() {
 
         configResolved(config) {
             root = config.root;
-            ({ mainConfigPath, prvConfigPath } = resolveGregConfigPaths(root));
+            mainConfigPath = resolveMainGregConfigPath(root);
         },
 
         resolveId(id) {
@@ -106,7 +105,7 @@ export function vitePluginGregConfig() {
 
         async load(id) {
             if (id !== RESOLVED_ID) return;
-            if (!mainConfigPath && !prvConfigPath) return `export default {};`;
+            if (!mainConfigPath) return `export default {};`;
             try {
                 const config = await loadGregConfig(root);
                 return `export default ${JSON.stringify(config)};`;
@@ -117,7 +116,7 @@ export function vitePluginGregConfig() {
         },
 
         handleHotUpdate({ file, server }) {
-            ({ mainConfigPath, prvConfigPath } = resolveGregConfigPaths(root));
+            mainConfigPath = resolveMainGregConfigPath(root);
             if (isWatchedConfig(file)) {
                 const mod = server.moduleGraph.getModuleById(RESOLVED_ID);
                 if (mod) {

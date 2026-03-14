@@ -6,24 +6,6 @@ function isPlainObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
-function deepMerge(baseValue, overrideValue) {
-    if (!isPlainObject(baseValue) || !isPlainObject(overrideValue)) {
-        return overrideValue;
-    }
-
-    const result = { ...baseValue };
-    for (const [key, overrideEntry] of Object.entries(overrideValue)) {
-        const baseEntry = result[key];
-        if (isPlainObject(baseEntry) && isPlainObject(overrideEntry)) {
-            result[key] = deepMerge(baseEntry, overrideEntry);
-            continue;
-        }
-        result[key] = overrideEntry;
-    }
-
-    return result;
-}
-
 function normalizeConfig(value) {
     return isPlainObject(value) ? value : {};
 }
@@ -35,17 +17,6 @@ export function resolveMainGregConfigPath(rootDir = process.cwd()) {
     if (fs.existsSync(tsPath)) return tsPath;
     if (fs.existsSync(jsPath)) return jsPath;
     return null;
-}
-
-export function resolvePrvGregConfigPath(rootDir = process.cwd()) {
-    const prvPath = path.join(rootDir, 'prv', 'greg.config.js');
-    return fs.existsSync(prvPath) ? prvPath : null;
-}
-
-export function resolveGregConfigPaths(rootDir = process.cwd()) {
-    const mainConfigPath = resolveMainGregConfigPath(rootDir);
-    const prvConfigPath = resolvePrvGregConfigPath(rootDir);
-    return { mainConfigPath, prvConfigPath };
 }
 
 export async function loadGregConfigFile(configPath) {
@@ -70,13 +41,5 @@ export async function loadGregConfigFile(configPath) {
 }
 
 export async function loadGregConfig(rootDir = process.cwd()) {
-    const { mainConfigPath, prvConfigPath } = resolveGregConfigPaths(rootDir);
-    const mainConfig = await loadGregConfigFile(mainConfigPath);
-
-    if (!prvConfigPath) {
-        return mainConfig;
-    }
-
-    const prvConfig = await loadGregConfigFile(prvConfigPath);
-    return deepMerge(mainConfig, prvConfig);
+    return loadGregConfigFile(resolveMainGregConfigPath(rootDir));
 }

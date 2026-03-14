@@ -166,7 +166,6 @@ function computeWorkspaceBuildFingerprint() {
         'vite.config.ts',
         'greg.config.js',
         'greg.config.ts',
-        'prv/greg.config.js',
         'package.json',
         'src/main.js',
         'src/App.svelte',
