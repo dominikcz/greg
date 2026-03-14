@@ -58,7 +58,7 @@ const routes = [...new Set([
 
 const src = path.join(DIST, 'index.html');
 if (!fs.existsSync(src)) {
-    console.error('dist/index.html not found – run npm run build first.');
+    console.error(`${src} not found - run npm run build first.`);
     process.exit(1);
 }
 

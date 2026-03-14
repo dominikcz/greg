@@ -10,7 +10,7 @@ export default {
     /** VitePress-compatible base public path. */
     base: '/',
     /** VitePress-compatible build output directory. */
-    outDir: 'dist',
+    outDir: 'dist1',
     /** VitePress-compatible docs source directory (physical folder). */
     srcDir: 'docs',
     /** VitePress-compatible: patterns to exclude from docs source. */
