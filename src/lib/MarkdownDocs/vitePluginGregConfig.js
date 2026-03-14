@@ -62,6 +62,10 @@ export function vitePluginGregConfig() {
                     exclude: ['@dominikcz/greg'],
                     include: [
                         '@dominikcz/greg > unified',
+                        '@dominikcz/greg > extend',
+                        'extend',
+                        '@dominikcz/greg > debug',
+                        'debug',
                         '@dominikcz/greg > remark-parse',
                         '@dominikcz/greg > remark-gfm',
                         '@dominikcz/greg > remark-rehype',
