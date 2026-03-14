@@ -7,7 +7,7 @@
 <script lang="ts">
 	import Self from "./TreeViewItem.svelte";
 	import type { TreeViewItem } from "./treeViewTypes";
-	import { ChevronRight } from "@lucide/svelte";
+	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import { withBase } from "./common";
 
 	interface TreeViewItemProps {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import TreeView from "./TreeView.svelte";
-	import { ChevronRight } from "@lucide/svelte";
+	import ChevronRight from "@lucide/svelte/icons/chevron-right";
 	import { handleSectionClick } from "./navigationUtils";
 
 	import type { TreeViewItem } from "./treeViewTypes";

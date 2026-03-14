@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Languages, Sun, Moon } from "@lucide/svelte";
+	import Languages from "@lucide/svelte/icons/languages";
+	import Sun from "@lucide/svelte/icons/sun";
+	import Moon from "@lucide/svelte/icons/moon";
 	import SocialLink from "../components/SocialLink.svelte";
 	import DocsVersionSwitcher from "./DocsVersionSwitcher.svelte";
 	import { withBase } from "./common";

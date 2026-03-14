@@ -25,7 +25,7 @@
     import Breadcrumb from "./Breadcrumb.svelte";
     import PrevNext from "./PrevNext.svelte";
     import VersionOutdatedNotice from "./VersionOutdatedNotice.svelte";
-    import { EllipsisVertical } from "@lucide/svelte";
+    import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
     import gregConfig from "virtual:greg-config";
     import {
         type LocaleConfig,

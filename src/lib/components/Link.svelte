@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Snippet } from "svelte";
-    import { ExternalLink } from "@lucide/svelte";
+    import ExternalLink from "@lucide/svelte/icons/external-link";
 
     type Props = {
         tag?: string;
