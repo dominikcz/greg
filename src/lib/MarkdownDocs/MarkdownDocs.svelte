@@ -168,6 +168,11 @@
         searchProvider?: (query: string, limit?: number) => Promise<any[]>;
         /** Render markdown images as thumbnails with click-to-preview overlay. */
         markdownImagePreview?: boolean;
+        /** Runtime syntax highlighting options. */
+        shiki?: {
+            /** Additional language ids to load for code highlighting (for example ['rust', 'go']). */
+            extraLangs?: string[];
+        };
     };
 
     type VersionManifestEntry = {
@@ -215,6 +220,7 @@
         mermaidTheme = (gregConfig as any).mermaidTheme,
         mermaidThemes,
         markdownImagePreview = (gregConfig as any).markdownImagePreview ?? true,
+        shiki = (gregConfig as any).shiki ?? {},
         breadcrumb = (gregConfig as any).breadcrumb ?? false,
         backToTop = (gregConfig as any).backToTop ?? false,
         lastModified: globalLastModified = (gregConfig as any).lastModified ?? false,
@@ -1762,6 +1768,7 @@
                             {mermaidTheme}
                             {mermaidThemes}
                             enableImagePreview={markdownImagePreview}
+                            shikiExtraLangs={Array.isArray(shiki?.extraLangs) ? shiki.extraLangs : []}
                             colorTheme={theme}
                         />
                         {#if lastModified && activeFrontmatter?._mtime}

@@ -82,6 +82,9 @@ export default {
     srcDir: 'docs',
     docsBase: '',
     mainTitle: 'My Docs',
+    shiki: {
+        extraLangs: ['python', 'sql', 'csharp', 'pascal'],
+    },
     sidebar: [
         { text: 'Guide', auto: '/guide' },
         { text: 'GitHub', link: 'https://github.com/dominikcz/greg' }, // default: _self

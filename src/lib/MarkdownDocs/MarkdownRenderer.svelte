@@ -34,13 +34,17 @@
         DEFAULT_MERMAID_THEME,
         getColorSchemeTheme,
     } from "./mermaidThemes.js";
-    import { createHighlighter, type HighlighterGeneric } from "shiki";
+    import {
+        createBundledHighlighter,
+        type HighlighterGeneric,
+    } from "shiki/core";
+    import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 
     const shikiThemes = {
         light: "github-light",
         dark: "github-dark",
     } as const;
-    const shikiDefaultLang = "txt";
+    const shikiDefaultLang = "text";
     const shikiLangAliases: Record<string, string> = {
         js: "javascript",
         ts: "typescript",
@@ -49,8 +53,31 @@
         zsh: "bash",
         yml: "yaml",
         md: "markdown",
+        txt: "text",
+        py: "python",
+        cs: "csharp",
+        "c#": "csharp",
+        delphi: "pascal",
     };
-    const shikiLangs = [
+    const shikiBundledLangs = {
+        javascript: () => import("@shikijs/langs/javascript"),
+        typescript: () => import("@shikijs/langs/typescript"),
+        bash: () => import("@shikijs/langs/bash"),
+        json: () => import("@shikijs/langs/json"),
+        html: () => import("@shikijs/langs/html"),
+        css: () => import("@shikijs/langs/css"),
+        yaml: () => import("@shikijs/langs/yaml"),
+        markdown: () => import("@shikijs/langs/markdown"),
+        svelte: () => import("@shikijs/langs/svelte"),
+        csharp: () => import("@shikijs/langs/csharp"),
+        sql: () => import("@shikijs/langs/sql"),
+        ini: () => import("@shikijs/langs/ini"),
+        python: () => import("@shikijs/langs/python"),
+        pascal: () => import("@shikijs/langs/pascal"),
+    };
+    type ShikiBundledLang = keyof typeof shikiBundledLangs;
+
+    const shikiBaseLangs: ShikiBundledLang[] = [
         "javascript",
         "typescript",
         "bash",
@@ -60,20 +87,64 @@
         "yaml",
         "markdown",
         "svelte",
-        "txt",
+        "csharp",
+        "sql",
+        "ini",
+        "python",
+        "pascal",
     ];
 
-    let shikiHighlighterPromise: Promise<HighlighterGeneric<any, any>> | null =
-        null;
+    const shikiBundledThemes = {
+        "github-light": () => import("@shikijs/themes/github-light"),
+        "github-dark": () => import("@shikijs/themes/github-dark"),
+    };
 
-    function getShikiHighlighter() {
-        if (!shikiHighlighterPromise) {
-            shikiHighlighterPromise = createHighlighter({
-                themes: [shikiThemes.light, shikiThemes.dark],
-                langs: shikiLangs,
-            });
+    const createShikiHighlighter = createBundledHighlighter({
+        langs: shikiBundledLangs,
+        themes: shikiBundledThemes,
+        engine: createJavaScriptRegexEngine,
+    });
+
+    const shikiHighlighterPromises = new Map<
+        string,
+        Promise<HighlighterGeneric<any, any>>
+    >();
+
+    function asBundledShikiLang(value: string): ShikiBundledLang | null {
+        if (Object.prototype.hasOwnProperty.call(shikiBundledLangs, value)) {
+            return value as ShikiBundledLang;
         }
-        return shikiHighlighterPromise;
+        return null;
+    }
+
+    function normalizeShikiLang(value: string): string {
+        const raw = String(value || "")
+            .trim()
+            .toLowerCase();
+        return shikiLangAliases[raw] ?? raw;
+    }
+
+    function resolveConfiguredShikiLangs(extraLangs: string[] = []) {
+        const resolved = new Set<ShikiBundledLang>(shikiBaseLangs);
+        for (const candidate of extraLangs) {
+            const normalized = normalizeShikiLang(candidate);
+            const bundled = asBundledShikiLang(normalized);
+            if (bundled) resolved.add(bundled);
+        }
+        return Array.from(resolved);
+    }
+
+    function getShikiHighlighter(langs: ShikiBundledLang[]) {
+        const cacheKey = langs.slice().sort().join("|");
+        const cached = shikiHighlighterPromises.get(cacheKey);
+        if (cached) return cached;
+
+        const promise = createShikiHighlighter({
+            themes: [shikiThemes.light, shikiThemes.dark],
+            langs,
+        });
+        shikiHighlighterPromises.set(cacheKey, promise);
+        return promise;
     }
 
     function parseClassNameList(value: unknown): string[] {
@@ -105,10 +176,8 @@
         highlighter: HighlighterGeneric<any, any>,
         language: string,
     ) {
-        const rawLang = String(language || "")
-            .trim()
-            .toLowerCase();
-        const mapped = shikiLangAliases[rawLang] ?? rawLang;
+        const rawLang = normalizeShikiLang(language);
+        const mapped = rawLang;
         const loaded = highlighter.getLoadedLanguages();
         if (loaded.includes(mapped)) return mapped;
         if (loaded.includes(rawLang)) return rawLang;
@@ -205,6 +274,8 @@
         colorTheme?: "light" | "dark";
         /** Enable markdown image thumbnails + click-to-preview overlay. */
         enableImagePreview?: boolean;
+        /** Additional Shiki language ids loaded for runtime highlighting. */
+        shikiExtraLangs?: string[];
     };
     let {
         markdown,
@@ -214,7 +285,12 @@
         mermaidThemes: extraThemes = {},
         colorTheme,
         enableImagePreview = true,
+        shikiExtraLangs = [],
     }: Props = $props();
+
+    const configuredShikiLangs = $derived.by(() =>
+        resolveConfiguredShikiLangs(shikiExtraLangs),
+    );
 
     /** Combined theme map: built-ins overridden/extended by user-supplied themes. */
     const allMermaidThemes = $derived({ ...MERMAID_THEMES, ...extraThemes });
@@ -308,7 +384,7 @@
 
     function rehypeShiki() {
         return async (tree: any) => {
-            const highlighter = await getShikiHighlighter();
+            const highlighter = await getShikiHighlighter(configuredShikiLangs);
 
             visit(tree, "element", (node: any, _index: any, parent: any) => {
                 if (node.tagName !== "code") return;

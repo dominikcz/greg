@@ -171,6 +171,11 @@ declare module 'virtual:greg-config' {
         useDynamicPageTitle?: boolean;
         /** Render markdown images as thumbnails with click-to-preview overlay. Default: true. */
         markdownImagePreview?: boolean;
+        /** Runtime syntax highlighting options. */
+        shiki?: {
+            /** Additional language ids loaded by Shiki runtime (e.g. ['rust', 'go']). */
+            extraLangs?: string[];
+        };
         outline?: OutlineOption | boolean;
         mermaidTheme?: string;
         carbonAds?: { code: string; placement: string };

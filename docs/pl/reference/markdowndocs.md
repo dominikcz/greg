@@ -140,6 +140,24 @@ export default {
 }
 ```
 
+### `shiki.extraLangs`
+
+- **Typ:** `string[]`
+- **Domyślnie:** `[]`
+
+Dodaje dodatkowe języki kolorowania składni dla runtime Shiki.
+Nieznane identyfikatory są bezpiecznie ignorowane (blok kodu przechodzi na zwykłe podświetlenie tekstu).
+
+```js
+export default {
+  shiki: {
+    extraLangs: ['python', 'sql', 'csharp', 'pascal'],
+  },
+}
+```
+
+Przydatne aliasy: `py -> python`, `cs` / `c# -> csharp`, `delphi -> pascal`.
+
 ### `outline`
 
 - **Typ:** `false | number | [number, number] | 'deep' | { level?: ..., label?: string }`

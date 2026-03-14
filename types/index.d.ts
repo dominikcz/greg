@@ -344,6 +344,11 @@ export type GregConfig = {
     mainTitle?: string;
     /** Render markdown images as thumbnails with click-to-preview overlay. Default: true. */
     markdownImagePreview?: boolean;
+    /** Runtime syntax highlighting options. */
+    shiki?: {
+        /** Additional language ids loaded by Shiki runtime (e.g. ['rust', 'go']). */
+        extraLangs?: string[];
+    };
     /**
      * VitePress-compatible outline setting.
      *   false       – disable outline

@@ -20,6 +20,9 @@ export default {
             minMatchCharLength: 2,
         },
     },
+    shiki: {
+        extraLangs: ['python', 'sql', 'csharp', 'pascal'],
+    },
     // versioning: {
     //     strategy: 'branches',
     //     default: 'latest',
