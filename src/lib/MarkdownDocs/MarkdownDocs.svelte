@@ -87,6 +87,8 @@
         children?: Snippet;
         version?: string;
         mainTitle?: string;
+        /** Keep browser tab title in sync with active page title. Default: true. */
+        useDynamicPageTitle?: boolean;
         carbonAds?: CarbonAdsOptions;
         /** VitePress-compatible outline option. false = disabled, [2,3] = default. */
         outline?: OutlineOption | boolean;
@@ -206,6 +208,7 @@
         ),
         version: globalVersion = (gregConfig as any).version ?? "",
         mainTitle: globalMainTitle = (gregConfig as any).mainTitle ?? "Greg",
+        useDynamicPageTitle = (gregConfig as any).useDynamicPageTitle ?? true,
         carbonAds = (gregConfig as any).carbonAds,
         outline: globalOutline =
             (gregConfig as any).outline ?? ([2, 3] as [number, number]),
@@ -1345,6 +1348,28 @@
     }
 
     const title = $derived(router.title(flat));
+    const browserTitle = $derived.by(() => {
+        if (!useDynamicPageTitle) {
+            const fixedTitle = String(mainTitle ?? "").trim();
+            return fixedTitle || "Greg";
+        }
+        const brand =
+            siteTitle === false
+                ? String(mainTitle || "").trim()
+                : String(siteTitle ?? mainTitle ?? "").trim();
+        const pageTitle = String(title ?? "").trim();
+        if (!brand) return pageTitle || "Greg";
+        if (!pageTitle || pageTitle === brand) return brand;
+        return `${pageTitle} | ${brand}`;
+    });
+
+    $effect(() => {
+        if (typeof document === "undefined") return;
+        if (!browserTitle) return;
+        if (document.title !== browserTitle) {
+            document.title = browserTitle;
+        }
+    });
 
     // -- Content fetch -----------------------------------------------------------
     async function fetchMarkdown(mdPath: string): Promise<string> {

@@ -167,6 +167,8 @@ declare module 'virtual:greg-config' {
         docsBase?: string;
         version?: string;
         mainTitle?: string;
+        /** Sync browser tab title with active page title. Default: true. */
+        useDynamicPageTitle?: boolean;
         /** Render markdown images as thumbnails with click-to-preview overlay. Default: true. */
         markdownImagePreview?: boolean;
         outline?: OutlineOption | boolean;

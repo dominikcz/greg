@@ -55,11 +55,13 @@ The wizard asks a handful of questions:
 | **Site title** | Shown in the browser tab and the site header |
 | **Description** | Used in the HTML `<meta>` tag |
 | **TypeScript** | Creates `.ts` config files instead of `.js` |
-| **Add npm scripts** | Adds `dev`, `build` and `preview` to `package.json` |
+| **Config mode** | Choose **minimal** (default) or **full** `greg.config` template |
+| **Add npm scripts** | Adds `greg`, `dev`, `build` and `preview` to `package.json` |
 | **Starter content** | _Empty_ — bare minimum; _Sample_ — example pages; _Generated_ — large fake docs set |
 | **Install now** | Runs `npm install` (or your package manager) right away |
 
 When it finishes, you will see a summary of created files.
+The scaffold also includes a default `.gitignore` and copies baseline assets into `public/`.
 
 ### 3. Start the development server
 

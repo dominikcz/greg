@@ -16,7 +16,7 @@ For unattended/default setup (no prompts):
 npx @dominikcz/greg init --defaults
 ```
 
-The interactive wizard will ask for docs path, site title, TypeScript preference, and the type of initial documentation (empty, sample, or generated fake docs). It can also install all required dependencies for you.
+The interactive wizard asks for docs path, site title, TypeScript preference, config mode (minimal or full), and starter docs type (empty, sample, or generated fake docs). It also creates a sensible `.gitignore`, copies default `public/` assets, and can install all required dependencies for you.
 
 At the end you only need:
 

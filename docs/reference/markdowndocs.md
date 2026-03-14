@@ -133,6 +133,23 @@ Name of the project shown in the top-left header.
 <MarkdownDocs srcDir="/" version="1.0.0" mainTitle="My Project" />
 ```
 
+### `useDynamicPageTitle`
+
+- **Type:** `boolean`
+- **Default:** `true`
+
+Controls browser tab title behavior:
+
+- `true` (default): tab title follows active page title (for example `Getting Started | My Project`)
+- `false`: tab title stays fixed to `mainTitle`
+
+```js
+export default {
+  mainTitle: 'My Project',
+  useDynamicPageTitle: false,
+}
+```
+
 ### `outline`
 
 - **Type:** `false | number | [number, number] | 'deep' | { level?: …, label?: string }`

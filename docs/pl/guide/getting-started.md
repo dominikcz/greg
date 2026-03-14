@@ -54,11 +54,13 @@ Kreator zada kilka pytań:
 | **Tytuł strony** | Wyświetlany w zakładce przeglądarki i nagłówku serwisu |
 | **Opis** | Trafia do tagu HTML `<meta>` |
 | **TypeScript** | Tworzy pliki konfiguracyjne `.ts` zamiast `.js` |
-| **Skrypty npm** | Dodaje `dev`, `build` i `preview` do `package.json` |
+| **Tryb konfiguracji** | Wybór szablonu **minimalnego** (domyślnie) albo **pełnego** `greg.config` |
+| **Skrypty npm** | Dodaje `greg`, `dev`, `build` i `preview` do `package.json` |
 | **Treść startowa** | _Pusta_ — minimum; _Przykładowa_ — gotowe strony; _Generowana_ — duży zestaw fałszywej dokumentacji |
 | **Zainstaluj teraz** | Uruchamia `npm install` (lub Twój package manager) od razu |
 
 Po zakończeniu zobaczysz podsumowanie utworzonych plików.
+Dodatkowo scaffold zawiera domyślny `.gitignore` i kopiuje podstawowe assety do `public/`.
 
 ### 3. Uruchom serwer developerski
 

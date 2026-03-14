@@ -123,6 +123,23 @@ Nazwa projektu w lewym górnym rogu nagłówka.
 <MarkdownDocs srcDir="/" version="1.0.0" mainTitle="My Project" />
 ```
 
+### `useDynamicPageTitle`
+
+- **Typ:** `boolean`
+- **Domyślnie:** `true`
+
+Steruje tytułem zakładki w przeglądarce:
+
+- `true` (domyślnie): tytuł zakładki podąża za aktywną stroną (np. `Getting Started | My Project`)
+- `false`: tytuł zakładki pozostaje stały i jest równy `mainTitle`
+
+```js
+export default {
+  mainTitle: 'My Project',
+  useDynamicPageTitle: false,
+}
+```
+
 ### `outline`
 
 - **Typ:** `false | number | [number, number] | 'deep' | { level?: ..., label?: string }`

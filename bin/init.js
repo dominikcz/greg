@@ -18,6 +18,7 @@ import { fork, spawnSync } from 'node:child_process';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const cliArgs = new Set(process.argv.slice(2));
 const useDefaultsMode = cliArgs.has('--defaults') || cliArgs.has('--yes');
+const forceLocalDependency = cliArgs.has('--local-dependency') || process.env.GREG_INIT_LOCAL_DEP === '1';
 
 // ── ANSI helpers (used for file-creation log lines) ───────────────────────────
 const g = (s) => `\x1b[32m${s}\x1b[0m`;  // green
@@ -120,12 +121,7 @@ function isTransientCacheSpec(spec) {
 
 function resolveGregDependencySpec(version) {
     const packageRoot = join(__dirname, '..');
-    const npmView = spawnSync('npm', ['view', `@dominikcz/greg@${version}`, 'version'], {
-        stdio: 'pipe',
-        shell: true,
-    });
-
-    if (npmView.status === 0) {
+    if (!forceLocalDependency) {
         return { spec: `^${version}`, source: 'registry' };
     }
 
@@ -158,6 +154,7 @@ async function main() {
     let desc = 'Documentation';
     let useTS = true;
     let addScripts = true;
+    let fullConfig = false;
     let docsType = '1';
 
     if (!useDefaultsMode) {
@@ -166,6 +163,7 @@ async function main() {
         desc         = orCancel(await p.text({ message: 'Site description', initialValue: 'Documentation' }));
         useTS        = orCancel(await p.confirm({ message: 'Use TypeScript for configuration?', initialValue: true }));
         addScripts   = orCancel(await p.confirm({ message: 'Add greg scripts to package.json?', initialValue: true }));
+        fullConfig   = orCancel(await p.confirm({ message: 'Generate full greg.config template?', initialValue: false }));
         docsType     = orCancel(await p.select({
             message: 'Documentation contents',
             options: [
@@ -189,6 +187,9 @@ async function main() {
     const rootPath = '';
     const ext      = useTS ? 'ts' : 'js';
     const vars     = { TITLE: title, DESCRIPTION: desc, DOCS_DIR: docsDir, ROOT_PATH: rootPath, EXT: ext };
+    const gregConfigTemplate = useTS
+        ? (fullConfig ? 'greg.config.full.ts' : 'greg.config.ts')
+        : (fullConfig ? 'greg.config.full.js' : 'greg.config.js');
 
     p.log.step('Creating files…');
 
@@ -199,7 +200,14 @@ async function main() {
     ensure('src/app.css',          tpl('src/app.css'));
     ensure(`vite.config.${ext}`,   tpl('vite.config.js', vars)); // same content for .js and .ts
     ensure('svelte.config.js',     tpl('svelte.config.js'));     // always .js — vite-plugin-svelte requires it
-    ensure(`greg.config.${ext}`,   tpl(useTS ? 'greg.config.ts' : 'greg.config.js', vars));
+    ensure(`greg.config.${ext}`,   tpl(gregConfigTemplate, vars));
+    ensure('.gitignore',           tpl('.gitignore'));
+    const packagePublicDir = join(__dirname, '..', 'public');
+    if (existsSync(packagePublicDir)) {
+        copyRawDir(packagePublicDir, 'public');
+    } else {
+        p.log.warn('public assets not found in package; skipping public/ scaffold');
+    }
 
     if (useTS) {
         ensure('tsconfig.json', tpl('tsconfig.json'));
@@ -244,7 +252,7 @@ async function main() {
                 let changed = false;
                 if (addScripts) {
                     pkg.scripts ??= {};
-                    for (const [k, v] of [['dev', 'greg dev'], ['build', 'greg build'], ['preview', 'greg preview']]) {
+                    for (const [k, v] of [['greg', 'greg'], ['dev', 'greg dev'], ['build', 'greg build'], ['preview', 'greg preview']]) {
                         if (!pkg.scripts[k]) { pkg.scripts[k] = v; changed = true; }
                     }
                 }
@@ -258,6 +266,18 @@ async function main() {
                 if (!pkg.devDependencies['@dominikcz/greg'] || isTransientCacheSpec(pkg.devDependencies['@dominikcz/greg'])) {
                     pkg.devDependencies['@dominikcz/greg'] = gregDependencySpec;
                     changed = true;
+                }
+                const peerDepsMap = {
+                    '@sveltejs/vite-plugin-svelte': gregDevDeps['@sveltejs/vite-plugin-svelte'] ?? '^6',
+                    svelte: gregDevDeps.svelte ?? '^5',
+                    vite: gregDevDeps.vite ?? '^7',
+                    ...(useTS ? { typescript: '^5' } : {}),
+                };
+                for (const [depName, depVersion] of Object.entries(peerDepsMap)) {
+                    if (!pkg.devDependencies[depName]) {
+                        pkg.devDependencies[depName] = depVersion;
+                        changed = true;
+                    }
                 }
                 if (changed) {
                     writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
@@ -273,8 +293,14 @@ async function main() {
                 name: 'my-docs',
                 version: '0.0.1',
                 type: 'module',
-                ...(addScripts ? { scripts: { dev: 'greg dev', build: 'greg build', preview: 'greg preview' } } : {}),
-                devDependencies: { '@dominikcz/greg': gregDependencySpec },
+                ...(addScripts ? { scripts: { greg: 'greg', dev: 'greg dev', build: 'greg build', preview: 'greg preview' } } : {}),
+                devDependencies: {
+                    '@dominikcz/greg': gregDependencySpec,
+                    '@sveltejs/vite-plugin-svelte': gregDevDeps['@sveltejs/vite-plugin-svelte'] ?? '^6',
+                    svelte: gregDevDeps.svelte ?? '^5',
+                    vite: gregDevDeps.vite ?? '^7',
+                    ...(useTS ? { typescript: '^5' } : {}),
+                },
             };
             writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
             console.log(`  ${g('+')} package.json`);
@@ -283,16 +309,8 @@ async function main() {
 
     // ── Install dependencies ──────────────────────────────────────────────────
     // @dominikcz/greg is already in package.json devDependencies — install only peer deps.
-    const peerDepsArr = [
-        `@sveltejs/vite-plugin-svelte@${gregDevDeps['@sveltejs/vite-plugin-svelte'] ?? '^6'}`,
-        `svelte@${gregDevDeps.svelte ?? '^5'}`,
-        `vite@${gregDevDeps.vite ?? '^7'}`,
-        ...(useTS ? ['typescript'] : []),
-    ];
     const pm = detectPm();
-    const installArgs = pm === 'npm'
-        ? ['install', '--save-dev', ...peerDepsArr]
-        : ['add', '-D', ...peerDepsArr];
+    const installArgs = ['install'];
 
     const installNow = useDefaultsMode
         ? true
@@ -325,8 +343,8 @@ async function main() {
 
     p.outro(
         installNow
-            ? `${b(g('Done!'))}  Start your project:\n\n  ${c('npm run dev')}`
-            : `${b(g('Done!'))}  Next steps:\n\n  ${c(`${pm} ${installArgs.join(' ')}`)}\n  ${c('npm run dev')}`
+            ? `${b(g('Done!'))}  Start your project:\n\n  ${c('npm run dev')}\n  ${c('npx greg --help')}`
+            : `${b(g('Done!'))}  Next steps:\n\n  ${c(`${pm} ${installArgs.join(' ')}`)}\n  ${c('npm run dev')}\n  ${c('npx greg --help')}`
     );
 }
 
@@ -342,6 +360,26 @@ function copyTemplateDir(srcDir, destRel, vars) {
                 content = content.split(`{{${k}}}`).join(v);
             }
             ensure(join(destRel, entry), content);
+        }
+    }
+}
+
+function copyRawDir(srcDir, destRel) {
+    for (const entry of readdirSync(srcDir)) {
+        const srcPath = join(srcDir, entry);
+        const destPath = join(destRel, entry);
+        if (statSync(srcPath).isDirectory()) {
+            copyRawDir(srcPath, destPath);
+        } else {
+            const full = join(cwd, destPath);
+            if (existsSync(full)) {
+                console.log(`  ${y('~')} ${destPath}  ${d('(skipped – already exists)')}`);
+                continue;
+            }
+            const dir = dirname(full);
+            if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+            writeFileSync(full, readFileSync(srcPath));
+            console.log(`  ${g('+')} ${destPath}`);
         }
     }
 }
