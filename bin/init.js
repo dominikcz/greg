@@ -201,7 +201,7 @@ async function main() {
     ensure(`vite.config.${ext}`,   tpl('vite.config.js', vars)); // same content for .js and .ts
     ensure('svelte.config.js',     tpl('svelte.config.js'));     // always .js — vite-plugin-svelte requires it
     ensure(`greg.config.${ext}`,   tpl(gregConfigTemplate, vars));
-    ensure('.gitignore',           tpl('.gitignore'));
+    ensure('.gitignore',           tpl('gitignore'));
     const packagePublicDir = join(__dirname, '..', 'public');
     if (existsSync(packagePublicDir)) {
         copyRawDir(packagePublicDir, 'public');
