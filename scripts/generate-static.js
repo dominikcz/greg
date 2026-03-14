@@ -27,6 +27,12 @@ const DIST = path.resolve(distDir);
 const DOCS = path.resolve(docsDir);
 const ROOT_PATH = srcDir;
 
+function normalizeRouteForLog(route) {
+    const cleaned = String(route || '').trim().replace(/\\/g, '/').replace(/\/+/g, '/');
+    if (!cleaned || cleaned === '/') return '/';
+    return '/' + cleaned.replace(/^\/+|\/+$/g, '');
+}
+
 // ── Collect routes from the docs/ folder ────────────────────────────────────
 
 function collectRoutes(dir, base) {
@@ -73,7 +79,8 @@ for (const route of routes) {
     fs.mkdirSync(outDir, { recursive: true });
     fs.copyFileSync(src, outFile);
     count++;
-    console.log(`  ✓  ${route}/index.html`);
+    const routeLog = normalizeRouteForLog(route);
+    console.log(`  ✓  ${routeLog === '/' ? '/index.html' : `${routeLog}/index.html`}`);
 }
 
 console.log(`\nStatic export: ${count} routes written to dist/`);

@@ -190,6 +190,17 @@ Optional maintenance flags:
 - `--clean-versions`: removes the versioned output directory before building
 - `--rebuild-all`: rebuilds every configured version and skips branch build cache reuse for this run
 
+Cache SHA prefix length in branch build cache:
+
+- default: `7`
+- config: `versioning.cacheShaLength`
+- env override: `GREG_CACHE_SHA_LENGTH`
+- valid range: `7..40`
+- cache key format: `<shortSha>-<workspaceBuildFingerprint>`
+- the suffix prevents stale cache hits when build inputs/config changed but commit SHA did not
+
+Example: if branch `main` still resolves to the same commit, but you changed local build inputs (for example `vite.config.js` or Markdown build plugins), Greg writes to a different cache folder because the workspace fingerprint changes.
+
 ## UI Components
 
 Greg renders two visual versioning components automatically when a valid manifest is available:

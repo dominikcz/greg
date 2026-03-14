@@ -34,6 +34,14 @@ export default defineConfig({
   base,
   build: {
     outDir,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        if (warning.code === 'SOURCEMAP_BROKEN' && warning.plugin === 'vite-plugin-svelte:preprocess') {
+          return;
+        }
+        warn(warning);
+      },
+    },
   },
   resolve: {
     alias: {

@@ -190,6 +190,17 @@ Opcjonalne flagi porzadkowe:
 - `--clean-versions`: usuwa katalog wyjscia wersji przed buildem
 - `--rebuild-all`: przebudowuje wszystkie skonfigurowane wersje i pomija uzycie cache buildow branchy w tym uruchomieniu
 
+Dlugosc prefiksu SHA w cache buildow branchy:
+
+- domyslnie: `7`
+- konfiguracja: `versioning.cacheShaLength`
+- override przez env: `GREG_CACHE_SHA_LENGTH`
+- poprawny zakres: `7..40`
+- format klucza cache: `<shortSha>-<workspaceBuildFingerprint>`
+- ten sufiks zapobiega uzyciu nieaktualnego cache, gdy zmienily sie lokalne wejscia builda/config, ale SHA commita zostalo takie samo
+
+Przyklad: jesli branch `main` nadal wskazuje ten sam commit, ale lokalnie zmienisz wejscia builda (np. `vite.config.js` albo pluginy budowania Markdown), Greg zapisze wynik w innym katalogu cache, bo zmieni sie workspace fingerprint.
+
 ## Komponenty UI
 
 Gdy manifest jest dostepny, Greg renderuje automatycznie dwa elementy:

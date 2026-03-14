@@ -200,6 +200,28 @@ function getBranchSha(refName) {
     return String(out.stdout || '').trim();
 }
 
+function toShortSha(sha, length = 7) {
+    return String(sha || '').slice(0, length);
+}
+
+function resolveCacheShaLength(versioning) {
+    const DEFAULT_LENGTH = 7;
+    const MIN_LENGTH = 7;
+    const MAX_LENGTH = 40;
+    const raw = process.env.GREG_CACHE_SHA_LENGTH ?? versioning.cacheShaLength;
+
+    if (raw == null || String(raw).trim() === '') {
+        return DEFAULT_LENGTH;
+    }
+
+    const parsed = Number.parseInt(String(raw), 10);
+    if (!Number.isInteger(parsed) || parsed < MIN_LENGTH || parsed > MAX_LENGTH) {
+        throw new Error(`Invalid cache SHA length '${raw}'. Use an integer between ${MIN_LENGTH} and ${MAX_LENGTH}.`);
+    }
+
+    return parsed;
+}
+
 function ensureBranchDocsSnapshot(args) {
     const { branch, sha, docsDir, branchCacheDir } = args;
     const docsRel = String(docsDir || 'docs').replace(/^\/+|\/+$/g, '') || 'docs';
@@ -443,6 +465,7 @@ async function main() {
     const args = parseArgs(process.argv.slice(2));
     const config = await loadGregConfig();
     const versioning = config.versioning ?? {};
+    const cacheShaLength = resolveCacheShaLength(versioning);
 
     const strategy = args.strategy || versioning.strategy || 'branches';
     validateVersioningConfig(versioning, strategy);
@@ -527,6 +550,7 @@ async function main() {
 
         for (const entry of entries) {
             const sha = getBranchSha(entry.branch);
+            const shortSha = toShortSha(sha, cacheShaLength);
             const snapshot = ensureBranchDocsSnapshot({
                 branch: entry.branch,
                 sha,
@@ -538,7 +562,7 @@ async function main() {
                 branchCacheDir,
                 'builds',
                 sanitizeSegment(entry.version),
-                `${sha}-${workspaceBuildFingerprint}`,
+                `${shortSha}-${workspaceBuildFingerprint}`,
             );
             const hasBuildCache = !args.rebuildAll && fs.existsSync(path.join(buildCache, 'index.html'));
 

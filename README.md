@@ -299,6 +299,33 @@ export default {
 
 To override those labels per locale, use `versioning.locales`:
 
+### Cache SHA length (branch mode)
+
+In `branches` strategy, Greg stores build cache under `.greg/version-cache/builds/...` using a short commit SHA prefix.
+
+- default prefix length: `7`
+- configurable in `greg.config.* > versioning.cacheShaLength`
+- can be overridden per run via env `GREG_CACHE_SHA_LENGTH`
+- allowed range: `7..40`
+- cache folder key format: `<shortSha>-<workspaceBuildFingerprint>`
+- the suffix avoids stale cache reuse when local build inputs/config changed but branch commit SHA stayed the same
+
+Example: if `main` still points to the same commit, but you changed `vite.config.js` or Markdown build plugins locally, Greg uses a different cache folder because the workspace fingerprint changes.
+
+Example:
+
+```js [greg.config.js]
+export default {
+    versioning: {
+        cacheShaLength: 12,
+    },
+}
+```
+
+```sh
+GREG_CACHE_SHA_LENGTH=16 greg build
+```
+
 ```js [greg.config.js]
 export default {
     versioning: {
