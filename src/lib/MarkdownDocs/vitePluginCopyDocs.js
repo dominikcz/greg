@@ -114,7 +114,7 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
                     ? (url === rootPrefix || url.startsWith(rootPrefix + '/'))
                     : url.startsWith('/');
                 if (isDocsPath) {
-                    const rel = url.slice(rootPrefix.length).replace(/^\//, '');
+                    const rel = decodeURIComponent(url.slice(rootPrefix.length).replace(/^\//, ''));
                     for (const dir of (Array.isArray(docsDir) ? docsDir : [docsDir])) {
                         const filePath = path.resolve(root, dir, rel);
                         if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
