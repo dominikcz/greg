@@ -70,9 +70,9 @@ Each non-empty line inside the block becomes one flex item.
 
 ```md
 [[
-![Freezer A](/know-how/gastro-orlen/mroznia/freezer-a.webp)
-![Freezer B](/know-how/gastro-orlen/mroznia/freezer-b.webp)
-![Freezer C](/know-how/gastro-orlen/mroznia/freezer-c.webp)
+![img A](/some/path/img-a.webp)
+![img B](/some/path/img-b.webp)
+![img C](/some/path/img-c.webp)
 ]]
 ```
 

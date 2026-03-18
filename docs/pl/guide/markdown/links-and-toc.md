@@ -66,9 +66,9 @@ zawijanym rzędzie. Każda niepusta linia wewnątrz bloku to osobny element flex
 
 ```md
 [[
-![Mroźnia A](/know-how/gastro-orlen/mroznia/freezer-a.webp)
-![Mroźnia B](/know-how/gastro-orlen/mroznia/freezer-b.webp)
-![Mroźnia C](/know-how/gastro-orlen/mroznia/freezer-c.webp)
+![img A](/some/path/img-a.webp)
+![img B](/some/path/img-b.webp)
+![img C](/some/path/img-c.webp)
 ]]
 ```
 
