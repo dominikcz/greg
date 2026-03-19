@@ -135,4 +135,81 @@ describe('vitePluginCopyDocs › configureServer', () => {
 
         expect(res.passedThrough).toBe(true);
     });
+
+    // ── fix: URIError on malformed percent-encoding ────────────────────────────
+
+    it('calls next() and does not throw when URL contains malformed percent-encoding', async () => {
+        const root = mkdtempSync(join(tmpdir(), 'greg-plugin-'));
+        tempDirs.push(root);
+
+        mkdirSync(join(root, 'docs'), { recursive: true });
+
+        const mw = createMiddleware({ docsDir: 'docs', srcDir: '/docs' }, root);
+        // %GG is not valid percent-encoding – decodeURIComponent throws URIError
+        const res = await request(mw, '/docs/%GGinvalid.md');
+
+        expect(res.passedThrough).toBe(true);
+    });
+
+    // ── fix: path traversal protection ────────────────────────────────────────
+
+    it('blocks path traversal attempt via %2F..%2F in docs URL', async () => {
+        const root = mkdtempSync(join(tmpdir(), 'greg-plugin-'));
+        tempDirs.push(root);
+
+        mkdirSync(join(root, 'docs'), { recursive: true });
+        // Create a sensitive file outside the docs dir
+        writeFileSync(join(root, 'secret.md'), '# SECRET', 'utf8');
+
+        const mw = createMiddleware({ docsDir: 'docs', srcDir: '/docs' }, root);
+        // Encoded path traversal: /docs/../secret.md → decodes to /docs/../secret.md
+        const res = await request(mw, '/docs/%2E%2E%2Fsecret.md');
+
+        // Must NOT serve the file outside docs/
+        expect(res.passedThrough).toBe(true);
+    });
+
+    // ── fix: staticDirs – decodeURIComponent + path traversal ─────────────────
+
+    it('serves a snippet file with Polish characters (percent-encoded URL)', async () => {
+        const root = mkdtempSync(join(tmpdir(), 'greg-plugin-'));
+        tempDirs.push(root);
+
+        mkdirSync(join(root, 'snippets'), { recursive: true });
+        writeFileSync(join(root, 'snippets', 'przykład.js'), '// przykład', 'utf8');
+
+        const mw = createMiddleware({ docsDir: 'docs', srcDir: '/docs', staticDirs: ['snippets'] }, root);
+        // przykład → przyk%C5%82ad
+        const res = await request(mw, '/snippets/przyk%C5%82ad.js');
+
+        expect(res.passedThrough).toBeUndefined();
+        expect(res.headers['content-type']).toContain('text/plain');
+        expect(bodyText(res.body)).toBe('// przykład');
+    });
+
+    it('calls next() and does not throw when staticDirs URL has malformed percent-encoding', async () => {
+        const root = mkdtempSync(join(tmpdir(), 'greg-plugin-'));
+        tempDirs.push(root);
+
+        mkdirSync(join(root, 'snippets'), { recursive: true });
+
+        const mw = createMiddleware({ docsDir: 'docs', srcDir: '/docs', staticDirs: ['snippets'] }, root);
+        const res = await request(mw, '/snippets/%GGinvalid.js');
+
+        expect(res.passedThrough).toBe(true);
+    });
+
+    it('blocks path traversal attempt via %2F..%2F in staticDirs URL', async () => {
+        const root = mkdtempSync(join(tmpdir(), 'greg-plugin-'));
+        tempDirs.push(root);
+
+        mkdirSync(join(root, 'snippets'), { recursive: true });
+        writeFileSync(join(root, 'secret.js'), '// SECRET', 'utf8');
+
+        const mw = createMiddleware({ docsDir: 'docs', srcDir: '/docs', staticDirs: ['snippets'] }, root);
+        // Encoded path traversal: /snippets/../secret.js
+        const res = await request(mw, '/snippets/%2E%2E%2Fsecret.js');
+
+        expect(res.passedThrough).toBe(true);
+    });
 });

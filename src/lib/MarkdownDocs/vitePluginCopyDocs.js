@@ -114,9 +114,12 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
                     ? (url === rootPrefix || url.startsWith(rootPrefix + '/'))
                     : url.startsWith('/');
                 if (isDocsPath) {
-                    const rel = decodeURIComponent(url.slice(rootPrefix.length).replace(/^\//, ''));
+                    let rel;
+                    try { rel = decodeURIComponent(url.slice(rootPrefix.length).replace(/^\//, '')); }
+                    catch { next(); return; }
                     for (const dir of (Array.isArray(docsDir) ? docsDir : [docsDir])) {
                         const filePath = path.resolve(root, dir, rel);
+                        if (!filePath.startsWith(path.resolve(root, dir) + path.sep)) continue;
                         if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
                             res.setHeader('Content-Type', getContentType(filePath));
                             res.end(fs.readFileSync(filePath));
@@ -128,7 +131,11 @@ export function vitePluginCopyDocs({ docsDir = 'docs', srcDir = '/docs', staticD
                 // Extra static dirs (snippets etc.)
                 for (const dir of staticDirs) {
                     if (url.startsWith('/' + dir + '/') || url === '/' + dir) {
-                        const filePath = path.resolve(root, url.slice(1));
+                        let rel;
+                        try { rel = decodeURIComponent(url.slice(1)); }
+                        catch { next(); return; }
+                        const filePath = path.resolve(root, rel);
+                        if (!filePath.startsWith(path.resolve(root, dir) + path.sep)) continue;
                         if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
                             res.setHeader('Content-Type', 'text/plain; charset=utf-8');
                             res.end(fs.readFileSync(filePath, 'utf8'));
