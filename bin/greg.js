@@ -84,16 +84,20 @@ function help() {
 
 function run(cmd, extraArgs = [], options = {}) {
     const { exit = true } = options;
+    const envBase = { ...process.env, ...(options.env || {}) };
+    const pathValue = envBase.PATH ?? envBase.Path ?? process.env.PATH ?? process.env.Path ?? '';
+    const resolvedPath = resolve(__dirname, '../node_modules/.bin') +
+        (process.platform === 'win32' ? ';' : ':') +
+        pathValue;
     const result = spawnSync(cmd, extraArgs, {
         stdio: 'inherit',
         shell: true,
         // Ensure the local node_modules/.bin is on the PATH so that
         // the project-local vite binary is preferred.
         env: {
-            ...process.env,
-            PATH: resolve(__dirname, '../node_modules/.bin') +
-                (process.platform === 'win32' ? ';' : ':') +
-                (process.env.PATH ?? ''),
+            ...envBase,
+            PATH: resolvedPath,
+            Path: resolvedPath,
         },
     });
     const status = result.status ?? 0;
@@ -103,13 +107,17 @@ function run(cmd, extraArgs = [], options = {}) {
 
 function runNodeScript(scriptPath, extraArgs = [], options = {}) {
     const { exit = true } = options;
+    const envBase = { ...process.env, ...(options.env || {}) };
+    const pathValue = envBase.PATH ?? envBase.Path ?? process.env.PATH ?? process.env.Path ?? '';
+    const resolvedPath = resolve(__dirname, '../node_modules/.bin') +
+        (process.platform === 'win32' ? ';' : ':') +
+        pathValue;
     const result = spawnSync(process.execPath, [scriptPath, ...extraArgs], {
         stdio: 'inherit',
         env: {
-            ...process.env,
-            PATH: resolve(__dirname, '../node_modules/.bin') +
-                (process.platform === 'win32' ? ';' : ':') +
-                (process.env.PATH ?? ''),
+            ...envBase,
+            PATH: resolvedPath,
+            Path: resolvedPath,
         },
     });
     const status = result.status ?? 0;
@@ -120,6 +128,20 @@ function runNodeScript(scriptPath, extraArgs = [], options = {}) {
 function printElapsedSeconds(startMs) {
     const elapsed = ((Date.now() - startMs) / 1000).toFixed(1);
     console.log(`\n${infoTag()} ${color(`Done in ${elapsed}s`, '32')}`);
+}
+
+function parseBooleanFlag(value) {
+    if (value == null) return false;
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized) return false;
+    return !['0', 'false', 'no', 'off'].includes(normalized);
+}
+
+function hasSingleBuildFlag(passthroughArgs) {
+    if (passthroughArgs.includes('--single')) return true;
+    if (parseBooleanFlag(process.env.npm_config_single)) return true;
+    if (parseBooleanFlag(process.env.GREG_SINGLE_BUILD)) return true;
+    return false;
 }
 
 async function hasVersioningBuildConfig() {
@@ -166,7 +188,7 @@ switch (command) {
         break;
     case 'build': {
         const startedAt = Date.now();
-        const forceSingle = args.includes('--single');
+        const forceSingle = hasSingleBuildFlag(args);
         const passthroughArgs = args.filter((a) => a !== '--single');
         const shouldBuildVersions = !forceSingle && await hasVersioningBuildConfig();
 

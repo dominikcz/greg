@@ -445,6 +445,15 @@ export type GregConfig = {
             /** Ignore match position in text. Default: true */
             ignoreLocation?: boolean;
         };
+        /** Standalone `greg search-server` performance tuning options. */
+        server?: {
+            /** Preload all shard indexes on startup. Default: true */
+            preloadShards?: boolean;
+            /** Max number of shard Fuse indexes kept in memory. */
+            maxLoadedShards?: number;
+            /** Number of candidate shards searched first per query. Default: 6 */
+            shardCandidates?: number;
+        };
         /** AI knowledge-base (RAG) configuration. */
         ai?: AiConfig;
     };

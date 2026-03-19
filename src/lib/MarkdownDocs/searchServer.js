@@ -29,7 +29,7 @@
 
 import { createServer } from 'node:http';
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { statSync } from 'node:fs';
 import { buildFuseResult } from './searchIndexBuilder.js';
 import { loadGregConfig } from './loadGregConfig.js';
@@ -43,6 +43,24 @@ function msSince(t0) {
 
 function fmtMs(ms) {
 	return `${ms.toFixed(1)}ms`;
+}
+
+function parseBoolean(value, fallback = false) {
+	if (value == null) return fallback;
+	const normalized = String(value).trim().toLowerCase();
+	if (!normalized) return fallback;
+	if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+	if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+	return fallback;
+}
+
+function tokenizeQuery(value) {
+	return String(value || '')
+		.toLowerCase()
+		.replace(/[^\p{L}\p{N}\s-]+/gu, ' ')
+		.split(/[\s-]+/)
+		.map((part) => part.trim())
+		.filter((part) => part.length >= 3);
 }
 
 // ── CLI argument parser ───────────────────────────────────────────────────────
@@ -63,10 +81,18 @@ function parseArgs(argv) {
 const args = parseArgs(process.argv.slice(2));
 const gregConfig = await loadGregConfig();
 const configuredFuzzy = gregConfig?.search?.fuzzy ?? {};
+const configuredServer = gregConfig?.search?.server ?? {};
 const port = parseInt(args.port ?? process.env.GREG_SEARCH_PORT ?? '3100', 10);
 const host = String(args.host ?? process.env.GREG_SEARCH_HOST ?? 'localhost');
 const url = String(args.url ?? process.env.GREG_SEARCH_URL ?? '/api/search');
 const index = resolve(String(args.index ?? process.env.GREG_SEARCH_INDEX ?? 'dist/search-index.json'));
+const shardsManifest = resolve(
+	String(
+		args['shards-manifest']
+		?? process.env.GREG_SEARCH_SHARDS_MANIFEST
+		?? resolve(dirname(index), 'search-index', 'manifest.json'),
+	),
+);
 const corsOrigin = String(args['cors-origin'] ?? process.env.GREG_SEARCH_CORS_ORIGIN ?? '*');
 const corsMethods = String(args['cors-methods'] ?? process.env.GREG_SEARCH_CORS_METHODS ?? 'GET, OPTIONS');
 const corsHeaders = String(args['cors-headers'] ?? process.env.GREG_SEARCH_CORS_HEADERS ?? 'Content-Type');
@@ -89,6 +115,25 @@ const ignoreLocationRaw =
 	configuredFuzzy.ignoreLocation;
 const ignoreLocation =
 	String(ignoreLocationRaw ?? 'true').toLowerCase() !== 'false';
+const preloadShards = parseBoolean(
+	args['preload-shards'] ?? process.env.GREG_SEARCH_PRELOAD_SHARDS ?? configuredServer.preloadShards,
+	true,
+);
+const maxLoadedShardsRaw = args['max-loaded-shards'] ?? process.env.GREG_SEARCH_MAX_LOADED_SHARDS ?? configuredServer.maxLoadedShards;
+const configuredMaxLoadedShards = (() => {
+	if (maxLoadedShardsRaw == null || String(maxLoadedShardsRaw).trim() === '') return null;
+	const parsed = Number.parseInt(String(maxLoadedShardsRaw), 10);
+	if (!Number.isFinite(parsed) || parsed < 1 || parsed > 512) return null;
+	return parsed;
+})();
+const shardCandidatesRaw = args['shard-candidates'] ?? process.env.GREG_SEARCH_SHARD_CANDIDATES ?? configuredServer.shardCandidates;
+const shardCandidates = (() => {
+	const fallback = 6;
+	if (shardCandidatesRaw == null || String(shardCandidatesRaw).trim() === '') return fallback;
+	const parsed = Number.parseInt(String(shardCandidatesRaw), 10);
+	if (!Number.isFinite(parsed) || parsed < 1 || parsed > 512) return fallback;
+	return parsed;
+})();
 
 function getCorsHeaders(req) {
 	const reflectedOrigin = req.headers.origin ? String(req.headers.origin) : '*';
@@ -141,6 +186,17 @@ let sectionCount = 0;
 let loadParseMs = 0;
 let fuseBuildMs = 0;
 let indexMtimeMs = -1;
+let shardedMode = false;
+let shardManifest = null;
+let shardManifestDir = '';
+let shardLoadMs = 0;
+let shardBuildMs = 0;
+let loadedShardCount = 0;
+let cacheTick = 0;
+let shardPreloadMs = 0;
+let maxLoadedShards = configuredMaxLoadedShards ?? 8;
+/** @type {Map<string, { fuse: Fuse<any>; lastUsedAt: number }>} */
+const shardCache = new Map();
 
 function buildFuse(searchData) {
 	return new Fuse(searchData, {
@@ -155,6 +211,121 @@ function buildFuse(searchData) {
 			{ name: 'sections.content', weight: 1 },
 		],
 	});
+}
+
+function loadShardManifest() {
+	if (!existsSync(shardsManifest)) return false;
+	let parsed;
+	try {
+		parsed = JSON.parse(readFileSync(shardsManifest, 'utf-8'));
+	} catch (/** @type {any} */ e) {
+		console.warn(`[greg-search] Failed to parse shards manifest (${shardsManifest}): ${e.message}`);
+		return false;
+	}
+	if (!parsed || parsed.format !== 'greg-search-shards-v1' || !Array.isArray(parsed.files)) {
+		return false;
+	}
+	shardManifest = parsed;
+	shardManifestDir = dirname(shardsManifest);
+	shardedMode = true;
+	return true;
+}
+
+function markShardUsage(key) {
+	const cached = shardCache.get(key);
+	if (!cached) return;
+	cached.lastUsedAt = ++cacheTick;
+}
+
+function evictShardsIfNeeded() {
+	while (shardCache.size > maxLoadedShards) {
+		let oldestKey = null;
+		let oldestTick = Number.POSITIVE_INFINITY;
+		for (const [key, value] of shardCache.entries()) {
+			if (value.lastUsedAt < oldestTick) {
+				oldestTick = value.lastUsedAt;
+				oldestKey = key;
+			}
+		}
+		if (!oldestKey) break;
+		shardCache.delete(oldestKey);
+	}
+}
+
+function getShardFuse(entry) {
+	const cached = shardCache.get(entry.key);
+	if (cached) {
+		markShardUsage(entry.key);
+		return cached.fuse;
+	}
+
+	const filePath = resolve(shardManifestDir, entry.file);
+	const loadT0 = process.hrtime.bigint();
+	const shardData = JSON.parse(readFileSync(filePath, 'utf-8'));
+	shardLoadMs += msSince(loadT0);
+
+	const buildT0 = process.hrtime.bigint();
+	const shardFuse = buildFuse(shardData);
+	shardBuildMs += msSince(buildT0);
+
+	shardCache.set(entry.key, {
+		fuse: shardFuse,
+		lastUsedAt: ++cacheTick,
+	});
+	loadedShardCount += 1;
+	evictShardsIfNeeded();
+	return shardFuse;
+}
+
+function searchAcrossShards(query, limit) {
+	if (!query || !shardManifest?.files?.length) return [];
+	const terms = tokenizeQuery(query);
+	const entries = shardManifest.files;
+	const scores = entries.map((entry) => {
+		const hintSet = new Set(Array.isArray(entry.hints) ? entry.hints : []);
+		let score = 0;
+		for (const term of terms) {
+			if (hintSet.has(term)) score += 1;
+		}
+		return { entry, score };
+	});
+
+	const hasHintMatch = scores.some((item) => item.score > 0);
+	const prioritizedEntries = hasHintMatch
+		? scores
+			.sort((a, b) => b.score - a.score)
+			.slice(0, Math.min(shardCandidates, entries.length))
+			.map((item) => item.entry)
+		: entries;
+
+	const merged = [];
+	const searched = new Set();
+	for (const entry of prioritizedEntries) {
+		searched.add(entry.key);
+		const shardFuse = getShardFuse(entry);
+		const shardResults = shardFuse.search(query, { limit });
+		if (shardResults.length) merged.push(...shardResults);
+	}
+
+	if (hasHintMatch && merged.length === 0) {
+		for (const entry of entries) {
+			if (searched.has(entry.key)) continue;
+			const shardFuse = getShardFuse(entry);
+			const shardResults = shardFuse.search(query, { limit });
+			if (shardResults.length) merged.push(...shardResults);
+		}
+	}
+	merged.sort((a, b) => (a.score ?? 1) - (b.score ?? 1));
+	return merged.slice(0, limit).map(buildFuseResult);
+}
+
+function preloadAllShards() {
+	if (!shardedMode || !shardManifest?.files?.length) return;
+	const t0 = process.hrtime.bigint();
+	for (const entry of shardManifest.files) {
+		getShardFuse(entry);
+	}
+	shardPreloadMs = msSince(t0);
 }
 
 function loadIndex(force = false) {
@@ -190,7 +361,16 @@ function loadIndex(force = false) {
 	return true;
 }
 
-loadIndex(true);
+if (loadShardManifest()) {
+	const manifest = shardManifest;
+	console.log(`[greg-search] Sharded mode enabled (${manifest.files.length} shards).`);
+	maxLoadedShards = configuredMaxLoadedShards ?? manifest.files.length;
+	if (preloadShards) {
+		preloadAllShards();
+	}
+} else {
+	loadIndex(true);
+}
 
 // ── HTTP server ───────────────────────────────────────────────────────────────
 const server = createServer((req, res) => {
@@ -225,9 +405,15 @@ const server = createServer((req, res) => {
 		.map(v => v.trim())
 		.filter(Boolean);
 
-	loadIndex(false);
-
-	let results = q ? fuse.search(q, { limit }).map(buildFuseResult) : [];
+	let results = [];
+	if (q) {
+		if (shardedMode) {
+			results = searchAcrossShards(q, limit);
+		} else {
+			loadIndex(false);
+			results = fuse.search(q, { limit }).map(buildFuseResult);
+		}
+	}
 	if (localeRoot && baseRoot) {
 		results = results.filter((result) =>
 			isPathInLocale(result.id, localeRoot, baseRoot, localeRoots),
@@ -247,11 +433,24 @@ const server = createServer((req, res) => {
 server.listen(port, host, () => {
 	console.log(`[greg-search] Listening on http://${host}:${port}${url}`);
 	const startupMs = msSince(startupT0);
-	console.log(
-		`[greg-search] Startup summary: load+parse=${fmtMs(loadParseMs)}, ` +
-		`fuse-index=${fmtMs(fuseBuildMs)}, total=${fmtMs(startupMs)}, ` +
-		`docs=${data.length}, sections=${sectionCount}`,
-	);
+	if (shardedMode) {
+		console.log(
+			`[greg-search] Startup summary: mode=sharded, total=${fmtMs(startupMs)}, ` +
+			`docs=${shardManifest.totalDocs ?? 'unknown'}, shards=${shardManifest.files.length}, ` +
+			`max-loaded-shards=${maxLoadedShards}, preload=${preloadShards}, shard-candidates=${shardCandidates}`,
+		);
+		console.log(
+			`[greg-search] Runtime shard stats: loaded=${loadedShardCount}, ` +
+			`cache-size=${shardCache.size}, preload=${fmtMs(shardPreloadMs)}, ` +
+			`load+parse=${fmtMs(shardLoadMs)}, fuse-index=${fmtMs(shardBuildMs)}`,
+		);
+	} else {
+		console.log(
+			`[greg-search] Startup summary: load+parse=${fmtMs(loadParseMs)}, ` +
+			`fuse-index=${fmtMs(fuseBuildMs)}, total=${fmtMs(startupMs)}, ` +
+			`docs=${data.length}, sections=${sectionCount}`,
+		);
+	}
 	console.log(
 		`[greg-search] CORS: origin=${corsOrigin}, methods="${corsMethods}", ` +
 		`headers="${corsHeaders}", max-age=${corsMaxAge}`,

@@ -297,6 +297,15 @@ export default {
             // true: useful for long docs where terms are often mid-paragraph.
             ignoreLocation: true
         },
+        // Standalone `greg search-server` tuning (production):
+        // - preloadShards: preload all shard indexes at startup for lower query latency
+        // - maxLoadedShards: shard cache upper bound in memory (defaults to shard count when preload=true)
+        // - shardCandidates: number of likely shards searched first per query
+        server: {
+            preloadShards: true,
+            maxLoadedShards: 32,
+            shardCandidates: 6,
+        },
         ai: {
             enabled: true,
             provider: 'ollama',         // or 'openai'

@@ -214,6 +214,11 @@ declare module 'virtual:greg-config' {
                 minMatchCharLength?: number;
                 ignoreLocation?: boolean;
             };
+            server?: {
+                preloadShards?: boolean;
+                maxLoadedShards?: number;
+                shardCandidates?: number;
+            };
         };
         locales?: Record<string, LocaleConfig>;
         sidebar?: 'auto' | SidebarItem[];

@@ -22,7 +22,7 @@ node_modules
 *.sw?
 .vscode
 docs-vitepress
-docs/fake-docs
+docs/fake-doc*
 *.tgz
 .greg/
 prv
