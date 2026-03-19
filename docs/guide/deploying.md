@@ -23,6 +23,7 @@ dist/
   index.html
   assets/          ← JS, CSS, fonts (content-hashed)
   search-index.json
+  search-index/    ← sharded index files + manifest for greg search-server (optional)
   <any public/ files>
 ```
 

@@ -20,8 +20,6 @@ search: {
 - `local`: Przeglądarka pobiera `/search-index.json` i uruchamia Fuse.js lokalnie. Polecane dla małych zestawów dokumentacji.
 - `none`: Wbudowane UI wyszukiwania (przycisk + modal + skróty) jest wyłączone. Polecane dla stron bez wbudowanego search.
 
-`server` to zwykle najlepszy domyślny wybór dla większych zbiorów dokumentacji.
-
 ## Jak działa indeksowanie
 
 W czasie **builda** `vitePluginSearchIndex` przechodzi po wszystkich plikach `.md`
@@ -75,6 +73,60 @@ search: {
 }
 ```
 
+### Strojenie serwera dla dużych indeksów
+
+Dla bardzo dużych zestawów dokumentacji możesz stroić standalone `greg search-server`
+bezpośrednio z `greg.config.js`:
+
+```js
+search: {
+  provider: 'server',
+  serverUrl: 'http://localhost:3100/api/search',
+  server: {
+    preloadShards: true,
+    maxLoadedShards: 32,
+    shardCandidates: 6,
+  }
+}
+```
+
+- `preloadShards` (domyślnie: `true`) preloaduje indeksy shardów przy starcie, aby zmniejszyć opóźnienia zapytań.
+- `maxLoadedShards` ogranicza liczbę indeksów Fuse shardów trzymanych w pamięci.
+- `shardCandidates` określa, ile najbardziej prawdopodobnych shardów jest przeszukiwanych najpierw.
+
+Kolejność rozwiązywania konfiguracji:
+
+1. Flagi CLI (`greg search-server --...`)
+2. Zmienne środowiskowe (`GREG_SEARCH_*`)
+3. `greg.config.js > search.server`
+4. Wbudowane wartości domyślne
+
+Obsługiwane runtime overrides:
+
+- `--preload-shards` / `GREG_SEARCH_PRELOAD_SHARDS`
+- `--max-loaded-shards` / `GREG_SEARCH_MAX_LOADED_SHARDS`
+- `--shard-candidates` / `GREG_SEARCH_SHARD_CANDIDATES`
+
+Build wypisuje też rozmiary wygenerowanych assetów wyszukiwania (pełny indeks + shardy).
+
+Generowanie shardów podczas builda możesz kontrolować przez `GREG_SEARCH_SHARDS`:
+
+- `GREG_SEARCH_SHARDS=32` (domyślnie) generuje 32 pliki shardów.
+- `GREG_SEARCH_SHARDS=64` zwiększa liczbę shardów.
+- `GREG_SEARCH_SHARDS=0` (lub `false` / `off` / `no`) wyłącza generowanie shardów i zostawia tylko `search-index.json`.
+
+Przy bardzo dużych dokumentacjach może być też potrzebny większy heap Node.js podczas builda:
+
+```bash
+NODE_OPTIONS=--max-old-space-size=8192 npm run build
+```
+
+W Windows PowerShell:
+
+```powershell
+$env:NODE_OPTIONS='--max-old-space-size=8192'; npm run build
+```
+
 W produkcji zwykle wystawisz ten serwer za reverse proxy, żeby frontend nadal
 korzystał z `/api/search`.
 
@@ -123,21 +175,21 @@ bez semantycznych znaczników dopasowania.
 
 ## Nawigacja klawiaturą w modalu
 
-| Klawisz   | Akcja                               |
-| --------- | ----------------------------------- |
-| `↑` / `↓` | Wybierz poprzedni / następny wynik  |
-| `Enter`   | Przejdź do zaznaczonego wyniku      |
-| `Esc`     | Zamknij modal                       |
+| Klawisz   | Akcja                              |
+| --------- | ---------------------------------- |
+| `↑` / `↓` | Wybierz poprzedni / następny wynik |
+| `Enter`   | Przejdź do zaznaczonego wyniku     |
+| `Esc`     | Zamknij modal                      |
 
 ## Ranking wyników
 
 Wyniki są oceniane przez Fuse.js na podstawie wag dla pól:
 
-| Pole             | Waga |
-| ---------------- | ---- |
-| Tytuł strony     | 3x   |
-| Nagłówek sekcji  | 2x   |
-| Treść sekcji     | 1x   |
+| Pole            | Waga |
+| --------------- | ---- |
+| Tytuł strony    | 3x   |
+| Nagłówek sekcji | 2x   |
+| Treść sekcji    | 1x   |
 
 Używany jest fuzzy threshold `0.4` (ciaśniejszy niż domyślny), dzięki czemu do
 wyników trafiają głównie rzeczywiste dopasowania. `ignoreLocation: true`
@@ -155,7 +207,6 @@ pomijane zarówno w routingu, jak i w indeksie wyszukiwania.
 - W trybie `server` endpoint wyszukiwania musi być osiągalny z klienta (`serverUrl` musi być poprawny dla danego środowiska).
 - Zawartość bloków kodu jest usuwana z indeksu (nie jest przeszukiwalna).
 
-
 ## Baza wiedzy AI
 
 Funkcja AI dodaje zakładkę **Zapytaj AI** do modalu wyszukiwania. Wykorzystuje
@@ -170,7 +221,7 @@ search: {
   ai: {
     enabled: true,
     provider: 'ollama', // lub 'openai'
-    ollama: { model: 'phi4' },
+    ollama: { model: 'gpt-oss' },
   }
 }
 ```
@@ -178,18 +229,26 @@ search: {
 Wymagany plugin Vite (`vitePluginAiServer`) oraz konfiguracja serwera AI w
 produkcji opisane są w [Przewodniku po rozpoczęciu pracy](/docs/pl/guide/getting-started).
 
+### Przechowywanie danych AI w runtime
+
+W `dev`/`preview` (`vitePluginAiServer`) Greg używa pamięciowego store'a wektorowego
+(`MemoryStore`). Chunks są przebudowywane przy starcie oraz po zmianach plików Markdown,
+więc zindeksowane dane AI nie są utrwalane między restartami procesu.
+
+W produkcji preferuj standalone `greg ai-server`, który może używać trwałego
+store'a opartego o SQLite (`search.ai.store = 'sqlite'`).
 
 ### Postaci AI (persony)
 
 Greg zawiera pięć wbudowanych person, które użytkownik może wybrać w interfejsie czatu:
 
-| ID             | Nazwa        | Ikona | Opis                                    |
-| -------------- | ------------ | ----- | --------------------------------------- |
-| `professional` | Professional | 👔    | Precyzyjne, formalne, techniczne odpowiedzi |
-| `friendly`     | Friendly     | 😊    | Ciepłe, przystępne wyjaśnienia          |
-| `pirate`       | Pirate       | 🏴‍☠️    | Arr! Wiedza na falach kodu!              |
-| `sensei`       | Sensei       | 🥋    | Cierpliwy nauczyciel, krok po kroku     |
-| `concise`      | Concise      | ✂️    | Maksimum treści, minimum słów           |
+| ID             | Nazwa        | Ikona | Opis                                        |
+| -------------- | ------------ | ----- | ------------------------------------------- |
+| `professional` | Professional | 👔     | Precyzyjne, formalne, techniczne odpowiedzi |
+| `friendly`     | Friendly     | 😊     | Ciepłe, przystępne wyjaśnienia              |
+| `pirate`       | Pirate       | 🏴‍☠️    | Arr! Wiedza na falach kodu!                 |
+| `sensei`       | Sensei       | 🥋     | Cierpliwy nauczyciel, krok po kroku         |
+| `concise`      | Concise      | ✂️     | Maksimum treści, minimum słów               |
 
 #### Ograniczenie dostępnych postaci
 

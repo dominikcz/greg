@@ -77,6 +77,60 @@ search: {
 }
 ```
 
+### Server tuning for large indices
+
+For very large documentation sets, tune standalone `greg search-server` directly
+from `greg.config.js`:
+
+```js
+search: {
+  provider: 'server',
+  serverUrl: 'http://localhost:3100/api/search',
+  server: {
+    preloadShards: true,
+    maxLoadedShards: 32,
+    shardCandidates: 6,
+  }
+}
+```
+
+- `preloadShards` (default: `true`) preloads shard indexes at startup to reduce query latency.
+- `maxLoadedShards` limits how many shard Fuse indexes stay in memory.
+- `shardCandidates` controls how many likely shards are searched first per query.
+
+Resolution order is:
+
+1. CLI flags (`greg search-server --...`)
+2. Environment variables (`GREG_SEARCH_*`)
+3. `greg.config.js > search.server`
+4. Built-in defaults
+
+Supported runtime overrides:
+
+- `--preload-shards` / `GREG_SEARCH_PRELOAD_SHARDS`
+- `--max-loaded-shards` / `GREG_SEARCH_MAX_LOADED_SHARDS`
+- `--shard-candidates` / `GREG_SEARCH_SHARD_CANDIDATES`
+
+Build output now includes size logs for the generated search assets (full index + shards).
+
+You can tune shard generation at build time with `GREG_SEARCH_SHARDS`:
+
+- `GREG_SEARCH_SHARDS=32` (default) generates 32 shard files.
+- `GREG_SEARCH_SHARDS=64` increases shard count.
+- `GREG_SEARCH_SHARDS=0` (or `false` / `off` / `no`) disables shard generation and keeps only `search-index.json`.
+
+For very large documentation sets, you may also need a higher Node.js heap limit during build:
+
+```bash
+NODE_OPTIONS=--max-old-space-size=8192 npm run build
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:NODE_OPTIONS='--max-old-space-size=8192'; npm run build
+```
+
 In production, you will usually place the search server behind a reverse proxy
 so your frontend can keep using `/api/search`.
 
@@ -140,9 +194,9 @@ Results are scored by Fuse.js using weighted fields:
 
 | Field             | Weight |
 | ----------------- | ------ |
-| Page title        | 3×      |
-| Section heading   | 2×      |
-| Section body text | 1×      |
+| Page title        | 3×     |
+| Section heading   | 2×     |
+| Section body text | 1×     |
 
 A fuzzy threshold of `0.4` is used — tighter than the default, so only genuine
 matches surface. `ignoreLocation: true` means the match can appear anywhere in
@@ -177,13 +231,22 @@ search: {
   ai: {
     enabled: true,
     provider: 'ollama', // or 'openai'
-    ollama: { model: 'phi4' },
+    ollama: { model: 'gpt-oss' },
   }
 }
 ```
 
 See the [Getting started guide](/docs/guide/getting-started) for the required Vite plugin
 (`vitePluginAiServer`) and the production AI server setup.
+
+### AI runtime storage
+
+In dev/preview (`vitePluginAiServer`), Greg uses an in-memory vector store
+(`MemoryStore`). Chunks are rebuilt on startup and whenever Markdown files change,
+so indexed AI data is not persisted across process restarts.
+
+For production, prefer the standalone `greg ai-server`, which can use a persistent
+SQLite-backed store (`search.ai.store = 'sqlite'`).
 
 
 ### AI characters (personas)
@@ -192,11 +255,11 @@ Greg ships five built-in personas that users can pick in the chat UI:
 
 | ID             | Name         | Icon | Description                        |
 | -------------- | ------------ | ---- | ---------------------------------- |
-| `professional` | Professional | 👔   | Precise, formal, technical answers |
-| `friendly`     | Friendly     | 😊   | Warm, approachable explanations    |
+| `professional` | Professional | 👔    | Precise, formal, technical answers |
+| `friendly`     | Friendly     | 😊    | Warm, approachable explanations    |
 | `pirate`       | Pirate       | 🏴‍☠️   | Arr! Knowledge on the high seas!   |
-| `sensei`       | Sensei       | 🥋   | Patient teacher, step-by-step      |
-| `concise`      | Concise      | ✂️   | Maximum density, minimum words     |
+| `sensei`       | Sensei       | 🥋    | Patient teacher, step-by-step      |
+| `concise`      | Concise      | ✂️    | Maximum density, minimum words     |
 
 #### Limiting which characters are available
 

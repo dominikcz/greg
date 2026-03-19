@@ -18,8 +18,9 @@ Wynik trafia do `dist/`:
 ```
 dist/
   index.html
-  assets/
+  assets/          ← JS, CSS, fonts (content-hashed)
   search-index.json
+  search-index/    ← pliki shardów + manifest dla greg search-server (opcjonalne)
   <pliki z public/>
 ```
 
@@ -83,15 +84,15 @@ my-docs.example.com {
 }
 ```
 
-### Netlify
+## Netlify
 
-`public/_redirects`:
+Dodaj plik `public/_redirects`:
 
 ```
 /* /index.html 200
 ```
 
-Lub konfiguracja w `netlify.toml`:
+Lub użyj `netlify.toml`:
 
 ```toml
 [[redirects]]
@@ -100,13 +101,17 @@ Lub konfiguracja w `netlify.toml`:
   status = 200
 ```
 
-### Vercel
+
+## Vercel
+
+Dodaj `vercel.json` w katalogu głównym projektu:
 
 ```json
 {
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
 ```
+
 
 ## GitHub Pages
 
@@ -115,7 +120,7 @@ GitHub Pages natywnie nie wspiera fallbacku SPA. Typowy workaround:
 1. Skopiuj `dist/index.html` do `dist/404.html` po buildzie.
 2. Dodaj skrypt przekierowujący w `404.html`, który odtwarza oryginalny URL.
 
-Alternatywnie użyj GitHub Actions i workflow dla deployu SPA.
+Alternatywnie użyj [GitHub Actions i dedykowanego workflow](https://vitejs.dev/guide/static-deploy#github-pages) z powyższym podejściem.
 
 ## Base path
 
@@ -129,11 +134,12 @@ export default defineConfig({
 });
 ```
 
-Zaktualizuj też `srcDir` w `greg.config.js`:
+Zaktualizuj też `docsBase` w `greg.config.js`:
 
 ```js
 export default {
-  srcDir: '/my-project/docs',
+  srcDir: 'docs',
+  docsBase: '/my-project/docs',
   // ...
 }
 ```
