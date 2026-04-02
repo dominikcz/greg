@@ -18,7 +18,7 @@ Linki wewnętrzne działają w trybie SPA bez pełnego przeładowania strony:
 Output:
 
 [Pierwsze kroki](../getting-started)
-[Referencja API](/reference/api)
+[Referencja API](/reference/markdowndocs)
 [Do góry](#)
 
 Rozszerzenia `.md` i `.html` są automatycznie usuwane.

@@ -18,7 +18,7 @@ Internal links use SPA navigation and update the page without a full reload:
 Output:
 
 [Getting Started](../getting-started)
-[API reference](/reference/api)
+[API reference](/reference/markdowndocs)
 [Back to top](#)
 
 `.md` and `.html` extensions are stripped automatically.
