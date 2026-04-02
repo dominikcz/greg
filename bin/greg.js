@@ -183,9 +183,15 @@ switch (command) {
         child.on('exit', code => process.exit(code ?? 0));
         break;
     }
-    case 'dev':
-        run('vite', args);
+    case 'dev': {
+        const existingOpts = process.env.NODE_OPTIONS ?? '';
+        const heapFlag = '--max-old-space-size=4096';
+        const nodeOptions = existingOpts.includes('max-old-space-size')
+            ? existingOpts
+            : `${existingOpts} ${heapFlag}`.trim();
+        run('vite', args, { env: { NODE_OPTIONS: nodeOptions } });
         break;
+    }
     case 'build': {
         const startedAt = Date.now();
         const forceSingle = hasSingleBuildFlag(args);

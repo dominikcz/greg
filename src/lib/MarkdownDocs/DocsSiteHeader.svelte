@@ -46,6 +46,8 @@
 		navigate: (path: string) => void;
 		navigateHome?: (path: string) => void;
 		onOpenSearch: () => void;
+		showAiButton?: boolean;
+		onOpenAiPage?: () => void;
 	};
 
 	const EXTERNAL_RE = /^(?:[a-z][a-z\d+\-.]*:|\/\/{2})/i;
@@ -96,6 +98,8 @@
 		navigate,
 		navigateHome = navigate,
 		onOpenSearch,
+		showAiButton = false,
+		onOpenAiPage,
 	}: Props = $props();
 
 	function resolveLogoSrc(
@@ -372,6 +376,13 @@
 				</svg>
 				<span class="search-trigger-label">{searchButtonLabel}</span>
 				<span class="search-trigger-hint"><kbd>Ctrl</kbd><kbd>K</kbd></span>
+			</button>
+		{/if}
+		{#if showAiButton && onOpenAiPage}
+			<button class="ai-page-btn" onclick={onOpenAiPage} type="button" title="Open AI chat in new tab" aria-label="Open AI chat">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+					<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+				</svg>
 			</button>
 		{/if}
 	</div>
@@ -696,6 +707,30 @@
 				line-height: 1.5;
 				font-family: inherit;
 			}
+		}
+	}
+
+	.ai-page-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.38rem;
+		background: none;
+		border: 1px solid var(--greg-border-color);
+		border-radius: 6px;
+		color: var(--greg-menu-section-color);
+		cursor: pointer;
+		transition: border-color 0.15s, color 0.15s;
+		flex-shrink: 0;
+
+		svg {
+			width: 16px;
+			height: 16px;
+		}
+
+		&:hover {
+			border-color: var(--greg-accent);
+			color: var(--greg-accent);
 		}
 	}
 

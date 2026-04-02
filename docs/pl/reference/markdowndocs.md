@@ -247,7 +247,7 @@ const gregConfig = {
 
 `MarkdownRenderer.svelte` deleguje punkty rozszerzeń do `src/lib/MarkdownDocs/markdownRendererRuntime.ts`.
 
-### 1) Rejestr hydracji komponentów
+### 1 Rejestr hydracji komponentów
 
 `COMPONENT_REGISTRY` mapuje nazwę taga na:
 
@@ -256,7 +256,7 @@ const gregConfig = {
 
 To jest używane np. dla tagów `badge`, `button`, `image`, `link`, `codegroup`.
 
-### 2) Rejestry pluginów Markdown
+### 2 Rejestry pluginów Markdown
 
 Pipeline jest składany z dwóch uporządkowanych rejestrów:
 
@@ -271,7 +271,7 @@ Obejmują m.in.:
 - normalizacja Steps (`rehypeStepsWrapper`)
 - nagłówki/TOC (`rehypeSlug`, `rehypeAutolinkHeadings`, `rehypeTocPlaceholder`)
 
-### 3) Handlery renderowania (post-HTML)
+### 3 Handlery renderowania (post-HTML)
 
 Po renderze HTML uruchamiane są handlery z list:
 

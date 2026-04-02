@@ -20,6 +20,7 @@
     import { handleCodeGroupClick, handleCodeGroupKeydown } from "./codeGroup";
     import allFrontmatters from "virtual:greg-frontmatter";
     import MarkdownRenderer from "./MarkdownRenderer.svelte";
+    import AiChat from "./AiChat.svelte";
     import LayoutHome from "./layouts/LayoutHome.svelte";
     import BackToTop from "./BackToTop.svelte";
     import Breadcrumb from "./Breadcrumb.svelte";
@@ -594,6 +595,7 @@
         Boolean(searchProvider) ||
             (gregConfig as any)?.search?.provider !== "none",
     );
+    const aiEnabled = $derived(!!(gregConfig as any)?.search?.ai?.enabled);
     let searchOpen = $state(false);
 
     $effect(() => {
@@ -727,6 +729,10 @@
         }),
     );
     const currentSrcDir = $derived(localeContext.srcDir);
+
+    /** The SPA path that renders the full-page AI chat, e.g. "/docs/ai". */
+    const aiRoute = $derived(withBase(currentSrcDir).replace(/\/$/, '') + '/ai');
+    const aiPageMode = $derived(aiEnabled && router.active === aiRoute);
     function applyCurrentVersionPrefix(pathname: string): string {
         const normalizedPath = normalizeSrcDir(pathname);
         const currentPath = withoutBase(window.location.pathname);
@@ -1610,6 +1616,32 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
+{#if aiPageMode && aiEnabled}
+    <div class="greg greg-ai-page" data-theme={theme}>
+        <header class="ai-page-header">
+            <button class="ai-page-close" type="button" onclick={() => history.back()} title="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="16" height="16">
+                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <span class="ai-page-title">{aiTabLabel}</span>
+        </header>
+        <div class="ai-page-body">
+            <AiChat
+                onNavigate={(path, anchor) => { navigateInternalWithAnchor(path, anchor); }}
+                onClose={() => history.back()}
+                localeSrcDir={currentSrcDir}
+                placeholder={aiPlaceholder}
+                loadingText={aiLoadingText}
+                errorText={aiErrorText}
+                startText={aiStartText}
+                sourcesLabel={aiSourcesLabel}
+                clearChatLabel={aiClearChatLabel}
+                sendLabel={aiSendLabel}
+            />
+        </div>
+    </div>
+{:else}
 <div
     class="greg"
     data-theme={theme}
@@ -1636,6 +1668,8 @@
         {darkModeSwitchTitle}
         {searchButtonLabel}
         showSearch={searchEnabled}
+        showAiButton={aiEnabled && !aiPageMode}
+        onOpenAiPage={() => router.navigate(aiRoute)}
         versionOptions={manifestVersionOptions}
         activeVersion={activeDocsVersion}
         {versionMenuLabel}
@@ -1922,8 +1956,60 @@
         <BackToTop target={mainEl} label={returnToTopLabel} />
     {/if}
 </div>
+{/if}
 
 <style lang="scss">
+    /* ── Full-page AI chat ──────────────────────────────────── */
+    .greg-ai-page {
+        display: flex;
+        flex-direction: column;
+        height: 100dvh;
+        overflow: hidden;
+        background: var(--greg-menu-background);
+    }
+
+    .ai-page-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0 1rem;
+        height: var(--greg-header-height, 56px);
+        border-bottom: 1px solid var(--greg-border-color);
+        background: var(--greg-header-background);
+        flex-shrink: 0;
+    }
+
+    .ai-page-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.3rem;
+        border: none;
+        background: none;
+        color: var(--greg-menu-section-color);
+        cursor: pointer;
+        border-radius: 4px;
+        transition: color 0.15s, background 0.15s;
+        &:hover { color: var(--greg-color); background: var(--greg-menu-hover-background); }
+    }
+
+    .ai-page-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--greg-color);
+    }
+
+    .ai-page-body {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        max-width: 860px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
     .skip-link {
         position: absolute;
         left: 0.75rem;

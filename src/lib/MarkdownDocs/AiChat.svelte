@@ -2,6 +2,7 @@
     import { onMount } from "svelte";
     import gregConfig from "virtual:greg-config";
     import { withBase } from "./common";
+    import MarkdownRenderer from "./MarkdownRenderer.svelte";
 
     // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -337,86 +338,33 @@
         return characters.find(c => c.id === id);
     }
 
-    // ── Markdown answer renderer ────────────────────────────────────────────────
-
-    function escHtml(s: string): string {
-        return s
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+    /** Remove or neutralize links pointing to placeholder/invented domains from LLM output. */
+    function sanitizeMarkdownLinks(md: string): string {
+        // Pattern: [text](url) — strip links whose URL is not a real doc path
+        return md.replace(/\[([^\]\n]+)\]\(([^)\n]+)\)/g, (match, text, url) => {
+            const trimmed = url.trim();
+            // Allow relative paths and fragment links
+            if (/^[/#]/.test(trimmed)) return match;
+            // Allow only https links that are NOT placeholder domains
+            if (/^https?:\/\//i.test(trimmed)) {
+                const placeholderDomains = /\/\/(www\.)?(example\.(com|org|net)|placeholder\.com|lorem\.ipsum|test\.com|foo\.bar)/i;
+                if (placeholderDomains.test(trimmed)) return text;
+                return match;
+            }
+            // Anything else (no scheme, not relative) — render as plain text
+            return text;
+        });
     }
 
-    /** Sanitize a URL from LLM output: allow relative paths and http(s), normalize //. */
-    function sanitizeUrl(url: string): string {
-        const trimmed = url.trim();
-        if (/^https?:\/\//i.test(trimmed)) return trimmed;
-        if (/^\//.test(trimmed)) return trimmed.replace(/\/\/+/g, '/');
-        if (/^#/.test(trimmed)) return trimmed;
-        return '#';
-    }
+    // ── Markdown answer navigation handler ────────────────────────────────────
 
-    /** Apply inline markdown (bold, italic, code) and links to an already-HTML-escaped string. */
-    function processInlineEscaped(escaped: string): string {
-        // Bold **text** or __text__
-        let r = escaped
-            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-            .replace(/__(.+?)__/g, '<strong>$1</strong>');
-        // Italic *text* (not ** boundary)
-        r = r.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-        // Inline code `code`
-        r = r.replace(/`([^`\n]+)`/g, '<code>$1</code>');
-        return r;
-    }
-
-    /** Process a line of text: handle links first (before escaping) then escape+inline. */
-    function renderLine(line: string): string {
-        let result = '';
-        let pos = 0;
-        // Match markdown links: [text](url)
-        const linkRe = /\[([^\]\n]+)\]\(([^)\n]+)\)/g;
-        let m: RegExpExecArray | null;
-
-        while ((m = linkRe.exec(line)) !== null) {
-            // Process the plain text segment before this link
-            result += processInlineEscaped(escHtml(line.slice(pos, m.index)));
-
-            const linkText = m[1];
-            const url = sanitizeUrl(m[2]);
-            const isExternal = /^https?:\/\//i.test(url);
-            result += `<a href="${escHtml(url)}"${
-                isExternal
-                    ? ' target="_blank" rel="noopener noreferrer"'
-                    : ' data-nav="1"'
-            }>${escHtml(linkText)}</a>`;
-            pos = m.index + m[0].length;
-        }
-        result += processInlineEscaped(escHtml(line.slice(pos)));
-        return result;
-    }
-
-    /**
-     * Convert LLM markdown answer to safe HTML.
-     * Handles: paragraphs, **bold**, *italic*, `code`, [links](url).
-     * Lists and headings are rendered as paragraphs with basic formatting.
-     */
-    function renderAnswer(text: string): string {
-        // Split on blank lines into paragraph blocks
-        const blocks = text.split(/\n{2,}/);
-        return blocks.map(block => {
-            const lines = block.split('\n');
-            const rendered = lines.map(line => renderLine(line)).join('<br>');
-            return `<p>${rendered}</p>`;
-        }).join('');
-    }
-
-    /** Handle clicks on internal navigation links inside `.ai-answer`. */
+    /** Handle clicks on internal links inside the AI answer. */
     function handleAnswerClick(e: MouseEvent) {
-        const anchor = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-nav]');
+        const anchor = (e.target as HTMLElement).closest<HTMLAnchorElement>('a');
         if (!anchor) return;
-        e.preventDefault();
         const href = anchor.getAttribute('href') ?? '';
-        if (!href) return;
+        if (!href || /^https?:\/\//i.test(href)) return;
+        e.preventDefault();
         const hashIdx = href.indexOf('#');
         const path = hashIdx >= 0 ? href.slice(0, hashIdx) : href;
         const section = hashIdx >= 0 ? href.slice(hashIdx + 1) : undefined;
@@ -482,14 +430,15 @@
                         {#if msg.role === "user"}
                             <p class="ai-user-text">{msg.content}</p>
                         {:else}
-                            <!-- Render answer with markdown links as clickable elements -->
                             <!-- svelte-ignore a11y_click_events_have_key_events -->
                             <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                             <div
                                 class="ai-answer"
                                 onclick={handleAnswerClick}
                                 role="article"
-                            >{@html renderAnswer(msg.content)}</div>
+                            >
+                                <MarkdownRenderer markdown={sanitizeMarkdownLinks(msg.content)} />
+                            </div>
 
                             {#if msg.sources && msg.sources.length > 0}
                                 <div class="ai-sources">
@@ -738,6 +687,15 @@
         background: var(--greg-menu-hover-background);
         padding: 0.65rem 0.9rem;
         border-radius: 2px 12px 12px 12px;
+
+        :global(.markdown-body) {
+            background: transparent;
+            font-size: inherit;
+            line-height: inherit;
+            color: inherit;
+            padding: 0;
+            margin: 0;
+        }
 
         :global(p) {
             margin: 0 0 0.45em;

@@ -268,7 +268,7 @@ const gregConfig = {
 branches inline. This keeps runtime rendering predictable and makes new
 features easier to add.
 
-### 1) Component hydration registry
+### 1 Component hydration registry
 
 `COMPONENT_REGISTRY` maps a tag name to:
 
@@ -278,7 +278,7 @@ features easier to add.
 This is used for custom component tags like `badge`, `button`, `image`,
 `link`, and `codegroup`.
 
-### 2) Markdown plugin registries
+### 2 Markdown plugin registries
 
 The markdown pipeline is assembled from two ordered registries:
 
@@ -293,7 +293,7 @@ These cover, among others:
 - Steps normalization (`rehypeStepsWrapper`)
 - headings/TOC (`rehypeSlug`, `rehypeAutolinkHeadings`, `rehypeTocPlaceholder`)
 
-### 3) Render handlers (post-HTML stage)
+### 3 Render handlers (post-HTML stage)
 
 After HTML is rendered, handlers are executed from ordered lists:
 

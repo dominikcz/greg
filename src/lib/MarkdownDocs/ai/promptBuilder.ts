@@ -15,20 +15,19 @@ export function buildSystemPrompt(
 		const link = `${baseUrl}${c.pageId}${anchor}`;
 		const heading = c.sectionHeading ? ` › ${c.sectionHeading}` : '';
 		return (
-			`[${i + 1}] Page: "${c.pageTitle}"${heading}\n` +
-			`    Link: ${link}\n` +
-			`    ${c.content}`
+			`SOURCE ${i + 1}: [${c.pageTitle}${heading}](${link})\n` +
+			c.content
 		);
 	}).join('\n\n');
 
 	return `${character.systemPrompt}
 
 STRICT RULES — follow these without exception:
+- LANGUAGE: You MUST respond in the exact same language as the user's question. Polish question = Polish answer. English question = English answer. This rule overrides everything else including your persona.
 - Base your answer EXCLUSIVELY on the DOCUMENTATION CONTEXT provided below.
-- If the context does not contain enough information to fully answer, say so clearly instead of guessing.
-- ALWAYS include at least one inline markdown link citation: [Section Title](link)
+- If the context does not contain enough information to fully answer, say so clearly. Do NOT include any source links in that case.
+- When you cite information, use the exact markdown links from the context: [Title](link). Do NOT invent, fabricate, or modify any URLs.
 - Do NOT invent, hallucinate, or add information absent from the context.
-- Respond in the same language the user used in their question.
 - Format your response in markdown.
 
 DOCUMENTATION CONTEXT:

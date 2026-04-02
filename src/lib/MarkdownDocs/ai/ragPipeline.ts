@@ -1,8 +1,39 @@
 import type { AiProvider } from './aiProvider.js';
 import type { ChunkStore } from './chunkStore.js';
-import type { AiCharacter, AiProviderOptions, AiResponse } from './types.js';
+import type { AiCharacter, AiProviderOptions, AiResponse, RetrievedChunk } from './types.js';
 import { buildMessages } from './promptBuilder.js';
 import { extractSources } from './docLinker.js';
+
+/**
+ * Parse all markdown link URLs from the LLM answer and return the set of
+ * pageIds (URL without anchor and without baseUrl prefix) that were cited.
+ */
+function extractCitedPageIds(answer: string, baseUrl: string, chunks: RetrievedChunk[]): Set<string> {
+	const cited = new Set<string>();
+
+	// 1. Inline markdown links: [text](url)
+	const linkRe = /\]\(([^)\s]+)\)/g;
+	let m: RegExpExecArray | null;
+	while ((m = linkRe.exec(answer)) !== null) {
+		let url = m[1].split('#')[0].trim();
+		if (!url) continue;
+		if (baseUrl && url.startsWith(baseUrl)) url = url.slice(baseUrl.length);
+		url = url.replace(/^\/\/+/, '/');
+		if (url) cited.add(url);
+	}
+
+	// 2. Numeric references [N] — map back to chunk pageId
+	const numRe = /\[(\d+)\]/g;
+	while ((m = numRe.exec(answer)) !== null) {
+		const idx = parseInt(m[1], 10) - 1;
+		if (idx >= 0 && idx < chunks.length) {
+			const pageId = chunks[idx].pageId.replace(/^\/\/+/, '/');
+			cited.add(pageId);
+		}
+	}
+
+	return cited;
+}
 
 export type RagOptions = {
 	/** Number of chunks to retrieve from the store. Default: 8 */
@@ -93,8 +124,14 @@ export class RagPipeline {
 		const messages = buildMessages(character, chunks, query, [], baseUrl);
 		const answer = await this.provider.chat(messages, options.llm);
 
-		// 4. Extract source citations from retrieved chunks
-		const sources = extractSources(chunks);
+		// 4. Collect only sources whose link was actually cited in the answer.
+		//    This is deterministic and doesn't rely on LLM marker compliance.
+		const citedPageIds = extractCitedPageIds(answer, baseUrl, chunks);
+		const citedChunks = chunks.filter(c => {
+			const normalised = c.pageId.replace(/^\/\/+/, '/');
+			return citedPageIds.has(normalised);
+		});
+		const sources = extractSources(citedChunks);
 
 		return { answer, sources, character: character.id };
 	}

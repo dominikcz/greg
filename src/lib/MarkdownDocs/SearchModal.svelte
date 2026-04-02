@@ -146,6 +146,8 @@
     let tabMode = $state<"search" | "ai">("search");
     /** Exposed handle from AiChat — gives access to clear() and hasMessages. */
     let aiChatHandle = $state<{ clear: () => void; hasMessages: boolean } | undefined>(undefined);
+    /** Whether the AI chat panel is expanded to full screen. */
+    let aiExpanded = $state(false);
     const serverUrl: string = cfgSearch.serverUrl ?? "/api/search";
     const fuzzyCfg = cfgSearch.fuzzy ?? {};
     const localThreshold: number = Number.isFinite(Number(fuzzyCfg.threshold))
@@ -566,6 +568,7 @@
 {#if open}
     <div
         class="search-backdrop"
+        class:ai-expanded={aiExpanded}
         onclick={handleBackdropClick}
         onkeydown={handleKeydown}
         role="dialog"
@@ -573,7 +576,7 @@
         aria-label={searchModalLabel}
         tabindex="-1"
     >
-        <div class="search-modal" class:ai-mode={aiEnabled && tabMode === "ai"}>
+        <div class="search-modal" class:ai-mode={aiEnabled && tabMode === "ai"} class:ai-expanded={aiExpanded}>
 
             <!-- ── Tab switcher (only when AI is enabled) ── -->
             {#if aiEnabled}
@@ -601,6 +604,19 @@
                         {aiTabLabel}
                     </button>
                     <div class="modal-tabs-end">
+                        {#if tabMode === "ai"}
+                            <button class="ai-expand-btn" type="button" onclick={() => (aiExpanded = !aiExpanded)} title={aiExpanded ? 'Minimize' : 'Expand'} aria-label={aiExpanded ? 'Minimize chat' : 'Expand chat'}>
+                                {#if aiExpanded}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+                                    </svg>
+                                {:else}
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+                                    </svg>
+                                {/if}
+                            </button>
+                        {/if}
                         {#if tabMode === "ai" && aiChatHandle?.hasMessages}
                             <button class="ai-clear-btn" type="button" onclick={() => aiChatHandle?.clear()} title={aiClearChatLabel}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -853,6 +869,20 @@
             max-height: calc(100vh - 5rem);
             min-height: min(540px, calc(100vh - 5rem));
         }
+
+        &.ai-expanded {
+            max-width: 100%;
+            width: 100%;
+            height: calc(100vh - 2rem);
+            max-height: calc(100vh - 2rem);
+            border-radius: 10px;
+        }
+    }
+
+    .search-backdrop.ai-expanded {
+        padding-top: 0;
+        align-items: center;
+        padding: 1rem;
     }
 
     /* ── Mode tabs ─────────────────────────────────────────────── */
@@ -911,6 +941,31 @@
     }
 
     /* ── Clear chat button (in modal-tabs) ──────────────────── */
+
+    .ai-expand-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: var(--greg-menu-section-color);
+        cursor: pointer;
+        padding: 0.2rem 0.3rem;
+        border-radius: 4px;
+        opacity: 0.6;
+        transition: opacity 0.15s, color 0.15s;
+        flex-shrink: 0;
+
+        svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        &:hover {
+            opacity: 1;
+            color: var(--greg-color);
+        }
+    }
 
     .ai-clear-btn {
         display: inline-flex;
