@@ -56,7 +56,7 @@
   "dependencies": {
     "@clack/prompts": "^1.2.0",
     "@lucide/svelte": "^1.7.0",
-    "esbuild": "^0.27.0",
+    "esbuild": "^0.27.7",
     "fuse.js": "^7.2.0",
     "js-yaml": "^4.1.1",
     "mdsvex": "^0.12.7",
@@ -88,6 +88,7 @@
   },
   "overrides": {
     "dompurify": ">=3.3.2",
-    "immutable": ">=5.1.5"
+    "immutable": ">=5.1.5",
+    "lodash-es": ">=4.18.1"
   }
 }
