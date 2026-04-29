@@ -423,7 +423,6 @@ the later entry in the `srcDir` array overrides the earlier one.
 
 ## TODO
 
-- [ ] AI search integration
 - [ ] edit mode
 - [ ] comments
 - [ ] code cleanup
