@@ -103,7 +103,7 @@
     }
 
     .greg-steps :global(ol > li:last-child::after) {
-        display: none;
+        bottom: 0;
     }
 
     /* ── first-child vertical alignment with circle centre ──────────────── */

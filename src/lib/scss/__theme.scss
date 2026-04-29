@@ -30,7 +30,7 @@
     --greg-toc-link-color: #4a4a6a;
     --greg-toc-link-hover: #646cff;
 
-    /* ÔöÇÔöÇ Semantic status colors (light) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Semantic status colors (light) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     --greg-info-border: rgba(100, 108, 255, 0.45);
     --greg-info-text: #646cff;
     --greg-info-bg: rgba(100, 108, 255, 0.08);
@@ -56,7 +56,7 @@
 
     --greg-code-inline-color: #e4004a;
 
-    /* ÔöÇÔöÇ Mermaid diagram CSS-variable tokens (light) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Mermaid diagram CSS-variable tokens (light) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     --mmd-canvas:       #ffffff;
     --mmd-node-bg:      #ffffff;
     --mmd-text:         rgba(0, 0, 0, 0.87);
@@ -80,7 +80,7 @@
 }
 
 @mixin greg-dark-vars {
-    /* Dark theme ÔÇö warm ember palette */
+    /* Dark theme ï¿½ï¿½ï¿½ warm ember palette */
     --greg-background: #1c1c1c;
     --greg-main-background: #1c1c1c;
     --greg-menu-background: #141414;
@@ -119,7 +119,7 @@
     --greg-toc-link-color: #d9c9b5;
     --greg-toc-link-hover: #ff6f61;
 
-    /* ÔöÇÔöÇ Semantic status colors (dark) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Semantic status colors (dark) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     --greg-info-border: rgba(255, 111, 97, 0.45);
     --greg-info-text: #ff6f61;
     --greg-info-bg: rgba(255, 111, 97, 0.08);
@@ -145,7 +145,7 @@
 
     --greg-code-inline-color: #daa520;
 
-    /* ÔöÇÔöÇ Mermaid diagram CSS-variable tokens (dark) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ */
+    /* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Mermaid diagram CSS-variable tokens (dark) ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
     --mmd-canvas:       #1e1e2e;
     --mmd-node-bg:      #2d2d44;
     --mmd-text:         rgba(255, 255, 255, 0.87);
@@ -172,10 +172,12 @@
 
 .greg[data-theme="dark"] {
     @include greg-dark-vars;
+	color-scheme: dark;
 }
 
 .greg[data-theme="light"] {
     @include greg-light-vars;
+	color-scheme: light;
 }
 
 @mixin greg-dark-markdown-vars {

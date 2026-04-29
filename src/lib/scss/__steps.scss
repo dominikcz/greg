@@ -67,7 +67,7 @@
 
 .markdown-body .greg-steps > ol > li:last-child::after,
 .markdown-body steps > ol > li:last-child::after {
-    display: none;
+    bottom: 0;
 }
 
 .markdown-body .greg-steps > ol > li > :first-child,
