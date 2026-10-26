@@ -2,10 +2,10 @@
 layout: home
 hero:
   name: "{{TITLE}}"
-  text: "Documentation"
-  tagline: Welcome! Start writing your docs in this folder.
+  text: {{HERO_TEXT}}
+  tagline: Practical examples to help you get started.
   actions:
     - theme: brand
-      text: Get Started
-      link: {{ROOT_PATH}}/getting-started
+      text: Quick reference
+      link: {{ROOT_PATH}}/guide/quick-reference
 ---

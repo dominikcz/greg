@@ -186,7 +186,7 @@ async function main() {
     const docsDir  = docsPath.replace(/^\.\//, '').replace(/\/$/, '');
     const rootPath = '';
     const ext      = useTS ? 'ts' : 'js';
-    const vars     = { TITLE: title, DESCRIPTION: desc, DOCS_DIR: docsDir, ROOT_PATH: rootPath, EXT: ext };
+    const vars     = { TITLE: title, DESCRIPTION: desc, HERO_TEXT: JSON.stringify(desc), DOCS_DIR: docsDir, ROOT_PATH: rootPath, EXT: ext };
     const gregConfigTemplate = useTS
         ? (fullConfig ? 'greg.config.full.ts' : 'greg.config.ts')
         : (fullConfig ? 'greg.config.full.js' : 'greg.config.js');

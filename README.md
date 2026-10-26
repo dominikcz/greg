@@ -4,6 +4,8 @@ Svelte 5 + Vite-powered documentation engine. Write Markdown, get a beautiful do
 
 Inspired by [VitePress](https://vitepress.dev){target="_blank"}, built on Svelte 5.
 
+[Read the documentation](https://dominikcz.github.io/greg/)
+
 ## Quick start
 
 ```sh
@@ -415,7 +417,7 @@ the later entry in the `srcDir` array overrides the earlier one.
 
 ## Links
 
-- [Documentation](https://github.com/dominikcz/greg)
+- [Documentation](https://dominikcz.github.io/greg/)
 - [GitHub](https://github.com/dominikcz/greg)
 - [npm](https://www.npmjs.com/package/@dominikcz/greg)
 

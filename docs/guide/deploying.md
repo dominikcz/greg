@@ -132,6 +132,12 @@ GitHub Pages does not natively support SPA fallback. The common workaround is:
 
 Alternatively, use [GitHub Actions + a custom workflow](https://vitejs.dev/guide/static-deploy#github-pages) with the approach above.
 
+For a docs site, `greg build:static` generates an `index.html` for every Markdown
+route, so direct links work without an SPA fallback. For a project site such as
+`https://<user>.github.io/<repo>/`, set Vite's `base` to `/<repo>/` and Greg's
+`docsBase` to `/<repo>`, then publish the generated `dist/` directory with
+GitHub Actions.
+
 
 ## Base path
 

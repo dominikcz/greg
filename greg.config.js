@@ -8,7 +8,7 @@
  */
 export default {
     /** VitePress-compatible base public path. */
-    base: '/',
+    base: process.env.GREG_BASE ?? '/',
     /** VitePress-compatible build output directory. */
     outDir: 'dist',
     /** VitePress-compatible docs source directory (physical folder). */
@@ -16,7 +16,7 @@ export default {
     /** VitePress-compatible: patterns to exclude from docs source. */
     srcExclude: [],
     /** URL prefix for the docs section in the browser ('' = root URLs like /guide). */
-    // docsBase: '',
+    docsBase: process.env.GREG_DOCS_BASE ?? '',
 
     // ── Locales (VitePress-compatible) ─────────────────────────────────────
     /**

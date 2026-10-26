@@ -1,47 +1,55 @@
 # Getting started
 
-Welcome to **{{TITLE}}**!
+Welcome to **{{TITLE}}**. This sample shows how to organize pages and use Greg's Markdown features.
 
-## Why Greg?
+## Start the site
 
-Greg is optimized for large documentation projects: preprocessed metadata,
-predictable routing/sidebar generation, and search that scales to bigger docs.
-It keeps configuration predictable, while some runtime API and platform
-features intentionally differ.
+```sh
+npm run dev
+```
 
-## Writing docs
+Open the local URL printed by Vite. Changes to Markdown files appear as you save them.
 
-Add Markdown files to this folder. Greg will automatically build a sidebar and routes from the file structure.
+## Add a page
 
-```bash
+Create a Markdown file under `{{DOCS_DIR}}`. Its path becomes its URL and sidebar entry:
+
+```text
 {{DOCS_DIR}}/
-  index.md          ← home page
+  index.md
   getting-started.md
   guide/
-    installation.md
-    configuration.md
-  reference/
-    api.md
+    quick-reference.md
 ```
 
-## Front matter
+For example, `guide/quick-reference.md` is available at `/guide/quick-reference`.
+Use `index.md` inside a folder to create that folder's landing page.
 
-Every page can use YAML front matter:
+## Set page title and order
 
-```yaml
+```md
 ---
-title: My Page
+title: Installation
 order: 1
 ---
+
+# Installation
+
+Page content goes here.
 ```
 
-## Math, diagrams and more
+`order` controls the page's position in the automatically generated sidebar.
 
-Greg supports:
+## Configure the site
 
-- **Mermaid** diagrams
-- **LaTeX** math via MathJax
-- **Custom containers** (`::: tip`, `::: warning`, `::: danger`)
-- **Code groups** and syntax highlighting via Shiki
+The generated `greg.config.{{EXT}}` has sensible defaults. For example, set a custom sidebar or enable search options there:
 
-Visit the [Greg documentation](https://github.com/dominikcz/greg) to learn more.
+```js
+export default {
+  srcDir: '{{DOCS_DIR}}',
+  mainTitle: '{{TITLE}}',
+  sidebar: 'auto',
+}
+```
+
+See the [quick reference](./guide/quick-reference) for Markdown features and practical examples.
