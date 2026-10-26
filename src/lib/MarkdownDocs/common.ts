@@ -12,8 +12,14 @@ export function joinPath(base: string, path: string) {
   return `${base}${path}`.replace(SLASHES_RE, '/')
 }
 
+function resolveViteBase(): string | undefined {
+    const value = import.meta.env?.BASE_URL;
+    return typeof value === "string" && value.startsWith("/") ? value : undefined;
+}
+
 export const pathConfig = {
-    base: normalizeBase((gregConfig as any).base),
+    // Vite's resolved base is authoritative; greg config is a fallback outside Vite or for relative bases.
+    base: normalizeBase(resolveViteBase() ?? (gregConfig as any).base),
     srcDir: String((gregConfig as any).srcDir ?? "docs").replace(SLASHES_RE, '/'),
     docsBase: String(
         Object.prototype.hasOwnProperty.call((gregConfig as any), "docsBase")

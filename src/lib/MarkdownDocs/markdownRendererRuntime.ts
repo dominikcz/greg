@@ -14,6 +14,7 @@ import { remarkCustomAnchors } from "./remarkCustomAnchors.js";
 import { remarkInlineAttrs } from "./remarkInlineAttrs.js";
 import { remarkFlexRow } from "./remarkFlexRow.js";
 import { remarkImportsBrowser } from "./remarkImportsBrowser.js";
+import { pathConfig } from "./common";
 
 import Badge from "../components/Badge.svelte";
 import Button from "../components/Button.svelte";
@@ -266,6 +267,7 @@ export function getRemarkPluginEntries(
             options: {
                 baseUrl: currentBaseUrl,
                 docsPrefix: currentDocsPrefix,
+                siteBase: pathConfig.base,
             },
         },
         { name: "remark-code-meta", plugin: remarkCodeMeta },

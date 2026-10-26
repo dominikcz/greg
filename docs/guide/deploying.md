@@ -134,36 +134,29 @@ Alternatively, use [GitHub Actions + a custom workflow](https://vitejs.dev/guide
 
 For a docs site, `greg build:static` generates an `index.html` for every Markdown
 route, so direct links work without an SPA fallback. For a project site such as
-`https://<user>.github.io/<repo>/`, set Vite's `base` to `/<repo>/` and Greg's
-`docsBase` to `/<repo>`, then publish the generated `dist/` directory with
-GitHub Actions.
+`https://<user>.github.io/<repo>/`, set `base` in `greg.config.js` to `/<repo>/`
+(leave `docsBase` empty — it is resolved relative to `base`), then publish the
+generated `dist/` directory with GitHub Actions.
 
 
 ## Base path
 
 If your docs are served from a sub-path (e.g. `https://example.com/my-project/`),
-set `base` in `vite.config.js`:
-
-```js
-export default defineConfig({
-  base: '/my-project/',
-  // …
-});
-```
-
-Also update `docsBase` in `greg.config.js`:
+set `base` in `greg.config.js` (it is passed to Vite automatically):
 
 ```js
 export default {
+  base: '/my-project/',
   srcDir: 'docs',
-  docsBase: '/my-project/docs',
+  docsBase: 'docs', // optional, relative to base → /my-project/docs/...
   // …
 }
 ```
 
-And the plugin `srcDir` (URL prefix) in `vite.config.js`:
+`docsBase` and the plugin `srcDir` (URL prefix) are always relative to `base`
+— do not repeat the base path in them:
 
 ```js
-vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/my-project/docs' }),
-vitePluginSearchServer({ docsDir: 'docs', srcDir: '/my-project/docs' }),
+vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/docs' }),
+vitePluginSearchServer({ docsDir: 'docs', srcDir: '/docs' }),
 ```

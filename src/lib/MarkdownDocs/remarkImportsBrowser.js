@@ -52,12 +52,13 @@ function extname(urlPath) {
  *   /path               → docsPrefix/path  (relative to docsDir root)
  *   ./path  ../path     → resolved relative to currentDirUrl
  */
-function resolveImportUrl(specifier, currentDirUrl, docsPrefix) {
+function resolveImportUrl(specifier, currentDirUrl, docsPrefix, siteBase = '/') {
     const cleanPrefix = docsPrefix.replace(/\/+$/, '');
+    const rootUrl = siteBase.replace(/\/+$/, '') + '/';
 
-    if (specifier === '@') return '/';
-    if (specifier.startsWith('@/')) return '/' + specifier.slice(2);
-    if (specifier.startsWith('@')) return '/' + specifier.slice(1);
+    if (specifier === '@') return rootUrl;
+    if (specifier.startsWith('@/')) return rootUrl + specifier.slice(2);
+    if (specifier.startsWith('@')) return rootUrl + specifier.slice(1);
 
     // /absolute → inside docsPrefix
     if (specifier.startsWith('/')) {
@@ -93,12 +94,12 @@ function normalizeInternalLinkUrl(url) {
     return (normalized || '.') + hashPart;
 }
 
-function expandAliasInUrls(node, currentDirUrl, docsPrefix) {
+function expandAliasInUrls(node, currentDirUrl, docsPrefix, siteBase) {
     if (node.type === 'link' && typeof node.url === 'string') {
         if (node.url.startsWith('#')) return;
         if (EXTERNAL_URL_RE.test(node.url)) return;
         if (!node.data?.hProperties?.target) {
-            const resolved = resolveImportUrl(node.url, currentDirUrl, docsPrefix);
+            const resolved = resolveImportUrl(node.url, currentDirUrl, docsPrefix, siteBase);
             node.url = normalizeInternalLinkUrl(resolved);
         }
     }
@@ -244,9 +245,9 @@ function looksLikeSvelteMarkup(content) {
 
 // ── Async tree transformers ───────────────────────────────────────────────────
 
-async function buildSnippetNode(rawSpec, currentDirUrl, docsPrefix) {
+async function buildSnippetNode(rawSpec, currentDirUrl, docsPrefix, siteBase) {
     const parsed = parseSnippetSpec(rawSpec);
-    const url = resolveImportUrl(parsed.filePart, currentDirUrl, docsPrefix);
+    const url = resolveImportUrl(parsed.filePart, currentDirUrl, docsPrefix, siteBase);
     let content = await fetchText(url);
     if (content === null) {
         return { type: 'code', lang: 'text', meta: '', value: `[remarkImports] File not found: ${url}` };
@@ -257,10 +258,10 @@ async function buildSnippetNode(rawSpec, currentDirUrl, docsPrefix) {
     return { type: 'code', lang: lang || null, meta: buildCodeMeta(parsed.title, parsed.metaTail), value: content };
 }
 
-async function buildIncludeNodes(rawSpec, currentDirUrl, docsPrefix) {
+async function buildIncludeNodes(rawSpec, currentDirUrl, docsPrefix, siteBase) {
     const withBraces = parseBraces(rawSpec);
     const withRegion = parseRegion(withBraces.text);
-    const url = resolveImportUrl(withRegion.filePart, currentDirUrl, docsPrefix);
+    const url = resolveImportUrl(withRegion.filePart, currentDirUrl, docsPrefix, siteBase);
     let content = await fetchText(url);
     if (content === null) {
         return {
@@ -294,18 +295,18 @@ function markNodesBaseDir(nodes, dirUrl) {
     }
 }
 
-async function transformChildren(children, currentDirUrl, docsPrefix, depth) {
+async function transformChildren(children, currentDirUrl, docsPrefix, siteBase, depth) {
     if (!Array.isArray(children) || depth > 20) return;
     for (let i = 0; i < children.length; i++) {
         const node = children[i];
         const nodeDir = node?.data?.__includeDirUrl || currentDirUrl;
-        expandAliasInUrls(node, nodeDir, docsPrefix);
+        expandAliasInUrls(node, nodeDir, docsPrefix, siteBase);
 
         if (node?.type === 'paragraph' && Array.isArray(node.children)) {
             const line = node.children.map(inlineNodeText).join('').trim();
             const m = line.match(SNIPPET_RE);
             if (m?.[1]) {
-                const snippetNode = await buildSnippetNode(m[1].trim(), nodeDir, docsPrefix);
+                const snippetNode = await buildSnippetNode(m[1].trim(), nodeDir, docsPrefix, siteBase);
                 children.splice(i, 1, snippetNode);
                 continue;
             }
@@ -315,7 +316,7 @@ async function transformChildren(children, currentDirUrl, docsPrefix, depth) {
             const line = String(node.value ?? '').trim();
             const m = line.match(INCLUDE_RE);
             if (m?.[1]) {
-                const included = await buildIncludeNodes(m[1].trim(), nodeDir, docsPrefix);
+                const included = await buildIncludeNodes(m[1].trim(), nodeDir, docsPrefix, siteBase);
                 markNodesBaseDir(included.nodes, included.includeDirUrl);
                 children.splice(i, 1, ...included.nodes);
                 i -= 1;
@@ -324,7 +325,7 @@ async function transformChildren(children, currentDirUrl, docsPrefix, depth) {
         }
 
         if (Array.isArray(node?.children)) {
-            await transformChildren(node.children, nodeDir, docsPrefix, depth + 1);
+            await transformChildren(node.children, nodeDir, docsPrefix, siteBase, depth + 1);
         }
     }
 }
@@ -332,17 +333,19 @@ async function transformChildren(children, currentDirUrl, docsPrefix, depth) {
 // ── Plugin export ─────────────────────────────────────────────────────────────
 
 /**
- * @param {{ baseUrl?: string, docsPrefix?: string }} options
+ * @param {{ baseUrl?: string, docsPrefix?: string, siteBase?: string }} options
  *   baseUrl    - the URL path of the current markdown file, e.g. '/docs/guide/getting-started.md'
  *   docsPrefix - the docs root prefix, e.g. '/docs' (default: '/docs')
+ *   siteBase   - the deployed site base that `@/` resolves to, e.g. '/greg/' (default: '/')
  */
 export function remarkImportsBrowser(options = {}) {
     const docsPrefix = (options.docsPrefix ?? '/docs').replace(/\/+$/, '');
+    const siteBase = options.siteBase ?? '/';
     const baseUrl = options.baseUrl ?? docsPrefix + '/index.md';
     const currentDirUrl = baseUrl.substring(0, baseUrl.lastIndexOf('/') + 1);
 
     return async (tree) => {
-        await transformChildren(tree.children, currentDirUrl, docsPrefix, 0);
+        await transformChildren(tree.children, currentDirUrl, docsPrefix, siteBase, 0);
     };
 }
 

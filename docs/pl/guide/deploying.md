@@ -125,28 +125,21 @@ Alternatywnie użyj [GitHub Actions i dedykowanego workflow](https://vitejs.dev/
 ## Base path
 
 Jeśli docs są serwowane z subścieżki (np. `https://example.com/my-project/`),
-ustaw `base` w `vite.config.js`:
-
-```js
-export default defineConfig({
-  base: '/my-project/',
-  // ...
-});
-```
-
-Zaktualizuj też `docsBase` w `greg.config.js`:
+ustaw `base` w `greg.config.js` (jest automatycznie przekazywany do Vite):
 
 ```js
 export default {
+  base: '/my-project/',
   srcDir: 'docs',
-  docsBase: '/my-project/docs',
+  docsBase: 'docs', // opcjonalnie, względem base → /my-project/docs/...
   // ...
 }
 ```
 
-I `srcDir` w pluginach Vite (`vite.config.js`):
+`docsBase` i `srcDir` w pluginach (prefiks URL) są zawsze względne wobec `base`
+— nie powtarzaj w nich ścieżki bazowej:
 
 ```js
-vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/my-project/docs' }),
-vitePluginSearchServer({ docsDir: 'docs', srcDir: '/my-project/docs' }),
+vitePluginSearchIndex({ docsDir: 'docs', srcDir: '/docs' }),
+vitePluginSearchServer({ docsDir: 'docs', srcDir: '/docs' }),
 ```
