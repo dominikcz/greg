@@ -41,13 +41,13 @@ trafia do `dist/pdf/default.pdf`.
 export default {
     pdf: {
         books: {
-            instrukcja: {
-                title: 'Instrukcja użytkownika',
-                subtitle: 'KDS – Kitchen Display System',
-                version: '0.0.10',
+            podrecznik: {
+                title: 'Podręcznik użytkownika',
+                subtitle: 'Acme Cloud',
+                version: '2.1',
                 dateFormat: 'YYYY.MM.DD',
-                output: 'dist/pdf/instrukcja.pdf',
-                content: [{ sidebar: true, groups: 'flatten', exclude: 'how-to/**' }],
+                output: 'dist/pdf/podrecznik.pdf',
+                content: [{ sidebar: true, groups: 'flatten', exclude: 'wewnetrzne/**' }],
                 cover: '__pdf/cover.md',
                 toc: { title: 'Spis treści', depth: 2 },
                 numbering: { depth: 1 },
@@ -107,7 +107,7 @@ pdf: false              # nigdy w PDF
 ```yaml
 ---
 pdf:
-  books: [instrukcja]   # tylko w tych dokumentach
+  books: [podrecznik]   # tylko w tych dokumentach
   title: Krótki tytuł   # tytuł w spisie treści PDF
   numbered: false       # bez numeru rozdziału (np. historia wersji)
 ---
@@ -127,8 +127,8 @@ Kliknij **Pobierz** w prawym górnym rogu.
 Aktualna wersja instrukcji jest dostępna na https://example.com/docs.
 :::
 
-::: pdf-only instrukcja
-Tylko w dokumencie `instrukcja`.
+::: pdf-only podrecznik
+Tylko w dokumencie `podrecznik`.
 :::
 
 ::: page-break
@@ -143,7 +143,7 @@ z [atrybutów inline](./markdown/inline-attributes) (ukrywane przez CSS).
 | Opcja | Domyślnie | Znaczenie |
 |---|---|---|
 | `toc` | `{ depth: 2, pageNumbers: true }` | generowany spis treści; `false` wyłącza |
-| `numbering` | `false` | `{ depth: 2, format: '1.' \| '1.1' }` — numery z budowy dokumentu |
+| `numbering` | `numbering` serwisu | `{ depth: 2, format: '1.' \| '1.1' }` — patrz [Numeracja](#numeracja-i-odwołania) |
 | `headingShift` | `'auto'` | `'auto'` wyrównuje pierwszy nagłówek strony do jej poziomu w dokumencie; liczba przesuwa wszystkie nagłówki |
 | `chapterBreak` | `true` | rozdziały 1. poziomu od nowej strony; `'all'` — każda strona, `false` — żadna |
 
@@ -178,7 +178,12 @@ okładka to kilka `<div>`. Kolejne strony okładki (np. prawa autorskie) oddziel
 
 ### Wygląd
 
-Pliki `css` są ładowane po motywie druku Grega. Przydatne punkty zaczepienia:
+Pliki `css` są ładowane po motywie druku Grega. Motyw sterowany jest zmiennymi
+(`--pdf-font-family`, `--pdf-heading-font-family`, `--pdf-font-size`,
+`--pdf-line-height`, `--pdf-color`, `--pdf-heading-color`, `--pdf-accent`,
+`--pdf-rule`, `--pdf-code-background`, `--pdf-table-font-size`,
+`--pdf-table-header-background`, `--pdf-image-max-height`, `--pdf-margin-box-font`).
+Przydatne punkty zaczepienia:
 
 ```css
 :root {
@@ -195,10 +200,42 @@ Pliki `css` są ładowane po motywie druku Grega. Przydatne punkty zaczepienia:
 Elementy interaktywne są dostosowane do papieru: `details` są rozwinięte, odnośniki
 przy nagłówkach i przyciski ukryte, obrazy nigdy nie są dzielone między strony.
 
+## Numeracja i odwołania
+
+Numery rozdziałów są generowane — w serwisie i w dokumentach PDF — więc nagłówki
+i nazwy plików w Markdownie nie zawierają numerów, a zmiana kolejności rozdziałów
+to jedna linia w konfiguracji menu.
+
+```js
+// greg.config.js
+export default {
+    numbering: { depth: 1 },   // albo true; format: '1.' (domyślnie) | '1.1'; sidebar: false
+};
+```
+
+- Numer strony wynika z **kolejności menu bocznego**; strony zagnieżdżone pod stroną
+  dostają `3.1`, `3.2`…; grupy menu bez własnej strony nie mają numeru.
+- Nagłówki wewnątrz strony kontynuują jej numer (`5.`, `5.1.`, `5.1.1.`) do głębokości `depth`.
+- Serwis pokazuje numery w nagłówkach, menu, linkach poprzednia/następna,
+  okruszkach i tytule karty; dokumenty PDF — w nagłówkach, spisie treści, nagłówkach
+  stron i zakładkach. Dokument PDF dziedziczy numerację serwisu, chyba że ustawi własne `numbering`.
+- `numbered: false` we frontmatterze zostawia stronę bez numeru (np. historia wersji,
+  strony pomocy); `pdf: { numbered: false }` — tylko w PDF.
+
+Żeby odwołać się do rozdziału przez numer, napisz link **z pustym tekstem**:
+
+```md
+Kopie zapasowe opisano w rozdziale [](/guide/kopie-zapasowe).
+```
+
+Link pokazuje numer strony docelowej („w rozdziale 5”) — albo jej tytuł, gdy strona
+nie ma numeru — i pozostaje poprawny po zmianie kolejności rozdziałów. W PDF staje się
+linkiem wewnątrz dokumentu.
+
 ## Podgląd
 
 Przy uruchomionym `npm run dev` otwórz **`/__pdf`**, aby zobaczyć listę dokumentów,
-albo **`/__pdf/<dokument>`** (np. `/__pdf/instrukcja`): dokument wyrenderowany w całości, z paskiem stanu i listą
+albo **`/__pdf/<dokument>`** (np. `/__pdf/podrecznik`): dokument wyrenderowany w całości, z paskiem stanu i listą
 ostrzeżeń. Zmiany w Markdownie i konfiguracji przeładowują podgląd. Prawdziwy
 podział na strony pokaże podgląd wydruku przeglądarki (`Ctrl+P`).
 
@@ -229,7 +266,7 @@ Przy przenoszeniu istniejącego dokumentu do Grega `--compare` sprawdza, że zmi
 się układ, a nie treść:
 
 ```sh
-npx greg pdf instrukcja --compare stara-instrukcja.pdf
+npx greg pdf podrecznik --compare stary-podrecznik.pdf
 ```
 
 Raport (`<wynik>.compare.md`) dzieli oba dokumenty według nagłówków i porównuje

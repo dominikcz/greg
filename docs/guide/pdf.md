@@ -47,7 +47,7 @@ export default {
         books: {
             manual: {
                 title: 'User manual',
-                subtitle: 'Kitchen Display System',
+                subtitle: 'Acme Cloud',
                 version: '2.1',
                 output: 'dist/pdf/manual.pdf',
                 content: [{ sidebar: true, groups: 'flatten', exclude: 'internal/**' }],
@@ -145,7 +145,7 @@ For a single element, the `{.no-pdf}` / `{.pdf-only}` classes from
 | Option | Default | Meaning |
 |---|---|---|
 | `toc` | `{ depth: 2, pageNumbers: true }` | generated table of contents; `false` to disable |
-| `numbering` | `false` | `{ depth: 2, format: '1.' \| '1.1' }` — numbers from the book structure |
+| `numbering` | site `numbering` | `{ depth: 2, format: '1.' \| '1.1' }` — see [Numbering](#numbering-and-cross-references) |
 | `headingShift` | `'auto'` | `'auto'` aligns the first heading of each page with its level in the book; a number shifts all headings |
 | `chapterBreak` | `true` | level-1 chapters start on a new page; `'all'` for every page, `false` for none |
 
@@ -179,7 +179,12 @@ few `<div>`s. Use `::: page-break` for additional cover pages (e.g. copyright).
 
 ### Styling
 
-The `css` file(s) are loaded after Greg's print theme. Useful hooks:
+The `css` file(s) are loaded after Greg's print theme. The theme is driven by
+variables (`--pdf-font-family`, `--pdf-heading-font-family`, `--pdf-font-size`,
+`--pdf-line-height`, `--pdf-color`, `--pdf-heading-color`, `--pdf-accent`,
+`--pdf-rule`, `--pdf-code-background`, `--pdf-table-font-size`,
+`--pdf-table-header-background`, `--pdf-image-max-height`, `--pdf-margin-box-font`).
+Useful hooks:
 
 ```css
 :root {
@@ -195,6 +200,39 @@ The `css` file(s) are loaded after Greg's print theme. Useful hooks:
 
 Interactive elements are adapted for paper: `details` are expanded, header
 permalinks and buttons are hidden, images are never split.
+
+## Numbering and cross references
+
+Chapter numbers are generated — for the site and for PDF books — so Markdown
+headings and file names stay free of numbers and reordering chapters is a
+one-line change in the sidebar.
+
+```js
+// greg.config.js
+export default {
+    numbering: { depth: 1 },   // or true; format: '1.' (default) | '1.1'; sidebar: false
+};
+```
+
+- A page's number follows the **sidebar order**; pages nested under a page get
+  `3.1`, `3.2`…; sidebar groups without a page are not numbered.
+- Headings inside a page continue its number (`5.`, `5.1.`, `5.1.1.`) up to `depth`.
+- The site shows the numbers in headings, the sidebar, prev/next links,
+  breadcrumbs and the browser title; PDF books use them in headings, the table of
+  contents, running headers and bookmarks. Books follow the site numbering unless
+  they set their own `numbering`.
+- `numbered: false` in the frontmatter leaves a page without a number (e.g. a
+  revision history or help pages); `pdf: { numbered: false }` does it only in PDF.
+
+To refer to a chapter by number, write a link **with empty text**:
+
+```md
+Backups are described in chapter [](/guide/backups).
+```
+
+The link renders as the target page's number (`chapter 5`) — or its title when
+the page is not numbered — and stays correct when chapters move. In PDF it becomes
+a link inside the document.
 
 ## Preview
 

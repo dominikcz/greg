@@ -9,17 +9,17 @@ import {
 
 const fm = (extra = {}) => ({ _mtime: '2026-01-01T00:00:00.000Z', ...extra });
 
-const kdsFrontmatters = {
+const docsFrontmatters = {
     '/index.md': fm({ layout: 'home' }),
-    '/00-poczatek.md': fm(),
-    '/01-kds-instrukcja-uzytkownika.md': fm(),
-    '/02-1-wprowadzenie.md': fm(),
-    '/10-9-stany-aplikacji.md': fm(),
-    '/11-10-konfiguracja-stanowiska.md': fm(),
+    '/00-front-matter.md': fm(),
+    '/01-preface.md': fm(),
+    '/02-1-introduction.md': fm(),
+    '/10-9-states.md': fm(),
+    '/11-10-configuration.md': fm(),
     '/3-intro.md': fm(),
     '/how-to/index.md': fm(),
-    '/how-to/zmiana-miejsca.md': fm(),
-    '/diagnostyka/index.md': fm({ pdf: false }),
+    '/how-to/change-location.md': fm(),
+    '/troubleshooting/index.md': fm({ pdf: false }),
     '/__pdf/cover.md': fm(),
 };
 
@@ -33,7 +33,7 @@ describe('globToRegExp', () => {
         ['**/*.md', 'a/b/c.md', true],
         ['how-to/**', 'how-to/x/y.md', true],
         ['how-to/**', 'how-to.md', false],
-        ['[0-9][0-9]-*.md', '02-1-wprowadzenie.md', true],
+        ['[0-9][0-9]-*.md', '02-1-introduction.md', true],
         ['[0-9][0-9]-*.md', '3-intro.md', false],
         ['[!0]*.md', '02-x.md', false],
         ['[!0]*.md', '12-x.md', true],
@@ -49,76 +49,76 @@ describe('globToRegExp', () => {
 
 describe('resolveBook — glob', () => {
     it('sorts naturally, honours exclude and frontmatter flags', () => {
-        const book = { id: 'kds', content: [{ glob: '*.md', exclude: '00-*' }] };
-        const manifest = resolveBook({ book, frontmatters: kdsFrontmatters });
+        const book = { id: 'manual', content: [{ glob: '*.md', exclude: '00-*' }] };
+        const manifest = resolveBook({ book, frontmatters: docsFrontmatters });
         expect(pages(manifest)).toEqual([
-            '01-kds-instrukcja-uzytkownika.md',
-            '02-1-wprowadzenie.md',
+            '01-preface.md',
+            '02-1-introduction.md',
             '3-intro.md',
-            '10-9-stany-aplikacji.md',
-            '11-10-konfiguracja-stanowiska.md',
+            '10-9-states.md',
+            '11-10-configuration.md',
             'index.md',
         ]);
         expect(manifest.entries.every((e) => e.level === 1)).toBe(true);
     });
 
     it('includes hidden __ folders only when matched explicitly', () => {
-        const book = { id: 'kds', content: [{ glob: '__pdf/*.md' }] };
-        expect(pages(resolveBook({ book, frontmatters: kdsFrontmatters }))).toEqual(['__pdf/cover.md']);
+        const book = { id: 'manual', content: [{ glob: '__pdf/*.md' }] };
+        expect(pages(resolveBook({ book, frontmatters: docsFrontmatters }))).toEqual(['__pdf/cover.md']);
     });
 
     it('warns when a glob matches nothing', () => {
-        const book = { id: 'kds', content: [{ glob: 'nope/*.md' }] };
-        const manifest = resolveBook({ book, frontmatters: kdsFrontmatters });
+        const book = { id: 'manual', content: [{ glob: 'nope/*.md' }] };
+        const manifest = resolveBook({ book, frontmatters: docsFrontmatters });
         expect(manifest.warnings.map((w) => w.code)).toEqual(['PDF_EMPTY_GLOB']);
     });
 
     it('excludes pages with pdf: false', () => {
-        const book = { id: 'kds', content: [{ glob: 'diagnostyka/*.md' }] };
-        const manifest = resolveBook({ book, frontmatters: kdsFrontmatters });
+        const book = { id: 'manual', content: [{ glob: 'troubleshooting/*.md' }] };
+        const manifest = resolveBook({ book, frontmatters: docsFrontmatters });
         expect(pages(manifest)).toEqual([]);
-        expect(manifest.excluded).toEqual([{ mdKey: '/diagnostyka/index.md', reason: 'frontmatter pdf: false' }]);
+        expect(manifest.excluded).toEqual([{ mdKey: '/troubleshooting/index.md', reason: 'frontmatter pdf: false' }]);
     });
 });
 
 describe('resolveBook — explicit entries and parts', () => {
     it('resolves routes, files, levels and parts', () => {
         const book = {
-            id: 'kds',
+            id: 'manual',
             content: [
-                '/02-1-wprowadzenie',
-                { page: '10-9-stany-aplikacji.md', title: 'Stany' },
-                { part: 'Pomoc', items: ['/how-to', 'how-to/zmiana-miejsca.md'] },
+                '/02-1-introduction',
+                { page: '10-9-states.md', title: 'States' },
+                { part: 'Help', items: ['/how-to', 'how-to/change-location.md'] },
                 '/missing',
             ],
         };
-        const manifest = resolveBook({ book, frontmatters: kdsFrontmatters });
+        const manifest = resolveBook({ book, frontmatters: docsFrontmatters });
         expect(manifest.entries.map((e) => [e.kind, e.relPath ?? e.title, e.level])).toEqual([
-            ['page', '02-1-wprowadzenie.md', 1],
-            ['page', '10-9-stany-aplikacji.md', 1],
-            ['part', 'Pomoc', 1],
+            ['page', '02-1-introduction.md', 1],
+            ['page', '10-9-states.md', 1],
+            ['part', 'Help', 1],
             ['page', 'how-to/index.md', 2],
-            ['page', 'how-to/zmiana-miejsca.md', 2],
+            ['page', 'how-to/change-location.md', 2],
         ]);
-        expect(manifest.entries[1].title).toBe('Stany');
+        expect(manifest.entries[1].title).toBe('States');
         expect(manifest.warnings.map((w) => w.code)).toEqual(['PDF_MISSING_PAGE']);
     });
 
     it('dedupes repeated pages with a warning', () => {
-        const book = { id: 'kds', content: ['/02-1-wprowadzenie', { glob: '02-*.md' }] };
-        const manifest = resolveBook({ book, frontmatters: kdsFrontmatters });
-        expect(pages(manifest)).toEqual(['02-1-wprowadzenie.md']);
+        const book = { id: 'manual', content: ['/02-1-introduction', { glob: '02-*.md' }] };
+        const manifest = resolveBook({ book, frontmatters: docsFrontmatters });
+        expect(pages(manifest)).toEqual(['02-1-introduction.md']);
         expect(manifest.warnings.map((w) => w.code)).toEqual(['PDF_DUPLICATE_PAGE']);
     });
 
     it('honours pdf.books and pdf.numbered', () => {
         const frontmatters = {
             '/a.md': fm({ pdf: { books: ['other'] } }),
-            '/b.md': fm({ pdf: { numbered: false, title: 'Historia' } }),
+            '/b.md': fm({ pdf: { numbered: false, title: 'Revision history' } }),
         };
-        const manifest = resolveBook({ book: { id: 'kds', content: [{ glob: '*.md' }] }, frontmatters });
+        const manifest = resolveBook({ book: { id: 'manual', content: [{ glob: '*.md' }] }, frontmatters });
         expect(pages(manifest)).toEqual(['b.md']);
-        expect(manifest.entries[0]).toMatchObject({ numbered: false, title: 'Historia' });
+        expect(manifest.entries[0]).toMatchObject({ numbered: false, title: 'Revision history' });
         expect(manifest.excluded[0].reason).toContain('pdf.books');
     });
 });
@@ -127,58 +127,58 @@ describe('resolveBook — sidebar', () => {
     const menu = [
         { label: 'Home', link: '/', type: 'md', children: [] },
         {
-            label: 'Wprowadzenie', link: '', type: 'folder', children: [
-                { label: 'KDS', link: '/01-kds-instrukcja-uzytkownika', type: 'md', children: [] },
-                { label: '1. Wprowadzenie', link: '/02-1-wprowadzenie', type: 'md', children: [] },
+            label: 'Introduction', link: '', type: 'folder', children: [
+                { label: 'Preface', link: '/01-preface', type: 'md', children: [] },
+                { label: 'Getting started', link: '/02-1-introduction', type: 'md', children: [] },
             ],
         },
         {
-            label: 'Pomoc', link: '', type: 'folder', children: [
+            label: 'Help', link: '', type: 'folder', children: [
                 {
                     label: 'How to', link: '/how-to', type: 'md', children: [
-                        { label: 'Zmiana miejsca', link: '/how-to/zmiana-miejsca', type: 'md', children: [] },
+                        { label: 'Change location', link: '/how-to/change-location', type: 'md', children: [] },
                     ],
                 },
-                { label: 'Diagnostyka', link: '/diagnostyka', type: 'md', children: [] },
+                { label: 'Troubleshooting', link: '/troubleshooting', type: 'md', children: [] },
             ],
         },
         { label: 'GitHub', link: 'https://github.com', type: 'md', children: [] },
     ];
 
     it('maps groups to parts and depth to levels; skips home and external links', () => {
-        const manifest = resolveBook({ book: { id: 'kds', content: 'sidebar' }, frontmatters: kdsFrontmatters, menu });
+        const manifest = resolveBook({ book: { id: 'manual', content: 'sidebar' }, frontmatters: docsFrontmatters, menu });
         expect(manifest.entries.map((e) => [e.kind, e.relPath ?? e.title, e.level])).toEqual([
-            ['part', 'Wprowadzenie', 1],
-            ['page', '01-kds-instrukcja-uzytkownika.md', 2],
-            ['page', '02-1-wprowadzenie.md', 2],
-            ['part', 'Pomoc', 1],
+            ['part', 'Introduction', 1],
+            ['page', '01-preface.md', 2],
+            ['page', '02-1-introduction.md', 2],
+            ['part', 'Help', 1],
             ['page', 'how-to/index.md', 2],
-            ['page', 'how-to/zmiana-miejsca.md', 3],
+            ['page', 'how-to/change-location.md', 3],
         ]);
         expect(manifest.excluded).toEqual([
             { mdKey: '/index.md', reason: 'layout: home' },
-            { mdKey: '/diagnostyka/index.md', reason: 'frontmatter pdf: false' },
+            { mdKey: '/troubleshooting/index.md', reason: 'frontmatter pdf: false' },
         ]);
         expect(manifest.warnings).toEqual([]);
-        expect(manifest.entries[1].title).toBe('KDS');
+        expect(manifest.entries[1].title).toBe('Preface');
     });
 
     it('flattens groups and applies exclude masks', () => {
         const manifest = resolveBook({
-            book: { id: 'kds', content: [{ sidebar: true, groups: 'flatten', exclude: ['how-to/**'] }] },
-            frontmatters: kdsFrontmatters,
+            book: { id: 'manual', content: [{ sidebar: true, groups: 'flatten', exclude: ['how-to/**'] }] },
+            frontmatters: docsFrontmatters,
             menu,
         });
         expect(manifest.entries.map((e) => [e.relPath, e.level])).toEqual([
-            ['01-kds-instrukcja-uzytkownika.md', 1],
-            ['02-1-wprowadzenie.md', 1],
+            ['01-preface.md', 1],
+            ['02-1-introduction.md', 1],
         ]);
     });
 
     it('allows a page excluded by one entry to be included by a later one', () => {
         const manifest = resolveBook({
-            book: { id: 'kds', content: [{ sidebar: true, groups: 'flatten', exclude: 'how-to/**' }, '/how-to'] },
-            frontmatters: kdsFrontmatters,
+            book: { id: 'manual', content: [{ sidebar: true, groups: 'flatten', exclude: 'how-to/**' }, '/how-to'] },
+            frontmatters: docsFrontmatters,
             menu,
         });
         expect(pages(manifest)).toContain('how-to/index.md');
@@ -187,27 +187,27 @@ describe('resolveBook — sidebar', () => {
 
     it('selects a branch by label path', () => {
         const manifest = resolveBook({
-            book: { id: 'kds', content: [{ sidebar: 'Pomoc > How to' }] },
-            frontmatters: kdsFrontmatters,
+            book: { id: 'manual', content: [{ sidebar: 'Help > How to' }] },
+            frontmatters: docsFrontmatters,
             menu,
         });
         expect(manifest.entries.map((e) => [e.relPath, e.level])).toEqual([
             ['how-to/index.md', 1],
-            ['how-to/zmiana-miejsca.md', 2],
+            ['how-to/change-location.md', 2],
         ]);
     });
 
     it('sorts a glob in sidebar order', () => {
         const manifest = resolveBook({
-            book: { id: 'kds', content: [{ glob: ['0[12]-*.md', 'how-to/*.md'], sort: 'sidebar' }] },
-            frontmatters: kdsFrontmatters,
+            book: { id: 'manual', content: [{ glob: ['0[12]-*.md', 'how-to/*.md'], sort: 'sidebar' }] },
+            frontmatters: docsFrontmatters,
             menu,
         });
         expect(pages(manifest)).toEqual([
-            '01-kds-instrukcja-uzytkownika.md',
-            '02-1-wprowadzenie.md',
+            '01-preface.md',
+            '02-1-introduction.md',
             'how-to/index.md',
-            'how-to/zmiana-miejsca.md',
+            'how-to/change-location.md',
         ]);
     });
 });
@@ -248,10 +248,31 @@ describe('book config helpers', () => {
     });
 
     it('formats a manifest tree', () => {
-        const manifest = resolveBook({ book: { id: 'kds', content: [{ glob: '0[12]-*.md' }, '/missing'] }, frontmatters: kdsFrontmatters });
-        const text = formatManifest('kds', manifest);
-        expect(text).toContain('kds (2 pages, 0 excluded)');
-        expect(text).toContain('• 01-kds-instrukcja-uzytkownika.md');
+        const manifest = resolveBook({ book: { id: 'manual', content: [{ glob: '0[12]-*.md' }, '/missing'] }, frontmatters: docsFrontmatters });
+        const text = formatManifest('manual', manifest);
+        expect(text).toContain('manual (2 pages, 0 excluded)');
+        expect(text).toContain('• 01-preface.md');
         expect(text).toContain('PDF_MISSING_PAGE');
+        const numbered = formatManifest('manual', manifest, new Map([['/02-1-introduction.md', [1]]]));
+        expect(numbered).toContain('• 1. 02-1-introduction.md');
+    });
+
+    it('inherits the site numbering unless the book sets its own', () => {
+        expect(getBookConfig({ books: { a: {} } }, 'a', { numbering: { depth: 2 } }).numbering).toEqual({ depth: 2 });
+        expect(getBookConfig({ books: { a: { numbering: false } } }, 'a', { numbering: true }).numbering).toBe(false);
+        expect(getBookConfig({ books: { a: {} } }, 'a', {}).numbering).toBe(false);
+    });
+
+    it('ignores pdf flags in site mode, but honours numbered: false', () => {
+        const frontmatters = {
+            '/a.md': fm({ pdf: false }),
+            '/b.md': fm({ pdf: { numbered: false } }),
+            '/c.md': fm({ numbered: false }),
+        };
+        const book = { id: '__site', content: [{ glob: '*.md' }] };
+        const site = resolveBook({ book, frontmatters, target: 'site' });
+        expect(site.entries.map((e) => [e.relPath, e.numbered])).toEqual([['a.md', true], ['b.md', true], ['c.md', false]]);
+        const pdf = resolveBook({ book, frontmatters });
+        expect(pdf.entries.map((e) => [e.relPath, e.numbered])).toEqual([['b.md', false], ['c.md', false]]);
     });
 });

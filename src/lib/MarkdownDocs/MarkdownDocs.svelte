@@ -16,7 +16,16 @@
     import CarbonAds from "../components/CarbonAds.svelte";
     import Outline from "./Outline.svelte";
     import { useRouter } from "./useRouter.svelte";
-    import { PDF_ROUTE_PREFIX } from "../pdf/resolveBook.js";
+    import { PDF_ROUTE_PREFIX, resolveBook } from "../pdf/resolveBook.js";
+    import {
+        buildRefTargets,
+        computePageNumbers,
+        createRefResolver,
+        formatNumber,
+        normalizeNumbering,
+        rehypeNumbering,
+        routeKey,
+    } from "./numbering.js";
     import { useSplitter } from "./useSplitter.svelte";
     import { handleCodeGroupClick, handleCodeGroupKeydown } from "./codeGroup";
     import allFrontmatters from "virtual:greg-frontmatter";
@@ -36,7 +45,7 @@
         normalizeLocaleKey,
         resolveLocaleForPath,
     } from "./localeUtils";
-    import { withBase, withoutBase, normalizePath as normalizeSrcDir } from "./common";
+    import { withBase, withoutBase, normalizePath as normalizeSrcDir, pathConfig } from "./common";
     import {
         buildDefaultVersionPathPrefix,
         DEFAULT_PATH_PREFIX,
@@ -1092,7 +1101,7 @@
         );
         return inLocale;
     });
-    const menu = $derived.by(() => {
+    const baseMenu = $derived.by(() => {
         return Array.isArray(sidebar)
             ? (parseSidebarConfig(
                   sidebar,
@@ -1109,6 +1118,53 @@
                   currentSrcDir,
                   localeFrontmatters,
               );
+    });
+
+    // -- Numbering ---------------------------------------------------------------
+    // Chapter numbers come from the sidebar order (the same rule as PDF books), so
+    // Markdown headings stay unnumbered. Empty links `[](/page)` become references.
+    const siteNumbering = normalizeNumbering((gregConfig as any).numbering);
+    const siteManifest = $derived(
+        resolveBook({
+            book: { id: "__site", content: "sidebar" },
+            frontmatters: localeFrontmatters,
+            menu: baseMenu,
+            srcDir: currentSrcDir,
+            target: "site",
+        }),
+    );
+    const sitePageNumbers = $derived(
+        siteNumbering
+            ? computePageNumbers(siteManifest.entries, siteNumbering.depth)
+            : new Map<string, number[]>(),
+    );
+    const siteRefTargets = $derived(buildRefTargets(siteManifest.entries, sitePageNumbers));
+
+    function numberMenu(items: any[], numbers: Map<string, number[]>): any[] {
+        return items.map((item) => {
+            const number = item.link ? numbers.get(routeKey(item.link)) : undefined;
+            return {
+                ...item,
+                label: number ? `${formatNumber(number, siteNumbering!.format)} ${item.label}` : item.label,
+                children: item.children?.length ? numberMenu(item.children, numbers) : item.children,
+            };
+        });
+    }
+
+    const menu = $derived.by(() => {
+        if (!siteNumbering?.sidebar || !sitePageNumbers.size) return baseMenu;
+        const byRoute = new Map<string, number[]>();
+        const prefix = currentSrcDir === "/" ? "" : currentSrcDir;
+        for (const entry of siteManifest.entries) {
+            if (entry.kind !== "page") continue;
+            const number = sitePageNumbers.get(entry.mdKey);
+            if (!number) continue;
+            const key = routeKey(entry.route);
+            byRoute.set(key, number);
+            // Sidebar links may omit the docs prefix.
+            if (prefix && key.startsWith(prefix + "/")) byRoute.set(key.slice(prefix.length), number);
+        }
+        return numberMenu(baseMenu, byRoute);
     });
     const flat = $derived(flattenMenu(menu));
     const localeSwitchItems = $derived(
@@ -1429,6 +1485,22 @@
         activeKey ? frontmatters[activeKey] : undefined,
     );
 
+    /** Heading numbers and cross-reference texts for the active page. */
+    const siteRenderPlugins = $derived.by(() => {
+        const fileUrl = activeMarkdownFetchPath || router.activeMarkdownPath || "";
+        return [
+            {
+                name: "rehype-numbering",
+                plugin: rehypeNumbering,
+                options: {
+                    pageNumber: activeKey ? sitePageNumbers.get(activeKey) : undefined,
+                    numbering: siteNumbering,
+                    resolveRef: createRefResolver({ fileUrl, base: pathConfig.base, targets: siteRefTargets }),
+                },
+            },
+        ];
+    });
+
     /** Apply withBase to a hero image src string or themed-image object. */
     function applyBaseToImage(image: unknown): unknown {
         if (!image) return image;
@@ -1627,14 +1699,14 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
 {#if pdfBookId === ""}
     {#await import("../pdf/PdfIndex.svelte") then { default: PdfIndex }}
-        <PdfIndex srcDir={currentSrcDir} {menu} {frontmatters} />
+        <PdfIndex srcDir={currentSrcDir} menu={baseMenu} {frontmatters} />
     {/await}
 {:else if pdfBookId !== null}
     {#await import("../pdf/PrintBook.svelte") then { default: PrintBook }}
         <PrintBook
             bookId={pdfBookId}
             srcDir={currentSrcDir}
-            {menu}
+            menu={baseMenu}
             {frontmatters}
             {mermaidTheme}
             {mermaidThemes}
@@ -1829,6 +1901,7 @@
                             enableImagePreview={markdownImagePreview}
                             shikiExtraLangs={Array.isArray(shiki?.extraLangs) ? shiki.extraLangs : []}
                             colorTheme={theme}
+                            extraRehypePlugins={siteRenderPlugins}
                         />
                         {#if lastModified && activeFrontmatter?._mtime}
                             {@const lmLabel =

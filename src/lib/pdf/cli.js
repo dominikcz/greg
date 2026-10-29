@@ -19,7 +19,8 @@ import { collectFrontmatters } from '../MarkdownDocs/vitePluginFrontmatter.js';
 import { prepareMenu, parseSidebarConfig } from '../MarkdownDocs/docsUtils.js';
 import { DEFAULT_OUTPUT_BASE_DIR } from '../MarkdownDocs/versioningDefaults.js';
 import { formatManifest, getBookConfig, listBookIds, resolveBook } from './resolveBook.js';
-import { anchorPageNumbers, closePdf, countPages, openPdf } from './pdfInspect.js';
+import { anchorPageNumbers, closePdf, countPages, openPdf, readOutline } from './pdfInspect.js';
+import { computePageNumbers, normalizeNumbering } from '../MarkdownDocs/numbering.js';
 
 const USE_COLOR = process.stdout.isTTY && !process.env.NO_COLOR;
 const color = (text, code) => (USE_COLOR ? `\x1b[${code}m${text}\x1b[0m` : text);
@@ -182,6 +183,40 @@ const PDF_OPTIONS = {
     tagged: true,
 };
 
+const normalizeTitle = (text) => String(text ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+/**
+ * Cross-check TOC page numbers with the PDF bookmarks (Chromium builds both from the
+ * same headings, but link destinations are affected by a fragmentation bug the
+ * bookmarks are not). Entries are matched in document order by heading text; a
+ * mismatch is corrected in place. Returns descriptions of corrected entries.
+ */
+export async function reconcileWithOutline(doc, tocEntries, pages) {
+    if (!tocEntries.length) return [];
+    const outline = await readOutline(doc);
+    const fixed = [];
+    let cursor = 0;
+    for (const entry of tocEntries) {
+        const text = normalizeTitle(entry.text);
+        if (!text || !entry.target) continue;
+        let found = -1;
+        for (let i = cursor; i < outline.length; i++) {
+            if (normalizeTitle(outline[i].title).includes(text)) {
+                found = i;
+                break;
+            }
+        }
+        if (found === -1) continue;
+        cursor = found + 1;
+        const page = outline[found].page;
+        if (page && pages[entry.target] !== page) {
+            fixed.push(`"${entry.text}" ${pages[entry.target] ?? '?'} → ${page}`);
+            pages[entry.target] = page;
+        }
+    }
+    return fixed;
+}
+
 async function printBook(context, baseUrl, bookId, opts) {
     const page = await context.newPage();
     const consoleErrors = [];
@@ -218,7 +253,14 @@ async function printBook(context, baseUrl, bookId, opts) {
         const firstDoc = await openPdf(buffer);
         const firstCount = firstDoc.numPages;
         const pages = await anchorPageNumbers(firstDoc, signal.tocTargets);
+        const fixed = await reconcileWithOutline(firstDoc, signal.tocEntries ?? [], pages);
         await closePdf(firstDoc);
+        if (fixed.length) {
+            signal.warnings.push({
+                code: 'PDF_TOC_PAGE_MISMATCH',
+                message: `${fixed.length} TOC entries pointed to a different page than their bookmark (corrected): ${fixed.slice(0, 5).join('; ')}`,
+            });
+        }
         tocNumbers = await page.evaluate((map) => window.__GREG_PDF__.setPageNumbers(map), pages);
         timings.inspect = Date.now() - t;
         t = Date.now();
@@ -279,7 +321,10 @@ export async function runPdfCommand(argv, { root = process.cwd() } = {}) {
         const model = loadDocsModel(config, root);
         for (const id of bookIds) {
             const book = getBookConfig(config.pdf, id, config);
-            console.log(formatManifest(id, resolveBook({ book, ...model })));
+            const manifest = resolveBook({ book, ...model });
+            const numbering = normalizeNumbering(book.numbering);
+            const numbers = numbering ? computePageNumbers(manifest.entries, numbering.depth) : null;
+            console.log(formatManifest(id, manifest, numbers));
             console.log('');
         }
         return 0;

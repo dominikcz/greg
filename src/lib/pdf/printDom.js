@@ -2,8 +2,9 @@
  * printDom — whole-book DOM post-processing for the print route.
  *
  * Runs once every chapter is rendered. It needs cross-chapter knowledge, which is
- * why it is not a rehype plugin: heading levels and numbers depend on the book
- * structure, and `#anchor` links may target headings from other chapters.
+ * why it is not a rehype plugin: heading levels depend on the book structure,
+ * and `#anchor` links may target headings from other chapters. (Numbers and
+ * cross-reference texts are added earlier by `rehypeNumbering`.)
  */
 import { chapterIdPrefix } from './rehypePdfChapter.js';
 
@@ -37,8 +38,13 @@ function safeDecode(value) {
 /** Heading text without the generated number. */
 export function headingText(el) {
     const clone = el.cloneNode(true);
-    clone.querySelectorAll('.pdf-heading-number').forEach((n) => n.remove());
+    clone.querySelectorAll('.heading-number').forEach((n) => n.remove());
     return clone.textContent.replace(/\s+/g, ' ').trim();
+}
+
+/** Generated number of a heading ('' when not numbered). */
+export function headingNumber(el) {
+    return el.querySelector('.heading-number')?.textContent ?? '';
 }
 
 /**
@@ -59,38 +65,17 @@ export function applyHeadingShift(chapters, shift) {
     }
 }
 
-/** Number headings from the book structure (numbers are real text, so they reach the PDF outline). */
-export function applyNumbering(chapters, numbering, warnings) {
-    if (!numbering) {
-        return;
-    }
-    const depth = Math.min(6, Math.max(1, Number(numbering.depth) || 1));
-    const trailingDot = numbering.format !== '1.1';
-    const numberedHeadings = chapters
-        .filter(({ entry }) => entry.numbered !== false)
-        .flatMap(({ el }) => Array.from(el.querySelectorAll(HEADINGS)));
-    if (!numberedHeadings.length) return;
-    const baseLevel = Math.min(...numberedHeadings.map(headingLevel));
-    const counters = [];
+/** Report headings that already carry a hand-written number while numbering is generated. */
+export function detectManualNumbers(chapters, warnings) {
     for (const { el, entry } of chapters) {
-        if (entry.numbered === false) continue;
         for (const heading of el.querySelectorAll(HEADINGS)) {
-            const rel = headingLevel(heading) - baseLevel;
-            if (rel < 0 || rel >= depth) continue;
-            counters[rel] = (counters[rel] ?? 0) + 1;
-            counters.length = rel + 1;
-            const number = counters.map((n) => n ?? 0).join('.') + (trailingDot ? '.' : '');
-            if (MANUAL_NUMBER_RE.test(heading.textContent ?? '')) {
+            const text = headingText(heading);
+            if (MANUAL_NUMBER_RE.test(text)) {
                 warnings.push({
                     code: 'PDF_MANUAL_NUMBER',
-                    message: `Heading "${headingText(heading)}" in ${entry.relPath} already starts with a number.`,
+                    message: `Heading "${text}" in ${entry.relPath} already starts with a number.`,
                 });
             }
-            const span = heading.ownerDocument.createElement('span');
-            span.className = 'pdf-heading-number';
-            span.textContent = number;
-            heading.insertBefore(heading.ownerDocument.createTextNode(' '), heading.firstChild);
-            heading.insertBefore(span, heading.firstChild);
         }
     }
 }
@@ -202,7 +187,7 @@ export function collectTocEntries(root, depth) {
             if (!h.id || h.closest('.pdf-no-toc')) continue;
             const level = headingLevel(h);
             if (level > max) continue;
-            const number = h.querySelector('.pdf-heading-number')?.textContent ?? '';
+            const number = headingNumber(h);
             entries.push({ id: h.id, level, number, text: headingText(h), part: heading.matches('.pdf-part') });
         }
     }

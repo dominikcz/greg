@@ -13,7 +13,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { closePdf, extractPageLines, openPdf } from './pdfInspect.js';
 
-const LEADING_NUMBER_RE = /^\d+(?:\.\d+)*\.?\s+(?=\S)/;
+// Heading-style numbers only ("5. ", "5.1 ", "5.1. ") — a bare "3 " may be table content.
+const LEADING_NUMBER_RE = /^(?:\d+\.|\d+(?:\.\d+)+\.?)\s+(?=\S)/;
 
 /** Normalise text so typography and numbering never produce differences. */
 export function normalizeText(text) {
@@ -87,13 +88,16 @@ export function bodyLines(pages, skip = new Set()) {
         if (skip.has(index + 1)) return;
         const edges = edgeIndexes(pageLines.length);
         const current = new Set();
+        let leading = true;
         pageLines.forEach((line, i) => {
             if (edges.has(i) && running.has(runningKey(line))) return;
             const normalized = normalizeLine(lineText(line));
             if (!normalized) return;
             current.add(normalized);
-            // Table header rows repeated at the top of a continuation page.
-            if (i < 3 && previousPage.has(normalized)) return;
+            // Table header rows repeated at the very top of a continuation page (only the
+            // leading run of lines that all appeared on the previous page).
+            if (leading && i < 3 && previousPage.has(normalized)) return;
+            leading = false;
             lines.push({ text: normalized, page: index + 1 });
         });
         previousPage = current;
@@ -142,7 +146,8 @@ function splitSections(lines, headings, positions) {
         const end = k + 1 < located.length ? located[k + 1].at : lines.length;
         const body = lines.slice(start, end);
         sections.set(located[k].index, {
-            words: normalizeText(body.map((l) => l.text).join(' ')).split(' ').filter(Boolean),
+            // Slashes split words too: table cells wrap "IN / OUT" differently between layouts.
+            words: normalizeText(body.map((l) => l.text).join(' ')).split(/[\s/]+/).filter(Boolean),
             page: lines[start]?.page ?? null,
         });
     }

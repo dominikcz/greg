@@ -4,10 +4,16 @@
 :root {
     --pdf-font-size: 10.5pt;
     --pdf-line-height: 1.5;
+    --pdf-font-family: inherit;
+    --pdf-heading-font-family: inherit;
     --pdf-color: #1f2328;
+    --pdf-heading-color: #1f2328;
     --pdf-muted: #59636e;
     --pdf-accent: var(--greg-accent, #0969da);
     --pdf-rule: #d1d9e0;
+    --pdf-code-background: #f3f5f7;
+    --pdf-table-font-size: 0.9em;
+    --pdf-table-header-background: #f1f3f5;
     --pdf-margin-box-font: 8.5pt sans-serif;
 }
 
@@ -35,6 +41,7 @@ html:has(.greg-print) body {
     -webkit-print-color-adjust: exact;
 
     .markdown-body {
+        font-family: var(--pdf-font-family);
         font-size: var(--pdf-font-size);
         line-height: var(--pdf-line-height);
         background: transparent;
@@ -51,6 +58,98 @@ html:has(.greg-print) body {
         > :last-child {
             break-after: auto !important;
             page-break-after: auto !important;
+        }
+
+        // Typography tuned for paper (the site sizes are made for screens).
+        p {
+            margin: 0.55em 0;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--pdf-heading-font-family);
+            color: var(--pdf-heading-color);
+            line-height: 1.25;
+            margin: 1.4em 0 0.5em;
+            // Chromium bug workaround: a heading moved to the next page (forced break or
+            // break-after: avoid) starting exactly at its box edge leaves an empty fragment
+            // on the previous page — doubled bookmark title, destination one page early.
+            padding-top: 1px;
+        }
+
+        h1 {
+            font-size: 1.9em;
+            margin-top: 0;
+            padding-bottom: 0.25em;
+        }
+
+        h2 {
+            font-size: 1.4em;
+            padding-bottom: 0.2em;
+        }
+
+        h3 {
+            font-size: 1.15em;
+        }
+
+        h4 {
+            font-size: 1em;
+        }
+
+        ul, ol {
+            margin: 0.4em 0 0.6em;
+            padding-left: 1.6em;
+        }
+
+        li + li {
+            margin-top: 0.15em;
+        }
+
+        li > p {
+            margin: 0.25em 0;
+        }
+
+        :not(pre) > code {
+            padding: 0 0.25em;
+            font-size: 0.86em;
+            color: inherit;
+            background: var(--pdf-code-background);
+            border: 0.5pt solid var(--pdf-rule);
+            border-radius: 2px;
+        }
+
+        pre {
+            border: 0.5pt solid var(--pdf-rule);
+            font-size: 0.85em;
+        }
+
+        table {
+            display: table;
+            width: 100%;
+            margin: 0.7em 0;
+            font-size: var(--pdf-table-font-size);
+            line-height: 1.35;
+        }
+
+        table th,
+        table td {
+            padding: 3pt 6pt;
+            vertical-align: top;
+            border: 0.5pt solid var(--pdf-rule);
+        }
+
+        table thead th {
+            text-align: left;
+            color: var(--pdf-heading-color);
+            background: var(--pdf-table-header-background);
+        }
+
+        table tbody tr,
+        table tbody tr:nth-child(even) {
+            background: transparent;
+        }
+
+        blockquote {
+            margin: 0.6em 0;
         }
     }
 
@@ -86,7 +185,11 @@ html:has(.greg-print) body {
 
     img {
         max-width: 100%;
+        // Tall screenshots would otherwise fill a whole page at full width.
+        max-height: var(--pdf-image-max-height, 140mm);
+        width: auto;
         height: auto;
+        object-fit: contain;
     }
 
     // Keep an image together with the caption paragraph that follows it.
@@ -107,7 +210,7 @@ html:has(.greg-print) body {
         break-inside: avoid;
     }
 
-    .pdf-heading-number {
+    .heading-number {
         margin-right: 0.15em;
     }
 
@@ -127,12 +230,19 @@ html:has(.greg-print) body {
 
     // Chromium splits a heading that starts exactly at a forced page break into an
     // empty fragment on the previous page: its link destination then points one page
-    // too early and its PDF bookmark title is doubled. 1px of offset avoids it.
+    // too early and its PDF bookmark title is doubled. A small offset avoids it
+    // (1px proved too fragile — it depends on rounding at print resolution).
     .pdf-chapter,
     .pdf-part,
     .pdf-toc,
     .pdf-cover {
-        padding-top: 1px;
+        padding-top: 1mm;
+    }
+
+    .pdf-chapter > .markdown-body > :first-child,
+    .pdf-part > :first-child,
+    .pdf-toc > :first-child {
+        margin-top: 1px !important;
     }
 
     .pdf-break-before,
@@ -198,8 +308,8 @@ html:has(.greg-print) body {
     .pdf-toc-number {
         order: 0;
         flex: none;
-        min-width: 2em;
-        padding-right: 0.4em;
+        min-width: 1.7em;
+        padding-right: 0.3em;
     }
 
     .pdf-toc-text {

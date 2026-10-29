@@ -127,7 +127,6 @@ export function getBookConfig(pdfConfig, bookId, siteConfig = {}) {
     return {
         content: 'sidebar',
         cover: false,
-        numbering: false,
         headingShift: 'auto',
         chapterBreak: true,
         externalPageLinks: 'site-url',
@@ -136,6 +135,8 @@ export function getBookConfig(pdfConfig, bookId, siteConfig = {}) {
         id: bookId,
         title: raw.title ?? defaults.title ?? siteConfig.mainTitle ?? bookId,
         version: raw.version ?? defaults.version ?? siteConfig.version ?? '',
+        // Books follow the site numbering unless they set their own.
+        numbering: raw.numbering ?? defaults.numbering ?? siteConfig.numbering ?? false,
         toc,
         page,
     };
@@ -153,9 +154,11 @@ export function getBookConfig(pdfConfig, bookId, siteConfig = {}) {
  * @param {Record<string, Record<string, any>>} args.frontmatters
  * @param {Array<any>} [args.menu]                   resolved sidebar tree
  * @param {string} [args.srcDir]                     docs root prefix of the locale
+ * @param {'pdf' | 'site'} [args.target]             'site' ignores the `pdf` frontmatter flags (site numbering)
  * @returns {{ entries: Array<ManifestPage|ManifestPart>, excluded: Array<{ mdKey: string, reason: string }>, warnings: ManifestWarning[] }}
  */
-export function resolveBook({ book, frontmatters, menu = [], srcDir = '/' }) {
+export function resolveBook({ book, frontmatters, menu = [], srcDir = '/', target = 'pdf' }) {
+    const forSite = target === 'site';
     const root = normalizeSrcDir(srcDir);
     const bookId = book?.id;
     const allKeys = Object.keys(frontmatters ?? {}).filter((key) => {
@@ -209,6 +212,7 @@ export function resolveBook({ book, frontmatters, menu = [], srcDir = '/' }) {
     })(menu);
 
     function exclusionReason(mdKey) {
+        if (forSite) return null;
         const pdf = readPdfFrontmatter(frontmatters[mdKey]);
         if (pdf.include === false) return 'frontmatter pdf: false';
         if (Array.isArray(pdf.books) && bookId && !pdf.books.includes(bookId)) {
@@ -252,7 +256,7 @@ export function resolveBook({ book, frontmatters, menu = [], srcDir = '/' }) {
             relPath: relativeMdPath(mdKey, root),
             title: String(opts.title ?? pdf.title ?? fm.title ?? sidebarLabels.get(mdKey) ?? ''),
             level: opts.level ?? level,
-            numbered: pdf.numbered !== false,
+            numbered: fm.numbered !== false && (forSite || pdf.numbered !== false),
             frontmatter: fm,
         });
     }
@@ -384,7 +388,7 @@ export function resolveBook({ book, frontmatters, menu = [], srcDir = '/' }) {
 }
 
 /** Plain-text tree of a manifest (used by `greg pdf --list`). */
-export function formatManifest(bookId, manifest) {
+export function formatManifest(bookId, manifest, pageNumbers) {
     const pages = manifest.entries.filter((e) => e.kind === 'page');
     const lines = [`${bookId} (${pages.length} pages, ${manifest.excluded.length} excluded)`];
     for (const entry of manifest.entries) {
@@ -393,7 +397,9 @@ export function formatManifest(bookId, manifest) {
             lines.push(`${indent}▸ ${entry.title}`);
         } else {
             const title = entry.title || entry.relPath;
-            lines.push(`${indent}• ${title}${entry.numbered ? '' : ' (unnumbered)'}  [${entry.relPath}]`);
+            const number = pageNumbers?.get(entry.mdKey);
+            const prefix = number ? `${number.join('.')}. ` : '';
+            lines.push(`${indent}• ${prefix}${title}${entry.numbered ? '' : ' (unnumbered)'}  [${entry.relPath}]`);
         }
     }
     for (const ex of manifest.excluded) lines.push(`  ✗ ${ex.mdKey}  (${ex.reason})`);

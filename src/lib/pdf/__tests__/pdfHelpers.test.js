@@ -17,15 +17,20 @@ const result = (hunks) => hunks.filter((h) => h.type !== 'delete').flatMap((h) =
 describe('compare helpers', () => {
     it('normalises typography symmetrically', () => {
         expect(normalizeText('„Zamknij”\u00a0—  OK…')).toBe('"zamknij" - ok...');
-        expect(normalizeText('( kds_ff ) i #1038 , dalej .')).toBe('(kds_ff) i #1038, dalej.');
+        expect(normalizeText('( item_42 ) and #1038 , next .')).toBe('(item_42) and #1038, next.');
     });
 
     it('drops text in the page margin zones and repeated table headers', () => {
         const pages = [
-            [{ text: 'Header', edge: true }, { text: 'Body', edge: false }, { text: 'Sytuacja Co widzi', edge: false }, { text: 'Wiersz 1', edge: false }, { text: '1 / 3', edge: true }],
-            [{ text: 'Sytuacja Co widzi', edge: false }, { text: 'Wiersz 2', edge: false }],
+            [{ text: 'Header', edge: true }, { text: 'Body', edge: false }, { text: 'Case Result', edge: false }, { text: 'Row 1', edge: false }, { text: '1 / 3', edge: true }],
+            [{ text: 'Case Result', edge: false }, { text: 'Row 2', edge: false }],
         ];
-        expect(bodyLines(pages).map((l) => l.text)).toEqual(['body', 'sytuacja co widzi', 'wiersz 1', 'wiersz 2']);
+        expect(bodyLines(pages).map((l) => l.text)).toEqual(['body', 'case result', 'row 1', 'row 2']);
+        const newTable = [
+            [{ text: 'Question Answer', edge: false }, { text: 'A', edge: false }],
+            [{ text: 'Settings', edge: false }, { text: 'Question Answer', edge: false }, { text: 'B', edge: false }],
+        ];
+        expect(bodyLines(newTable).map((l) => l.text)).toEqual(['question answer', 'a', 'settings', 'question answer', 'b']);
     });
 
     it('parses page lists', () => {
@@ -35,26 +40,26 @@ describe('compare helpers', () => {
 
     it('detects running headers and footers, but not numbered body lines', () => {
         const pages = Array.from({ length: 6 }, (_, i) => [
-            'KDS – instrukcja', `Akapit ${'a'.repeat(i + 1)}`, `Krok ${i}`, 'Stała treść', `Opis ${'b'.repeat(i + 1)}`, `${i + 1} / 6`,
+            'User manual – Product', `Paragraph ${'a'.repeat(i + 1)}`, `Step ${i}`, 'Fixed text', `Notes ${'b'.repeat(i + 1)}`, `${i + 1} / 6`,
         ]);
         const running = findRunningLines(pages);
-        expect(running.has('kds - instrukcja')).toBe(true);
+        expect(running.has('user manual - product')).toBe(true);
         expect(running.has('#/#')).toBe(true);
-        expect(running.has('krok #')).toBe(false);
+        expect(running.has('step #')).toBe(false);
         const lines = bodyLines(pages).map((l) => l.text);
-        expect(lines.slice(0, 4)).toEqual(['akapit a', 'krok 0', 'stała treść', 'opis b']);
+        expect(lines.slice(0, 4)).toEqual(['paragraph a', 'step 0', 'fixed text', 'notes b']);
         expect(lines).toHaveLength(24);
     });
 
     it('locates headings after a table of contents, including wrapped ones', () => {
         const lines = [
-            'spis treści', 'wprowadzenie', 'ekran główny i bardzo długi tytuł',
-            'wprowadzenie', 'tekst o ekranie',
-            'ekran główny i bardzo', 'długi tytuł', 'treść',
+            'contents', 'introduction', 'main screen with a very long title',
+            'introduction', 'text about the screen',
+            'main screen with a', 'very long title', 'body',
         ].map((text, i) => ({ text, page: i }));
         const positions = locateHeadings(lines, [
-            { text: '1. Wprowadzenie' },
-            { text: 'Ekran główny i bardzo długi tytuł' },
+            { text: '1. Introduction' },
+            { text: 'Main screen with a very long title' },
         ]);
         expect(positions).toEqual([3, 5]);
     });
@@ -74,9 +79,9 @@ describe('compare helpers', () => {
 
 describe('page css', () => {
     it('turns slot templates into CSS content', () => {
-        const tokens = { title: 'Manual "KDS"', chapter: '' };
+        const tokens = { title: 'Manual "X"', chapter: '' };
         expect(slotToCssContent('{page} / {pages}', tokens)).toBe('counter(page) " / " counter(pages)');
-        expect(slotToCssContent('{title}', tokens)).toBe('"Manual \\"KDS\\""');
+        expect(slotToCssContent('{title}', tokens)).toBe('"Manual \\"X\\""');
         expect(slotToCssContent('Page {page} {unknown}', tokens)).toBe('"Page " counter(page) " {unknown}"');
         expect(replaceTokens('{title} v{version} {x}', { title: 'A', version: '1' })).toBe('A v1 {x}');
     });
@@ -95,7 +100,7 @@ describe('page css', () => {
 
 describe('chapter rewriting', () => {
     it('resolves relative URLs against the markdown file', () => {
-        expect(resolveRelativeUrl('screeny/a.png', '/kds/02-intro.md')).toBe('/kds/screeny/a.png');
+        expect(resolveRelativeUrl('images/a.png', '/manual/02-intro.md')).toBe('/manual/images/a.png');
         expect(resolveRelativeUrl('../img/a.png', '/docs/guide/x.md')).toBe('/docs/img/a.png');
         expect(resolveRelativeUrl('/abs.png', '/docs/x.md')).toBe('/abs.png');
         expect(resolveRelativeUrl('#x', '/docs/x.md')).toBe('#x');
@@ -103,14 +108,14 @@ describe('chapter rewriting', () => {
     });
 
     it('rewrites raw HTML ids and URLs', () => {
-        const html = '<img src="screeny/logo.png" alt="x"><a id="top" href="other.md#a">x</a>';
+        const html = '<img src="images/logo.png" alt="x"><a id="top" href="other.md#a">x</a>';
         expect(rewriteRawHtml(html, { prefix: 'c-x--', fileUrl: '/docs/p.md' }))
-            .toBe('<img src="/docs/screeny/logo.png" alt="x"><a id="c-x--top" href="/docs/other.md#a">x</a>');
+            .toBe('<img src="/docs/images/logo.png" alt="x"><a id="c-x--top" href="/docs/other.md#a">x</a>');
     });
 
     it('normalises routes for lookup', () => {
         expect(normalizeRoute('/base/guide/index.md#x', '/base/')).toBe('/guide');
-        expect(normalizeRoute('/02-1-wprowadzenie/', '/')).toBe('/02-1-wprowadzenie');
+        expect(normalizeRoute('/02-1-introduction/', '/')).toBe('/02-1-introduction');
         expect(normalizeRoute('/%C5%BC.md', '/')).toBe('/ż');
     });
 });

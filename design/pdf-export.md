@@ -79,7 +79,7 @@ płatnych, „drukuj z przeglądarki” jako jedyna ścieżka, brak przepisywani
 
 ### 5.1 Pojęcia
 
-- **Book** — jeden dokument PDF. Projekt może mieć wiele booków (np. `instrukcja`, `serwis`).
+- **Book** — jeden dokument PDF. Projekt może mieć wiele booków (np. `podrecznik`, `serwis`).
 - **Wpis treści** (`PdfContentItem`) — element listy `content` booka, rozwijany do uporządkowanej listy stron.
 - **Strona** — plik `.md` z `srcDir`; w PDF staje się *rozdziałem* (lub podrozdziałem, zależnie od zagnieżdżenia).
 - **Część** (`part`) — grupująca pozycja bez pliku (np. „Dodatki”), generuje stronę tytułową części i poziom w TOC.
@@ -152,16 +152,16 @@ export type PdfPageConfig = {
 export type PdfMarginSlots = { left?: string; center?: string; right?: string };
 ```
 
-Przykład (KDS, stan docelowy — §15):
+Przykład (projekt pilotażowy, stan docelowy — §15):
 
 ```ts
 pdf: {
     books: {
-        instrukcja: {
-            title: 'Instrukcja użytkownika',
-            subtitle: 'KDS – Kitchen Display System',
-            version: '0.0.10',
-            content: [{ sidebar: true, groups: 'flatten', exclude: ['how-to/**', 'diagnostyka/**'] }],
+        podrecznik: {
+            title: 'Podręcznik użytkownika',
+            subtitle: 'Acme Cloud',
+            version: '2.1',
+            content: [{ sidebar: true, groups: 'flatten', exclude: ['how-to/**', 'troubleshooting/**'] }],
             cover: './pdf/cover.md',
             toc: { depth: 3, pageNumbers: true },
             numbering: { depth: 3 },                   // numery generowane — nie ma ich w plikach
@@ -183,7 +183,7 @@ pdf: false                 # strona nie trafia do żadnego PDF
 # lub
 pdf:
   include: false           # jw.
-  books: [instrukcja]      # tylko do wskazanych booków
+  books: [podrecznik]      # tylko do wskazanych booków
   title: Krótszy tytuł     # tytuł w PDF/TOC
   numbered: false          # strona bez numeru rozdziału (np. historia wersji, dodatki)
   break: before | after | avoid | none
@@ -209,7 +209,7 @@ Tekst tylko do druku {.pdf-only}
   poziomie **AST** w zależności od `env.target`, więc treść niepasująca do celu **nie jest renderowana**
   (nie tylko ukrywana CSS-em) — liczy się dla wydajności i dla wyszukiwarki (indeks pomija `pdf-only`).
 - `{.no-pdf}` / `{.pdf-only}` — tańsza ścieżka przez CSS (klasa celu na `<html>` w trasie druku).
-- Opcjonalnie `::: pdf-only instrukcja` — ograniczenie do booka.
+- Opcjonalnie `::: pdf-only podrecznik` — ograniczenie do booka.
 - Komponent `<PageBreak />` (oraz kontener `::: page-break`) — wymuszenie łamania.
 
 ### 5.5 Algorytm rozwiązywania treści
@@ -244,7 +244,7 @@ jednostkowo; przeglądarka dostaje gotową listę.
 serwisu*. Kroki:
 
 1. Bierzemy **rozwiązany** sidebar locale booka — dokładnie ten, który widzi użytkownik serwisu: tablica z konfiguracji
-   (w tym wygenerowana funkcją, jak w KDS) albo `'auto'` z drzewa katalogów; wpisy `auto` są rozwijane.
+   (w tym wygenerowana funkcją w konfiguracji) albo `'auto'` z drzewa katalogów; wpisy `auto` są rozwijane.
 2. Przechodzimy drzewo w głąb, w kolejności menu:
    - pozycja z `link` do strony w `srcDir` → rozdział; **poziom = głębokość w drzewie**
      (wpływa na TOC, numerację i zakładki; nagłówki w treści przesuwane są względem tego poziomu);
@@ -254,10 +254,10 @@ serwisu*. Kroki:
 3. Stosujemy wykluczenia: `exclude` wpisu, potem frontmatter (`pdf: false`).
 
 `{ sidebar: 'Praktyka i FAQ' }` lub `{ sidebar: 'Pomoc > How to' }` bierze tylko wskazaną gałąź. Pozwala to łączyć
-strategie, np. `[ { sidebar: 'Wprowadzenie' }, { glob: '__pdf/*.md' }, { sidebar: 'Praktyka i FAQ' } ]`.
+strategie, np. `[ { sidebar: 'Pierwsze kroki' }, { glob: '__pdf/*.md' }, { sidebar: 'Dodatki' } ]`.
 
 Kiedy którą wybrać: `sidebar` — gdy PDF ma być „serwisem na papierze” i nie chcemy utrzymywać drugiej listy;
-`glob` — gdy kolejność wynika z nazw plików (jak w KDS); jawna lista/`part` — gdy PDF ma inną strukturę niż serwis.
+`glob` — gdy kolejność wynika z nazw plików (prefiksy liczbowe); jawna lista/`part` — gdy PDF ma inną strukturę niż serwis.
 
 ## 6. Przyjazne zarządzanie treścią
 
@@ -265,11 +265,11 @@ Kiedy którą wybrać: `sidebar` — gdy PDF ma być „serwisem na papierze” 
    powód wykluczenia), np.:
 
    ```text
-   instrukcja (14 stron, 2 wykluczone)
-   ├─ 1. Wprowadzenie                         02-1-wprowadzenie.md
-   ├─ 2. Rodzaje stanowisk i ekranów          03-2-rodzaje-stanowisk-i-ekranow.md
+   podrecznik (14 stron, 2 wykluczone)
+   ├─ 1. Wprowadzenie                         02-1-introduction.md
+   ├─ 2. Instalacja                           03-2-installation.md
    │  …
-   └─ ✗ Diagnostyka                           diagnostyka/index.md  (frontmatter pdf: false)
+   └─ ✗ Rozwiązywanie problemów               troubleshooting/index.md  (frontmatter pdf: false)
    ```
 
 2. **Panel podglądu** `/__pdf/<book>` w `greg dev`: lewa kolumna — manifest (kliknięcie przewija do rozdziału,
@@ -326,7 +326,7 @@ greg pdf (CLI) ──► uruchamia preview (programowo, Vite API) ──► play
 ### 7.3 Kotwice i linki
 
 - Każdy rozdział dostaje identyfikator `c-<slug-trasy>`; nagłówki i kotwice wewnątrz — prefiks `c-<slug>--`.
-  Rozwiązuje to kolizje `id` między stronami (np. wiele `#wprowadzenie`).
+  Rozwiązuje to kolizje `id` między stronami (np. wiele `#wstep`).
 - Przepisywanie `href` (rehype, `env.target='pdf'`):
   - `/trasa` lub `./plik.md` w booku → `#c-<slug>`; `/trasa#x` → `#c-<slug>--x`;
   - `#x` (w obrębie strony) → `#c-<bieżący>--x`;
@@ -340,14 +340,14 @@ Generowany przez `pageCss.js`, np.:
 
 ```css
 @page { size: A4; margin: 20mm 18mm;
-  @top-left      { content: "KDS – instrukcja użytkownika"; }
+  @top-left      { content: "Acme Cloud – podręcznik użytkownika"; }
   @bottom-center { content: counter(page) " / " counter(pages); } }
 @page plain { @top-left { content: none; } @bottom-center { content: none; } }
 .pdf-cover, .pdf-toc, .pdf-part { page: plain; }
 ```
 
 - **Tytuł rozdziału w nagłówku (`{chapter}`)**: Chromium nie wspiera `string-set`/`string()`. Rozwiązanie:
-  **strony nazwane per rozdział** — `pageCss.js` generuje `@page ch-7 { @top-right { content: "7. Zamykanie zamówienia" } }`
+  **strony nazwane per rozdział** — `pageCss.js` generuje `@page ch-7 { @top-right { content: "7. Konfiguracja" } }`
   i `#c-…{ page: ch-7 }`. Dla bardzo wielu rozdziałów CSS rośnie liniowo (kilkaset reguł — akceptowalne).
   *Do potwierdzenia w spike'u S1: strony nazwane (`page:`) w połączeniu z polami marginesu.*
 - **Numeracja rozdziałów**: numery są **liczone z manifestu** (kolejność i poziomy z `content`) i wstawiane jako
@@ -392,8 +392,8 @@ Docelowo fragmenty **nie zawierają** ani numerów rozdziałów w tytułach, ani
 w nazwach plików. Wszystko to wynika ze struktury:
 
 - **Kolejność** — z `content` (zalecane: `sidebar`, czyli jedna kolejność dla serwisu i PDF; alternatywnie jawna
-  lista w booku albo `order` we frontmatterze). Nazwy plików mogą być opisowe (`wprowadzenie.md`,
-  `zamykanie-zamowienia.md`) — zmiana kolejności to zmiana jednej linii konfiguracji, bez zmiany nazw i linków.
+  lista w booku albo `order` we frontmatterze). Nazwy plików mogą być opisowe (`introduction.md`,
+  `configuration.md`) — zmiana kolejności to zmiana jednej linii konfiguracji, bez zmiany nazw i linków.
 - **Spis treści** — budowany z nagłówków wszystkich stron manifestu (do `toc.depth`), po nadaniu numerów
   i prefiksów kotwic. Pozycje są linkami; numery stron w etapie 2 (§7.5).
 - **Numeracja** (`numbering: { depth: 3 }`) — numer rozdziału = pozycja strony w manifeście (z uwzględnieniem
@@ -410,7 +410,7 @@ w nazwach plików. Wszystko to wynika ze struktury:
 Narzędzie do monitorowania różnic podczas migracji (i później — regresji między wydaniami):
 
 ```text
-greg pdf instrukcja --compare ./KDS-INSTRUKCJA-UZYTKOWNIKA.pdf
+greg pdf podrecznik --compare ./MANUAL.pdf
 ```
 
 1. Ekstrakcja tekstu z obu PDF (`pdfjs-dist`), z pominięciem stron okładki/TOC (wykrywanych lub wskazanych
@@ -494,79 +494,81 @@ Gdy pojawi się drugi konsument tych punktów, można je opakować w `plugins: [
   obecność tekstu `pdf-only`, brak tekstu `web-only`, poprawne cele linków wewnętrznych, numery w TOC = strony nagłówków.
   Uruchamiane tylko, gdy dostępny jest Chromium (`skipIf`).
 - **Wydajnościowe**: `fakedocs` (500 / 2000 stron) — czas i pamięć; regresja > 20% jako ostrzeżenie.
-- **Pilot**: dokumentacja KDS (`grill/kds/doc`) generowana z fragmentów `docs/` — kryteria §15.4, raport `--compare`.
+- **Pilot**: projekt pilotażowy (§15) generowany z fragmentów `docs/` — kryteria §15.4, raport `--compare`.
 
 ## 14. Plan wdrożenia
 
 | Etap | Zakres | Kryterium ukończenia |
 |---|---|---|
 | S | Spike'i: S1 strony nazwane + pola marginesu; S2 odczyt stron kotwic z PDF; S3 czas/pamięć dla 500 stron | Notatka z wynikami, decyzja o ewentualnych zmianach §7.4/§7.5 |
-| 1 (MVP) | Typy + `resolveBook` + `vitePluginPdf`, trasa `/__pdf`, `web-only`/`pdf-only`/`.no-pdf`, okładka, **generowany TOC (bez numerów stron)**, **generowana numeracja** + ostrzeżenia `PDF_MANUAL_*`, nagłówki/stopki (bez `{chapter}`), linki wewnętrzne, outline, `greg pdf` + `--list` + **`--compare`** | KDS: kryteria §15.4 dla etapu 1 |
-| 2 | Numery stron w TOC, `{chapter}`, numeracja w serwisie (opcjonalna), raport ostrzeżeń, `--strict`, cache Mermaid, panel podglądu z manifestem | Testy integracyjne zielone; KDS spełnia wszystkie kryteria §15.4; raport bez fałszywych alarmów na docs Grega |
+| 1 (MVP) | Typy + `resolveBook` + `vitePluginPdf`, trasa `/__pdf`, `web-only`/`pdf-only`/`.no-pdf`, okładka, **generowany TOC (bez numerów stron)**, **generowana numeracja** + ostrzeżenia `PDF_MANUAL_*`, nagłówki/stopki (bez `{chapter}`), linki wewnętrzne, outline, `greg pdf` + `--list` + **`--compare`** | Pilot: kryteria §15.4 dla etapu 1 |
+| 2 | Numery stron w TOC, `{chapter}`, numeracja w serwisie (opcjonalna), raport ostrzeżeń, `--strict`, cache Mermaid, panel podglądu z manifestem | Testy integracyjne zielone; pilot spełnia wszystkie kryteria §15.4; raport bez fałszywych alarmów na docs Grega |
 | 3 | `volumes`, cache inkrementalny, `pdf.buildWithSite`, przycisk „Pobierz PDF” w serwisie, wersjonowanie, ewentualnie silnik Vivliostyle | Cel wydajnościowy dla 2000 stron |
 | 4 | Furtki §12 jako publiczne API (`markdown.*Plugins`), dokumentacja w `docs/guide/pdf.md` (+ `pl/`) | Dokumentacja i przykład w README |
 
-## 15. Pilot MVP: instrukcja KDS z fragmentów
+## 15. Pilot MVP: podręcznik użytkownika z fragmentów
 
-**Zasada:** źródłem są wyłącznie fragmenty w `kds/doc/docs/`. `KDS-INSTRUKCJA-UZYTKOWNIKA.md` **nie** jest
-wejściem i docelowo znika (wraz z `md-parts.mjs`, `map.json`, `00-poczatek.md` i ręcznym drukiem).
-Obecny `KDS-INSTRUKCJA-UZYTKOWNIKA.pdf` jest **wzorcem treści** — monitorujemy różnice (`--compare`, §7.8)
-i iteracyjnie dostosowujemy konfigurację i fragmenty. Wygląd ma być lepszy, więc nie jest porównywany automatycznie.
+Projekt pilotażowy: podręcznik użytkownika aplikacji (ok. 60 stron A4, 13 rozdziałów, kilkadziesiąt zrzutów ekranu
+i tabel). Dotychczas utrzymywany jako jeden duży plik `MANUAL.md`, cięty zewnętrznym skryptem na części w `docs/`
+(z mapą części w JSON) i drukowany ręcznie z przeglądarki.
+
+**Zasada:** źródłem są wyłącznie fragmenty w `docs/`. `MANUAL.md` **nie** jest wejściem i docelowo znika (wraz ze
+skryptem dzielącym, mapą części, stroną okładki w `docs/` i ręcznym drukiem). Dotychczasowy `MANUAL.pdf` jest
+**wzorcem treści** — monitorujemy różnice (`--compare`, §7.8) i iteracyjnie dostosowujemy konfigurację i fragmenty.
+Wygląd ma być lepszy, więc nie jest porównywany automatycznie.
 
 ### 15.1 Stan wyjściowy fragmentów
 
 | Fragment | Zawartość | Docelowo |
 |---|---|---|
-| `index.md` | Strona główna serwisu (`layout: home`) | Tylko serwis (`pdf: false`) |
-| `00-poczatek.md` | Okładka i prawa autorskie (inline HTML, wysokości w px) + **ręczny spis treści** | **Usunięty.** Okładka i prawa autorskie → `pdf/cover.md` (tokeny `{version}`, `{date}`); spis treści generowany |
-| `01-kds-instrukcja-uzytkownika.md` | `# KDS - instrukcja użytkownika`, `<style>` z regułami łamania, „Historia wersji” | „Historia wersji” jako strona bez numeru (`numbered: false`); `<style>` → `pdf/print.css` / motyw druku |
-| `02-1-wprowadzenie.md` … `14-13-najczestsze-pytania.md` | `## 1. Wprowadzenie` … `## 13. …`, podrozdziały `###` | Opisowe nazwy plików, tytuły **bez numerów**, każda strona zaczyna się od `#` |
-| `how-to/`, `diagnostyka/` | Pomoc tylko w serwisie | Tylko serwis (`exclude` lub `pdf: false`) |
-| `../screeny/` | Zrzuty ekranu (ścieżki `screeny/…`) | Bez zmian |
-| `greg.config.ts` | Sidebar z `map.json`, grupy przypisane po **tytułach z numerami** | Sidebar jawny, po ścieżkach plików — wspólna kolejność dla serwisu i PDF |
+| `index.md` | Strona główna serwisu (`layout: home`) | Tylko serwis |
+| `00-front.md` | Okładka i prawa autorskie (inline HTML, wysokości w px) + **ręczny spis treści** | **Usunięty.** Okładka → `__pdf/cover.md` (tokeny `{version}`, `{date}`); spis treści generowany |
+| `01-preface.md` | Tytuł dokumentu, `<style>` z regułami łamania, historia wersji | Historia wersji jako strona bez numeru (`numbered: false`); `<style>` → motyw druku |
+| `02-1-introduction.md` … `14-13-faq.md` | `## 1. …` … `## 13. …`, podrozdziały `###` | Opisowe nazwy plików, tytuły **bez numerów**, każda strona zaczyna się od `#` |
+| `how-to/`, `troubleshooting/` | Pomoc tylko w serwisie | Tylko serwis (`exclude` lub `pdf: false`) |
+| `../images/` | Zrzuty ekranu (ścieżki względne) | Bez zmian |
+| `greg.config.ts` | Sidebar z mapy części, grupy przypisane po **tytułach z numerami** | Sidebar jawny, po ścieżkach plików — wspólna kolejność dla serwisu i PDF |
 
-Wzorzec numeracji w obecnym PDF: numerowane są tylko rozdziały (`##` → „1.”–„13.”), podrozdziały nie.
-Odpowiada to `numbering: { depth: 1, format: '1.' }`; głębszą numerację można włączyć później jedną opcją.
+Wzorzec numeracji: numerowane są tylko rozdziały (`##` → „1.”–„13.”), podrozdziały nie — odpowiada to
+`numbering: { depth: 1 }`.
 
 ### 15.2 Ścieżka migracji (iteracje z monitorowaniem różnic)
 
-Każdy krok kończy się `greg pdf instrukcja --compare ../KDS-INSTRUKCJA-UZYTKOWNIKA.pdf` i przeglądem raportu.
-Wzorzec PDF kopiujemy raz do `pdf/reference/` (nie zmienia się w trakcie migracji).
+Każdy krok kończy się `greg pdf podrecznik --compare <wzorzec>.pdf` i przeglądem raportu.
 
 | Krok | Zmiany | Oczekiwany raport `--compare` |
 |---|---|---|
-| 0. Linia bazowa | Book z `glob: '[0-9][0-9]-*.md'`, `exclude: '00-*'`, `numbering: false`, `cover: './pdf/cover.md'` (przeniesiona okładka) | Różnice tylko: brak ręcznego TOC (pomijany), okładka; treść rozdziałów 1:1 |
-| 1. Numeracja generowana | Usunięcie numerów z tytułów `##` we fragmentach (skrypt), `numbering: { depth: 1 }`, „Historia wersji” `numbered: false`; aktualizacja `GROUPS` w `greg.config.ts` (tytuły bez numerów) | Bez zmian treści (numery są normalizowane); `PDF_MANUAL_NUMBER` = 0 |
-| 2. Jednolite poziomy | Każdy fragment zaczyna się od `#` (tytuł strony), podrozdziały `##`; `headingShift: 'auto'` | Bez zmian treści; struktura TOC/zakładek jak we wzorcu |
-| 3. Kolejność z sidebaru | Opisowe nazwy plików (`wprowadzenie.md`, …), sidebar jawny po ścieżkach w `greg.config.ts`, `content: [{ sidebar: true, groups: 'flatten', exclude: … }]`; poprawa linków między fragmentami (skrypt) | Bez zmian treści; 0 ostrzeżeń o linkach |
-| 4. Sprzątanie | Usunięcie `00-poczatek.md`, `map.json`, `KDS-INSTRUKCJA-UZYTKOWNIKA.md`, `md-parts.mjs` z procesu; `<style>` z `01` do `pdf/print.css`; `npm run pdf` w `package.json` | Bez zmian treści |
-| 5. Wygląd | Dopracowanie `pdf/print.css` i okładki (typografia, odstępy, tabele, obrazy z podpisami) | Bez zmian treści; ocena wizualna na podglądzie `/__pdf/instrukcja` |
+| 0. Linia bazowa | Book z `glob: '[0-9][0-9]-*.md'`, `exclude: '00-*'`, `numbering: false`, przeniesiona okładka | Różnice tylko: brak ręcznego TOC, okładka; treść rozdziałów 1:1 |
+| 1. Numeracja generowana | Usunięcie numerów z tytułów (skrypt), `numbering: { depth: 1 }`, historia wersji `numbered: false` | Bez zmian treści (numery są normalizowane); `PDF_MANUAL_NUMBER` = 0 |
+| 2. Jednolite poziomy | Każdy fragment zaczyna się od `#`, podrozdziały `##`; `headingShift: 'auto'` | Bez zmian treści |
+| 3. Kolejność z sidebaru | Opisowe nazwy plików, sidebar jawny po ścieżkach, `content: [{ sidebar: true, groups: 'flatten', exclude: … }]`; poprawa linków (skrypt) | Bez zmian treści; 0 ostrzeżeń o linkach |
+| 4. Sprzątanie | Usunięcie `00-front.md`, mapy części, `MANUAL.md` i skryptu dzielącego z procesu; `npm run pdf` | Bez zmian treści |
+| 5. Wygląd | Dopracowanie stylu druku i okładki | Bez zmian treści; ocena wizualna na podglądzie `/__pdf/podrecznik` |
 
-Kroki 1–3 zmieniają też serwis (tytuły bez numerów, nowe adresy stron). Jeśli numery w serwisie są pożądane,
-włączamy `numbering` w `GregConfig` (§7.7) — ta sama numeracja co w PDF.
+Kroki 1–3 zmieniają też serwis (tytuły bez numerów, nowe adresy stron); numery w serwisie zapewnia `numbering`
+w `GregConfig` (§18.5).
 
 ### 15.3 Konfiguracja docelowa (po kroku 4)
 
 ```ts
+numbering: { depth: 1 },
 pdf: {
     books: {
-        instrukcja: {
-            title: 'Instrukcja użytkownika',
-            subtitle: 'KDS – Kitchen Display System',
-            version: '0.0.10',
-            output: 'dist/pdf/KDS-instrukcja-uzytkownika.pdf',
-            content: [{ sidebar: true, groups: 'flatten', exclude: ['how-to/**', 'diagnostyka/**'] }],
-            cover: './pdf/cover.md',            // okładka + prawa autorskie
+        podrecznik: {
+            title: 'Podręcznik użytkownika',
+            subtitle: 'Acme Cloud',
+            version: '2.1',
+            dateFormat: 'YYYY.MM.DD',
+            output: 'dist/pdf/podrecznik.pdf',
+            content: [{ sidebar: true, groups: 'flatten', exclude: ['how-to/**', 'troubleshooting/**'] }],
+            cover: '__pdf/cover.md',
+            css: '__pdf/print.css',
             toc: { title: 'Spis treści', depth: 2, pageNumbers: true },
-            numbering: { depth: 1, format: '1.' },
-            headingShift: 'auto',
             page: {
                 size: 'A4', margin: '20mm 18mm 18mm',
                 header: { left: '{subtitle}', right: '{chapter}' },
                 footer: { left: 'akt. {date}', right: '{page} / {pages}' },
-                plainPages: ['cover', 'toc'],
             },
-            css: './pdf/print.css',
         },
     },
 },
@@ -576,13 +578,13 @@ pdf: {
 
 | # | Kryterium | Etap |
 |---|---|---|
-| 1 | `greg pdf instrukcja` generuje PDF wyłącznie z fragmentów `docs/` + `pdf/` | 1 |
+| 1 | `greg pdf podrecznik` generuje PDF wyłącznie z fragmentów `docs/` | 1 |
 | 2 | Raport `--compare`: **0 różnic treści** w sekcjach (po normalizacji numerów i białych znaków) | 1 |
-| 3 | Liczba obrazów w każdej sekcji zgodna ze wzorcem | 1 |
+| 3 | Liczba obrazów zgodna ze wzorcem | 1 |
 | 4 | Spis treści i numeracja **generowane**; brak numerów i ręcznego TOC we fragmentach (`PDF_MANUAL_*` = 0) | 1 (TOC bez numerów stron), 2 (z numerami stron) |
 | 5 | Linki między rozdziałami i zakładki PDF działają | 1 |
-| 6 | Wygląd co najmniej jak we wzorcu: nagłówek z tytułem rozdziału, stopka z numerem strony, rozdziały od nowej strony, brak osieroconych nagłówków i rozdzielonych obrazów z podpisami | 2 (ocena ręczna) |
-| 7 | Czas generowania w raporcie; cel < 15 s dla ~57 stron | 1 |
+| 6 | Wygląd co najmniej jak we wzorcu: nagłówek z tytułem rozdziału, stopka z numerem strony, rozdziały od nowej strony, brak osieroconych nagłówków | 2 (ocena ręczna) |
+| 7 | Czas generowania w raporcie; cel < 15 s dla ~60 stron | 1 |
 
 ## 16. Otwarte pytania
 
@@ -639,10 +641,10 @@ pdf: {
 - **Wydajność:** highlighter Shiki był tworzony w każdej instancji `MarkdownRenderer` (30 instancji dla 30 stron);
   przeniesiony do `<script module>` → renderowanie dokumentacji Grega 4,0 s → 1,9 s.
 
-### 18.4 Pilot KDS — krok 0 (§15.2)
+### 18.4 Pilot — krok 0 (§15.2)
 
 Konfiguracja: `glob` po prefiksach, `numbering: false`, `headingShift: 0`, okładka i prawa autorskie przeniesione
-z `00-poczatek.md` do `docs/__pdf/cover.md` (tokeny `{version}`, `{date}`), `{chapter}` w nagłówku.
+z `00-front.md` do `docs/__pdf/cover.md` (tokeny `{version}`, `{date}`), `{chapter}` w nagłówku.
 
 | Miara | Wynik |
 |---|---|
@@ -652,9 +654,58 @@ z `00-poczatek.md` do `docs/__pdf/cover.md` (tokeny `{version}`, `{date}`), `{ch
 | Obrazy | 59 → 59 |
 | `--compare` | 75 sekcji: 59 identycznych, 7 *layout only* (tabele), 9 ze zmianami treści |
 
-Wszystkie 9 różnic treści to zdania obecne w aktualnych fragmentach (i w `KDS-INSTRUKCJA-UZYTKOWNIKA.md`), których
+Wszystkie 9 różnic treści to zdania obecne w aktualnych fragmentach (i w `MANUAL.md`), których
 nie ma we wzorcowym PDF — **wzorzec jest starszy niż źródła**. Przed krokiem 1 warto wygenerować nowy wzorzec
 z kroku 0 (`dist/pdf/…`) i porównywać kolejne kroki z nim.
+
+### 18.5 Etap 2 — numeracja wspólna dla serwisu i PDF, odwołania
+
+- `src/lib/MarkdownDocs/numbering.js` — jedna reguła dla obu wyjść (zmiana względem §7.7, gdzie numeracja PDF liczyła
+  nagłówki w całym dokumencie): **numer strony z kolejności stron** (menu / manifest, poziomy względem najpłytszej
+  numerowanej strony, części bez numerów), **numery nagłówków w obrębie strony** kontynuują numer strony. Dzięki temu
+  serwis, który zna tylko bieżącą stronę, pokazuje te same numery co PDF.
+- Serwis: `GregConfig.numbering` → numery w nagłówkach (plugin rehype), w menu, poprzednia/następna, okruszkach,
+  tytule karty; manifest serwisu liczony `resolveBook({ target: 'site' })` z menu (flagi `pdf:` ignorowane).
+- PDF: ten sam plugin w rozdziałach; dokument dziedziczy `numbering` serwisu; `PDF_MANUAL_NUMBER` z DOM.
+- **Odwołania:** link z pustym tekstem `[](/strona)` → numer strony docelowej (albo tytuł, gdy bez numeru);
+  w PDF — link wewnętrzny. Kotwica w odwołaniu nie zmienia numeru (zawsze numer strony — spójnie z serwisem).
+- `numbered: false` we frontmatterze działa w obu wyjściach; `pdf.numbered: false` tylko w PDF.
+- `greg pdf --list` pokazuje numery.
+
+### 18.6 Pilot — kroki 1–4 (§15.2)
+
+Wykonane jednorazowym skryptem migracji (poza repo):
+
+| Zmiana | Szczegóły |
+|---|---|
+| Nazwy plików | `02-1-introduction.md` → `introduction.md` itd.; `01-preface.md` → `revision-history.md` (`numbered: false`) |
+| Nagłówki | numery usunięte z tytułów, poziomy podniesione (`##` → `#`) — każda strona zaczyna się od `#` |
+| Linki | 135 linków: kotwice pełnego dokumentu → `/strona#kotwica`, stare adresy → nowe (także strony pomocy i strona główna) |
+| Odwołania | 28 × „rozdział N” → `[](/strona)` (poza historią wersji, która opisuje dawne numery) |
+| Menu | `greg.config.ts`: lista stron w grupach, etykiety z pierwszego nagłówka, `numbering: { depth: 1 }` |
+| Sprzątanie | usunięte `00-front.md`, mapa części oraz projektowy plugin przekierowań kotwic pełnego dokumentu; `MANUAL.md/.pdf` przeniesione poza repo |
+| PDF | `content: [{ sidebar: true, groups: 'flatten', exclude: pomoc }]`, `headingShift: 'auto'`, numeracja z serwisu |
+
+Weryfikacja: `--compare` z wzorcem z kroku 0 — **75/75 sekcji identycznych**, 67 → 67 stron, 59 → 59 obrazów;
+serwis — 62 strony, 742 linki wewnętrzne, **0 zepsutych**; numery w menu, nagłówkach, tytułach i odwołaniach.
+Pozostaje krok 5 (wygląd).
+
+### 18.7 Pilot — krok 5 (wygląd)
+
+- Motyw druku Grega (`print.scss`): typografia pod papier (skala nagłówków, odstępy akapitów i list), stonowany kod
+  inline, tabele na pełną szerokość z wyrównaniem do góry i mniejszym fontem, ramki bloków kodu, limit wysokości
+  obrazów (`--pdf-image-max-height`, 140 mm); wszystko sterowane zmiennymi `--pdf-*`.
+- Projektowy `docs/__pdf/print.css`: kolory marki z okładki, fonty firmowe, linie pod nagłówkiem
+  i nad stopką strony (puste pole środkowe domyka linię), ramki zrzutów ekranu, wyróżnione rozdziały w spisie treści.
+- **Błąd Chromium, ciąg dalszy:** podział nagłówka dotyczy także łamania naturalnego (`break-after: avoid` przesuwa
+  nagłówek na następną stronę) — 9 zdublowanych zakładek. Obejście: `padding-top: 1px` na samych nagłówkach (+ 1 mm na
+  sekcjach). Dodatkowo CLI porównuje numery stron spisu treści z zakładkami i koryguje rozbieżności
+  (`PDF_TOC_PAGE_MISMATCH`) — błąd nie przejdzie po cichu.
+- `--compare`: numery zdejmowane tylko w postaci nagłówkowej (`5.`, `5.1`), słowa dzielone też na `/`, powtórzony nagłówek
+  tabeli usuwany tylko na samym początku strony.
+
+Wynik: 67 → 62 strony; `--compare` z krokiem 0 — 58 identycznych, 17 *layout only* (tabele), **0 różnic treści**;
+0 zdublowanych zakładek, 71/71 pozycji spisu treści z poprawnymi numerami.
 
 ## 17. Źródła
 

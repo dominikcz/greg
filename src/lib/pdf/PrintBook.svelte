@@ -27,16 +27,24 @@
     } from "./pageCss.js";
     import {
         applyHeadingShift,
-        applyNumbering,
         applyTocPageNumbers,
         collectTocEntries,
+        detectManualNumbers,
         detectManualToc,
+        headingNumber,
         headingText,
         normalizeRoute,
         renderToc,
         rewriteLinks,
         waitForImages,
     } from "./printDom.js";
+    import {
+        buildRefTargets,
+        computePageNumbers,
+        createRefResolver,
+        normalizeNumbering,
+        rehypeNumbering,
+    } from "../MarkdownDocs/numbering.js";
     import "./print.scss";
 
     type Props = {
@@ -80,6 +88,9 @@
         book ? resolveBook({ book, frontmatters, menu, srcDir }) : null,
     );
     const docsPrefix = untrack(() => withBase(srcDir));
+    const numbering = book ? normalizeNumbering(book.numbering) : null;
+    const pageNumbers = manifest && numbering ? computePageNumbers(manifest.entries, numbering.depth) : new Map();
+    const refTargets = buildRefTargets(manifest?.entries ?? [], pageNumbers);
     const lang = document.documentElement.lang || "en";
     const isPl = lang.toLowerCase().startsWith("pl");
 
@@ -140,8 +151,17 @@
         return out;
     }
 
-    function chapterPlugins(chapterId: string, fileUrl: string) {
+    function chapterPlugins(chapterId: string, fileUrl: string, mdKey?: string) {
         return [
+            {
+                name: "rehype-numbering",
+                plugin: rehypeNumbering,
+                options: {
+                    pageNumber: mdKey ? pageNumbers.get(mdKey) : undefined,
+                    numbering,
+                    resolveRef: createRefResolver({ fileUrl, base: pathConfig.base, targets: refTargets }),
+                },
+            },
             {
                 name: "rehype-pdf-chapter",
                 plugin: rehypePdfChapter,
@@ -254,7 +274,7 @@
         for (const details of root.querySelectorAll("details")) details.open = true;
 
         applyHeadingShift(chapters, book.headingShift);
-        applyNumbering(chapters, book.numbering, found);
+        if (numbering) detectManualNumbers(chapters, found);
         detectManualToc(chapters, found);
 
         const routes = new Map<string, string>();
@@ -269,7 +289,7 @@
             for (const c of chapters) {
                 if (!current || (c.entry.level ?? 1) <= 1) {
                     const heading = c.el.querySelector("h1, h2, h3, h4, h5, h6");
-                    const number = heading?.querySelector(".pdf-heading-number")?.textContent ?? "";
+                    const number = heading ? headingNumber(heading) : "";
                     const title = heading ? headingText(heading) : c.entry.title;
                     current = `greg-ch-${chapterPages.length + 1}`;
                     chapterPages.push({ pageName: current, chapter: [number, title].filter(Boolean).join(" ") });
@@ -300,6 +320,10 @@
         const tocTargets = Array.from(root.querySelectorAll<HTMLElement>(".pdf-toc-page[data-target]")).map(
             (el) => el.dataset.target!,
         );
+        const tocEntries = Array.from(root.querySelectorAll<HTMLElement>(".pdf-toc-item a")).map((a) => ({
+            target: a.querySelector<HTMLElement>(".pdf-toc-page")?.dataset.target ?? "",
+            text: a.querySelector(".pdf-toc-text")?.textContent ?? "",
+        }));
         setSignal({
             ready: true,
             status,
@@ -317,8 +341,9 @@
             excluded: manifest?.excluded ?? [],
             headings: Array.from(root.querySelectorAll<HTMLElement>(".pdf-chapter :is(h1, h2, h3, h4, h5, h6)"))
                 .filter((h) => h.id)
-                .map((h) => ({ id: h.id, level: Number(h.tagName.slice(1)), text: headingText(h), number: h.querySelector(".pdf-heading-number")?.textContent ?? "" })),
+                .map((h) => ({ id: h.id, level: Number(h.tagName.slice(1)), text: headingText(h), number: headingNumber(h) })),
             tocTargets,
+            tocEntries,
             images: root.querySelectorAll("img").length,
             warnings: $state.snapshot(warnings),
             renderMs: Math.round(performance.now() - startedAt),
@@ -429,7 +454,7 @@
                             {shikiExtraLangs}
                             colorTheme="light"
                             enableImagePreview={false}
-                            extraRehypePlugins={chapterPlugins(item.chapterId, item.fileUrl)}
+                            extraRehypePlugins={chapterPlugins(item.chapterId, item.fileUrl, item.entry.mdKey)}
                             onrendered={() => markRendered(item.key)}
                         />
                     {:else if item.error}

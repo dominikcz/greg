@@ -470,6 +470,12 @@ export type GregConfig = {
     versioning?: GregVersioningConfig;
     /** PDF books printed by `greg pdf` (see the PDF Export guide). */
     pdf?: PdfConfig;
+    /**
+     * Generated chapter/section numbers (site and PDF books). Page numbers follow the
+     * sidebar order; headings inside a page continue the page number. `sidebar: false`
+     * keeps sidebar labels unnumbered. Empty links (`[](/page)`) render the target number.
+     */
+    numbering?: boolean | { depth?: number; format?: '1.' | '1.1'; sidebar?: boolean };
     [key: string]: unknown;
 };
 
@@ -516,7 +522,8 @@ export type PdfBookConfig = {
     /** Markdown file relative to the docs folder; tokens are replaced. */
     cover?: string | false;
     toc?: false | { title?: string; depth?: number; pageNumbers?: boolean };
-    numbering?: false | { depth?: number; format?: '1.' | '1.1' };
+    /** Default: the site `numbering`. `{ depth, format }` — numbers from the book structure. */
+    numbering?: boolean | { depth?: number; format?: '1.' | '1.1' };
     /** 'auto' aligns the first heading of each page with its level in the book. Default: 'auto'. */
     headingShift?: number | 'auto';
     /** Level-1 chapters start on a new page (true), every page ('all') or none (false). Default: true. */
