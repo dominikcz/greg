@@ -5,3 +5,9 @@
     gap: 1rem;
 }
 
+// Output-target classes for single elements ({.pdf-only} / {.no-pdf}); the PDF
+// print route reverses them in pdf/print.scss.
+.markdown-body .pdf-only {
+    display: none;
+}
+

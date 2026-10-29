@@ -21,3 +21,4 @@ existing one, step by step.
 - [Asset Handling](./asset-handling) — images, public files, and the `<Image>` component
 - [Using Svelte](./using-svelte) — Svelte components and reactivity inside Markdown pages
 - [Deploying](./deploying) — publishing to GitHub Pages, Netlify, Vercel and other hosts
+- [PDF Export](./pdf) — printable books from the same Markdown: content selection, TOC, numbering, page templates

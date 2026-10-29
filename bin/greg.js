@@ -8,6 +8,7 @@
  *   greg build                  Build for production (auto-detects versioning config)
  *   greg build:static           Build for production and generate static route files
  *   greg build:markdown         Export resolved markdown files
+ *   greg pdf                    Generate PDF books
  *   greg preview                Preview the production build
  *   greg search-server          Start the standalone search server (production)
  *   greg --version              Print the Greg version
@@ -55,6 +56,7 @@ function help() {
     build          Build for production (auto-detects versioning config)
     build:static   Build and generate static route files
     build:markdown Export resolved markdown files to dist/resolved-markdown
+    pdf            Generate PDF books (see: greg pdf --help)
     preview        Preview the production build
     search-server  Start the standalone search API server (production)
                    Options: --index <path>  --port <number>  --host <addr>
@@ -235,6 +237,10 @@ switch (command) {
         const markdownScript = resolve(__dirname, '../scripts/render-markdown.js');
         runNodeScript(markdownScript, args);
         break;
+    }
+    case 'pdf': {
+        const { runPdfCommand } = await import('../src/lib/pdf/cli.js');
+        process.exit(await runPdfCommand(args));
     }
     case 'preview':
         run('vite preview', args);

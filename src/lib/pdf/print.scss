@@ -1,0 +1,312 @@
+// Print route styles. Loaded only with PrintBook (lazy chunk), so nothing here
+// affects the site. Override in the book's `css` file; variables come first.
+
+:root {
+    --pdf-font-size: 10.5pt;
+    --pdf-line-height: 1.5;
+    --pdf-color: #1f2328;
+    --pdf-muted: #59636e;
+    --pdf-accent: var(--greg-accent, #0969da);
+    --pdf-rule: #d1d9e0;
+    --pdf-margin-box-font: 8.5pt sans-serif;
+}
+
+@page {
+    @top-left { font: var(--pdf-margin-box-font); color: var(--pdf-muted); }
+    @top-center { font: var(--pdf-margin-box-font); color: var(--pdf-muted); }
+    @top-right { font: var(--pdf-margin-box-font); color: var(--pdf-muted); }
+    @bottom-left { font: var(--pdf-margin-box-font); color: var(--pdf-muted); }
+    @bottom-center { font: var(--pdf-margin-box-font); color: var(--pdf-muted); }
+    @bottom-right { font: var(--pdf-margin-box-font); color: var(--pdf-muted); }
+}
+
+html:has(.greg-print),
+html:has(.greg-print) body {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+}
+
+.greg-print {
+    color: var(--pdf-color);
+    background: #fff;
+    color-scheme: light;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+
+    .markdown-body {
+        font-size: var(--pdf-font-size);
+        line-height: var(--pdf-line-height);
+        background: transparent;
+        color: var(--pdf-color);
+
+        // The clearfix pseudo-elements would land on an extra blank page after a forced break.
+        &::before,
+        &::after {
+            content: none;
+            display: none;
+        }
+
+        // A forced break after the last element would only add an empty page.
+        > :last-child {
+            break-after: auto !important;
+            page-break-after: auto !important;
+        }
+    }
+
+    // Interactive chrome has no meaning on paper.
+    .markdown-body button,
+    .header-anchor,
+    .no-pdf {
+        display: none !important;
+    }
+
+    .markdown-body .pdf-only {
+        display: revert;
+    }
+
+    a {
+        color: var(--pdf-accent);
+        text-decoration: none;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        break-after: avoid-page;
+        break-inside: avoid;
+    }
+
+    p, li {
+        orphans: 3;
+        widows: 3;
+    }
+
+    img, svg, figure, pre, table, blockquote, .custom-block, .mermaid {
+        break-inside: avoid;
+    }
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    // Keep an image together with the caption paragraph that follows it.
+    p:has(> img:only-child) {
+        break-after: avoid-page;
+    }
+
+    pre, code {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tr {
+        break-inside: avoid;
+    }
+
+    .pdf-heading-number {
+        margin-right: 0.15em;
+    }
+
+    .pdf-unlinked {
+        color: inherit;
+    }
+
+    .pdf-page-break {
+        break-after: page;
+        height: 0;
+        margin: 0;
+    }
+
+    .pdf-chapter:not(.pdf-break-before) {
+        margin-top: 2.5em;
+    }
+
+    // Chromium splits a heading that starts exactly at a forced page break into an
+    // empty fragment on the previous page: its link destination then points one page
+    // too early and its PDF bookmark title is doubled. 1px of offset avoids it.
+    .pdf-chapter,
+    .pdf-part,
+    .pdf-toc,
+    .pdf-cover {
+        padding-top: 1px;
+    }
+
+    .pdf-break-before,
+    .pdf-part {
+        break-before: page;
+    }
+
+    .pdf-part {
+        break-after: page;
+        padding-top: 30%;
+        text-align: center;
+    }
+
+    .pdf-part-title {
+        border: none;
+        font-size: 2em;
+    }
+
+    // Cover: the named page has no margins, the content restores them.
+    .pdf-cover {
+        break-after: page;
+
+        > .markdown-body {
+            padding: var(--pdf-page-margin, 20mm);
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
+        }
+    }
+
+    .pdf-toc {
+        break-after: page;
+    }
+
+    .pdf-toc-title {
+        margin: 0 0 1em;
+        font-size: 1.8em;
+        border: none;
+    }
+
+    .pdf-toc-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        font-size: var(--pdf-font-size);
+        line-height: 1.6;
+    }
+
+    .pdf-toc-item a {
+        display: flex;
+        align-items: baseline;
+        color: inherit;
+
+        &::after {
+            content: "";
+            order: 2;
+            flex: 1 1 auto;
+            min-width: 1.5em;
+            margin: 0 0.4em;
+            border-bottom: 1px dotted var(--pdf-muted);
+        }
+    }
+
+    .pdf-toc-number {
+        order: 0;
+        flex: none;
+        min-width: 2em;
+        padding-right: 0.4em;
+    }
+
+    .pdf-toc-text {
+        order: 1;
+    }
+
+    .pdf-toc-page {
+        order: 3;
+        flex: none;
+        min-width: 2.2em;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pdf-toc-l1 {
+        margin-top: 0.6em;
+        font-weight: 600;
+    }
+
+    @for $i from 2 through 6 {
+        .pdf-toc-l#{$i} {
+            padding-left: #{($i - 1) * 1.4}em;
+        }
+    }
+
+    .pdf-toc-part {
+        margin-top: 1em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .pdf-error {
+        color: #b42318;
+        font-weight: 600;
+    }
+}
+
+.pdf-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    font: 13px/1.4 system-ui, sans-serif;
+    color: #1f2328;
+    background: #f6f8fa;
+    border-bottom: 1px solid #d1d9e0;
+
+    button {
+        font: inherit;
+        padding: 0.15rem 0.6rem;
+        border: 1px solid #d1d9e0;
+        border-radius: 4px;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    [data-status="ready"] { color: #1a7f37; font-weight: 600; }
+    [data-status="error"] { color: #b42318; font-weight: 600; }
+}
+
+.pdf-toolbar-warnings {
+    flex-basis: 100%;
+    max-height: 40vh;
+    overflow: auto;
+    margin: 0;
+    padding-left: 1.2rem;
+
+    code {
+        font-size: 11px;
+    }
+}
+
+@media screen {
+    html:has(.greg-print) body {
+        background: #e9ecef;
+    }
+
+    .greg-print {
+        box-sizing: border-box;
+        width: var(--pdf-page-width, 210mm);
+        max-width: 100%;
+        margin: 1.5rem auto;
+        padding: var(--pdf-page-margin, 20mm);
+        box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
+
+        .pdf-break-before,
+        .pdf-part,
+        .pdf-toc,
+        .pdf-page-break {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px dashed #adb5bd;
+        }
+
+        .pdf-cover > .markdown-body {
+            padding: 0;
+        }
+    }
+}
+
+@media print {
+    .pdf-toolbar {
+        display: none !important;
+    }
+}

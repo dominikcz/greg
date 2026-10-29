@@ -21,3 +21,4 @@ istniejącego projektu, krok po kroku.
 - [Obsługa zasobów](./asset-handling) — obrazy, pliki publiczne i komponent `<Image>`
 - [Svelte w Markdown](./using-svelte) — komponenty Svelte i reaktywność na stronach Markdown
 - [Wdrażanie](./deploying) — publikacja na GitHub Pages, Netlify, Vercel i innych hostingach
+- [Eksport do PDF](./pdf) — dokumenty do druku z tego samego Markdowna: wybór treści, spis treści, numeracja, szablon strony

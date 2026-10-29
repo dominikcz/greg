@@ -468,5 +468,71 @@ export type GregConfig = {
     sidebar?: 'auto' | SidebarItem[];
     /** Multi-version docs build configuration. */
     versioning?: GregVersioningConfig;
+    /** PDF books printed by `greg pdf` (see the PDF Export guide). */
+    pdf?: PdfConfig;
     [key: string]: unknown;
+};
+
+/** Header/footer slot templates. Tokens: {title} {subtitle} {author} {version} {date} {chapter} {page} {pages}. */
+export type PdfMarginSlots = { left?: string; center?: string; right?: string };
+
+export type PdfPageConfig = {
+    /** Paper size. Default: 'A4'. */
+    size?: 'A3' | 'A4' | 'A5' | 'B5' | 'Letter' | 'Legal' | { width: string; height: string };
+    orientation?: 'portrait' | 'landscape';
+    /** CSS margin shorthand. Default: '20mm 18mm'. */
+    margin?: string;
+    header?: PdfMarginSlots | false;
+    /** Default (when neither header nor footer is set): `{ center: '{page} / {pages}' }`. */
+    footer?: PdfMarginSlots | false;
+    /** Pages without header/footer. Default: ['cover', 'toc', 'part']. */
+    plainPages?: Array<'cover' | 'toc' | 'part'>;
+};
+
+/** One entry of `PdfBookConfig.content`, expanded into pages in order. */
+export type PdfContentItem =
+    /** Route ('/guide/routing') or file relative to the docs folder ('guide/routing.md'). */
+    | string
+    | { page: string; title?: string; level?: number }
+    /** `true` = the whole sidebar; a string selects a branch by labels joined with '>'. */
+    | { sidebar: true | string; groups?: 'parts' | 'flatten'; exclude?: string | string[] }
+    | { glob: string | string[]; exclude?: string | string[]; sort?: 'natural' | 'sidebar' | 'title' | 'order' }
+    | { part: string; items: PdfContentItem[]; intro?: string };
+
+export type PdfBookConfig = {
+    title?: string;
+    subtitle?: string;
+    author?: string;
+    /** Default: GregConfig.version. */
+    version?: string;
+    /** Fixed value of {date}; default: today formatted with `dateFormat`. */
+    date?: string;
+    /** YYYY / MM / DD placeholders. Default: 'YYYY-MM-DD'. */
+    dateFormat?: string;
+    /** Output file (relative to the project). Default: `<outDir>/pdf/<bookId>.pdf`. */
+    output?: string;
+    /** Default: 'sidebar'. */
+    content?: 'sidebar' | PdfContentItem[];
+    /** Markdown file relative to the docs folder; tokens are replaced. */
+    cover?: string | false;
+    toc?: false | { title?: string; depth?: number; pageNumbers?: boolean };
+    numbering?: false | { depth?: number; format?: '1.' | '1.1' };
+    /** 'auto' aligns the first heading of each page with its level in the book. Default: 'auto'. */
+    headingShift?: number | 'auto';
+    /** Level-1 chapters start on a new page (true), every page ('all') or none (false). Default: true. */
+    chapterBreak?: boolean | 'all';
+    page?: PdfPageConfig;
+    /** Extra stylesheet(s) relative to the docs folder, loaded after the print theme. */
+    css?: string | string[];
+    /** Links to pages outside the book. Default: 'site-url' (needs `siteUrl`, otherwise plain text). */
+    externalPageLinks?: 'site-url' | 'text' | 'error';
+    /** Public URL of the site, used for links to pages outside the book. */
+    siteUrl?: string;
+};
+
+export type PdfConfig = {
+    /** Settings shared by all books. */
+    defaults?: PdfBookConfig;
+    /** Books keyed by id (`greg pdf <id>`, `/__pdf/<id>`). Without books one `default` book is printed. */
+    books?: Record<string, PdfBookConfig>;
 };

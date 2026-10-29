@@ -33,62 +33,71 @@ function parseFrontmatter(content) {
     }
 }
 
+function normalizeSrcDir(value) {
+    const cleaned = String(value ?? '').replace(/^\/+|\/+$/g, '');
+    return cleaned ? `/${cleaned}` : '/';
+}
+
+function isTraversableDirectory(entry, fullPath) {
+    if (entry.isDirectory()) return true;
+    if (!entry.isSymbolicLink()) return false;
+    try {
+        return fs.statSync(fullPath).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Collect frontmatter of every markdown file under `docsDir`.
+ * Keys are URL paths prefixed with `srcDir` (e.g. '/docs/guide/index.md').
+ * Shared by the virtual module and the `greg pdf` CLI.
+ */
+export function collectFrontmatters({ root = process.cwd(), docsDir = 'docs', srcDir = '/docs' } = {}) {
+    const absDirs = (Array.isArray(docsDir) ? docsDir : [docsDir]).map(d => path.resolve(root, d));
+    const normalizedSrcDir = normalizeSrcDir(srcDir);
+    const entries = {};
+
+    function walk(dir, baseDir) {
+        let items;
+        try { items = fs.readdirSync(dir, { withFileTypes: true }); }
+        catch { return; }
+        for (const item of items) {
+            const full = path.join(dir, item.name);
+            if (isTraversableDirectory(item, full)) {
+                walk(full, baseDir);
+            } else if (item.isFile() && item.name.endsWith('.md') && !item.name.startsWith('__')) {
+                const rel = path.relative(baseDir, full).replace(/\\/g, '/');
+                const viteKey = normalizedSrcDir === '/'
+                    ? `/${rel}`
+                    : `${normalizedSrcDir}/${rel}`; // e.g. /docs/guide/index.md
+                try {
+                    const content = fs.readFileSync(full, 'utf8');
+                    const stat = fs.statSync(full);
+                    entries[viteKey] = {
+                        ...parseFrontmatter(content),
+                        _mtime: stat.mtime.toISOString(),
+                    };
+                } catch { /* skip unreadable files */ }
+            }
+        }
+    }
+
+    for (const absDocsDir of absDirs) {
+        walk(absDocsDir, absDocsDir);
+    }
+    return entries;
+}
+
 // ---------------------------------------------------------------------------
 // Plugin
 // ---------------------------------------------------------------------------
 export function vitePluginFrontmatter({ docsDir = 'docs', srcDir = '/docs' } = {}) {
     let root = process.cwd();
 
-    function normalizeSrcDir(value) {
-        const cleaned = String(value ?? '').replace(/^\/+|\/+$/g, '');
-        return cleaned ? `/${cleaned}` : '/';
-    }
-
-    function isTraversableDirectory(entry, fullPath) {
-        if (entry.isDirectory()) return true;
-        if (!entry.isSymbolicLink()) return false;
-        try {
-            return fs.statSync(fullPath).isDirectory();
-        } catch {
-            return false;
-        }
-    }
-
     /** Collect all .md paths and return the virtual module source. */
     function buildModule() {
-        const absDirs = (Array.isArray(docsDir) ? docsDir : [docsDir]).map(d => path.resolve(root, d));
-        const normalizedSrcDir = normalizeSrcDir(srcDir);
-        const entries = {};
-
-        function walk(dir, baseDir) {
-            let items;
-            try { items = fs.readdirSync(dir, { withFileTypes: true }); }
-            catch { return; }
-            for (const item of items) {
-                const full = path.join(dir, item.name);
-                if (isTraversableDirectory(item, full)) {
-                    walk(full, baseDir);
-                } else if (item.isFile() && item.name.endsWith('.md') && !item.name.startsWith('__')) {
-                    const rel = path.relative(baseDir, full).replace(/\\/g, '/');
-                    const viteKey = normalizedSrcDir === '/'
-                        ? `/${rel}`
-                        : `${normalizedSrcDir}/${rel}`; // e.g. /docs/guide/index.md
-                    try {
-                        const content = fs.readFileSync(full, 'utf8');
-                        const stat = fs.statSync(full);
-                        entries[viteKey] = {
-                            ...parseFrontmatter(content),
-                            _mtime: stat.mtime.toISOString(),
-                        };
-                    } catch { /* skip unreadable files */ }
-                }
-            }
-        }
-
-        for (const absDocsDir of absDirs) {
-            walk(absDocsDir, absDocsDir);
-        }
-        return `export default ${JSON.stringify(entries)};`;
+        return `export default ${JSON.stringify(collectFrontmatters({ root, docsDir, srcDir }))};`;
     }
 
     return {

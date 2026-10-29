@@ -48,6 +48,8 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/js-yaml": "^4.0.9",
     "better-sqlite3": "^12.11.1",
+    "pdfjs-dist": "^6.4.299",
+    "playwright-core": "^1.64.1",
     "sqlite-vec": "^0.1.9",
     "svelte": "^5.57.2",
     "vite": "^8.3.5",
@@ -76,13 +78,21 @@
   },
   "peerDependencies": {
     "better-sqlite3": "^12.8.0",
-    "sqlite-vec": "^0.1.0"
+    "sqlite-vec": "^0.1.0",
+    "pdfjs-dist": "^6.4.299",
+    "playwright-core": "^1.64.1"
   },
   "peerDependenciesMeta": {
     "better-sqlite3": {
       "optional": true
     },
     "sqlite-vec": {
+      "optional": true
+    },
+    "pdfjs-dist": {
+      "optional": true
+    },
+    "playwright-core": {
       "optional": true
     }
   },

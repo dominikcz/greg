@@ -41,7 +41,16 @@ const defaultLabels = {
 
 const knownTypes = ['info', 'tip', 'warning', 'danger', 'details'];
 
-const OPEN_LINE_RE = /^:::[ \t]+(\w+)(?:[ \t]+(.+?))?[ \t]*$/;
+/**
+ * Output-target containers. They never render a box: matching content is
+ * unwrapped, non-matching content is dropped from the AST (so it costs nothing).
+ *   ::: web-only            — only in the site
+ *   ::: pdf-only [book …]   — only in PDF (optionally only in the listed books)
+ *   ::: page-break          — forced page break in PDF, nothing in the site
+ */
+const targetTypes = ['web-only', 'pdf-only', 'page-break'];
+
+const OPEN_LINE_RE = /^:::[ \t]+([\w-]+)(?:[ \t]+(.+?))?[ \t]*$/;
 const CLOSE_LINE_RE = /^:::[ \t]*$/;
 
 /** Maps GitHub alert type names to VitePress container types. */
@@ -154,6 +163,8 @@ function parseGithubAlert(node) {
 // ─── Remark plugin ────────────────────────────────────────────────────────────
 
 export function remarkContainers(userOptions = {}) {
+	const target = userOptions.target === 'pdf' ? 'pdf' : 'web';
+	const bookId = userOptions.bookId ? String(userOptions.bookId) : '';
 	return (tree) => {
 		const children = tree.children;
 
@@ -166,7 +177,48 @@ export function remarkContainers(userOptions = {}) {
 
 		// Apply ::: container syntax recursively (root + list items + blockquotes)
 		applyContainerSyntaxRecursive(tree);
+
+		applyTargetContainers(tree, target, bookId);
 	};
+}
+
+function keepTargetContainer(type, rawTitle, target, bookId) {
+	if (type === 'web-only') return target === 'web';
+	if (type === 'pdf-only') {
+		if (target !== 'pdf') return false;
+		const books = String(rawTitle ?? '').split(/[\s,]+/).filter(Boolean);
+		return !books.length || !bookId || books.includes(bookId);
+	}
+	return target === 'pdf';
+}
+
+/** Unwrap or drop web-only / pdf-only containers; turn page-break into a marker element. */
+function applyTargetContainers(node, target, bookId) {
+	if (!Array.isArray(node.children)) return;
+	for (let i = 0; i < node.children.length; i++) {
+		const child = node.children[i];
+		const type = child.type === 'containerBlock' ? child.data?.hProperties?.['data-type'] : null;
+		if (!targetTypes.includes(type)) {
+			applyTargetContainers(child, target, bookId);
+			continue;
+		}
+		if (!keepTargetContainer(type, child.rawTitle, target, bookId)) {
+			node.children.splice(i, 1);
+			i--;
+			continue;
+		}
+		if (type === 'page-break') {
+			node.children.splice(i, 1, {
+				type: 'pageBreak',
+				data: { hName: 'div', hProperties: { className: ['pdf-page-break'] } },
+				children: [],
+			});
+			continue;
+		}
+		applyTargetContainers(child, target, bookId);
+		node.children.splice(i, 1, ...child.children);
+		i += child.children.length - 1;
+	}
 }
 
 /**
@@ -215,7 +267,7 @@ function applyContainerPasses(children) {
 		if (!CLOSE_LINE_RE.test(lastLine)) continue;
 
 		const type = openMatch[1].toLowerCase();
-		if (!knownTypes.includes(type)) continue;
+		if (!knownTypes.includes(type) && !targetTypes.includes(type)) continue;
 
 		// Strip the opening and closing ::: lines; collect the inline nodes in between.
 		const innerChildren = [];
@@ -267,7 +319,7 @@ function applyContainerPasses(children) {
 	}
 	for (const { openIdx, closeIdx, type, title: rawTitle } of spans.reverse()) {
 		const lcType = type.toLowerCase();
-		if (!knownTypes.includes(lcType)) continue;
+		if (!knownTypes.includes(lcType) && !targetTypes.includes(lcType)) continue;
 		const innerNodes = children.slice(openIdx + 1, closeIdx);
 		children.splice(openIdx, closeIdx - openIdx + 1, containerBlockNode(lcType, rawTitle, innerNodes));
 	}

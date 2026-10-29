@@ -252,9 +252,17 @@ export async function runRenderHandlers(
     }
 }
 
+export type RenderTargetOptions = {
+    /** Output target: the site ('web', default) or a PDF book ('pdf'). */
+    target?: "web" | "pdf";
+    /** Active PDF book id (filters `::: pdf-only <book>` containers). */
+    bookId?: string;
+};
+
 export function getRemarkPluginEntries(
     currentBaseUrl: string,
     currentDocsPrefix: string,
+    targetOptions: RenderTargetOptions = {},
 ): PluginEntry[] {
     return [
         { name: "remark-parse", plugin: remarkParse },
@@ -271,7 +279,14 @@ export function getRemarkPluginEntries(
             },
         },
         { name: "remark-code-meta", plugin: remarkCodeMeta },
-        { name: "remark-containers", plugin: remarkContainers },
+        {
+            name: "remark-containers",
+            plugin: remarkContainers,
+            options: {
+                target: targetOptions.target ?? "web",
+                bookId: targetOptions.bookId,
+            },
+        },
         {
             name: "remark-custom-anchors",
             plugin: remarkCustomAnchors,
@@ -289,7 +304,7 @@ export function getRehypePluginEntries(deps: {
     rehypeMermaid: any;
     rehypeMarkdownImageThumbs: any;
     rehypeShiki: any;
-}): PluginEntry[] {
+}, extraEntries: PluginEntry[] = []): PluginEntry[] {
     return [
         { name: "rehype-slug", plugin: rehypeSlug },
         {
@@ -308,6 +323,7 @@ export function getRehypePluginEntries(deps: {
         { name: "rehype-code-group", plugin: rehypeCodeGroup },
         { name: "rehype-code-title", plugin: rehypeCodeTitle },
         { name: "rehype-toc-placeholder", plugin: rehypeTocPlaceholder },
+        ...extraEntries,
         {
             name: "rehype-stringify",
             plugin: rehypeStringify,

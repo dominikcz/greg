@@ -1,4 +1,4 @@
-<script lang="ts">
+<script module lang="ts">
     /**
      * MarkdownRenderer
      *
@@ -22,6 +22,7 @@
         getRemarkPluginEntries,
         getRehypePluginEntries,
         applyPluginEntries,
+        type PluginEntry,
         type RenderHandler,
     } from "./markdownRendererRuntime";
     import {
@@ -184,6 +185,9 @@
         return shikiDefaultLang;
     }
 
+</script>
+
+<script lang="ts">
     let runtimeRenderHandlers: RenderHandler[] = [];
     let themeChangeRenderHandlers: RenderHandler[] = [];
 
@@ -276,6 +280,14 @@
         enableImagePreview?: boolean;
         /** Additional Shiki language ids loaded for runtime highlighting. */
         shikiExtraLangs?: string[];
+        /** Output target; 'pdf' renders `pdf-only` content and drops `web-only`. */
+        target?: "web" | "pdf";
+        /** Active PDF book id (filters `::: pdf-only <book>`). */
+        bookId?: string;
+        /** Extra rehype plugins, applied after the built-in ones (before stringify). */
+        extraRehypePlugins?: PluginEntry[];
+        /** Called after the HTML is in the DOM and render handlers (components, Mermaid) finished. */
+        onrendered?: (root: HTMLElement) => void;
     };
     let {
         markdown,
@@ -286,6 +298,10 @@
         colorTheme,
         enableImagePreview = true,
         shikiExtraLangs = [],
+        target = "web",
+        bookId,
+        extraRehypePlugins = [],
+        onrendered,
     }: Props = $props();
 
     const configuredShikiLangs = $derived.by(() =>
@@ -506,7 +522,10 @@
         const processor = unified();
         applyPluginEntries(
             processor,
-            getRemarkPluginEntries(currentBaseUrl, currentDocsPrefix),
+            getRemarkPluginEntries(currentBaseUrl, currentDocsPrefix, {
+                target,
+                bookId,
+            }),
         );
         applyPluginEntries(
             processor,
@@ -515,7 +534,7 @@
                 rehypeMermaid,
                 rehypeMarkdownImageThumbs,
                 rehypeShiki,
-            }),
+            }, extraRehypePlugins),
         );
         return processor;
     }
@@ -556,8 +575,11 @@
     $effect(() => {
         const _ = html;
         if (!_ || !containerEl) return;
-        void runRenderHandlers(containerEl, runtimeRenderHandlers, {
+        const root = containerEl;
+        void runRenderHandlers(root, runtimeRenderHandlers, {
             mermaidThemeConfig: untrack(() => activeMermaidThemeConfig),
+        }).then(() => {
+            if (html === _) untrack(() => onrendered)?.(root);
         });
     });
 

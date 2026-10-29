@@ -16,6 +16,7 @@
     import CarbonAds from "../components/CarbonAds.svelte";
     import Outline from "./Outline.svelte";
     import { useRouter } from "./useRouter.svelte";
+    import { PDF_ROUTE_PREFIX, DEFAULT_BOOK_ID } from "../pdf/resolveBook.js";
     import { useSplitter } from "./useSplitter.svelte";
     import { handleCodeGroupClick, handleCodeGroupKeydown } from "./codeGroup";
     import allFrontmatters from "virtual:greg-frontmatter";
@@ -733,6 +734,12 @@
     /** The SPA path that renders the full-page AI chat, e.g. "/docs/ai". */
     const aiRoute = $derived(withBase(currentSrcDir).replace(/\/$/, '') + '/ai');
     const aiPageMode = $derived(aiEnabled && router.active === aiRoute);
+    // Print route (`/__pdf/<book>`): renders a PDF book instead of the site layout.
+    const pdfBookId = $derived.by(() => {
+        if (routePath !== "/__pdf" && !routePath.startsWith(PDF_ROUTE_PREFIX)) return null;
+        const id = routePath.slice(PDF_ROUTE_PREFIX.length).split("/")[0];
+        return id ? decodeURIComponent(id) : DEFAULT_BOOK_ID;
+    });
     function applyCurrentVersionPrefix(pathname: string): string {
         const normalizedPath = normalizeSrcDir(pathname);
         const currentPath = withoutBase(window.location.pathname);
@@ -1377,6 +1384,7 @@
 
     $effect(() => {
         if (typeof document === "undefined") return;
+        if (pdfBookId !== null) return;
         if (!browserTitle) return;
         if (document.title !== browserTitle) {
             document.title = browserTitle;
@@ -1616,7 +1624,19 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-{#if aiPageMode && aiEnabled}
+{#if pdfBookId !== null}
+    {#await import("../pdf/PrintBook.svelte") then { default: PrintBook }}
+        <PrintBook
+            bookId={pdfBookId}
+            srcDir={currentSrcDir}
+            {menu}
+            {frontmatters}
+            {mermaidTheme}
+            {mermaidThemes}
+            shikiExtraLangs={Array.isArray(shiki?.extraLangs) ? shiki.extraLangs : []}
+        />
+    {/await}
+{:else if aiPageMode && aiEnabled}
     <div class="greg greg-ai-page" data-theme={theme}>
         <header class="ai-page-header">
             <button class="ai-page-close" type="button" onclick={() => history.back()} title="Close">
