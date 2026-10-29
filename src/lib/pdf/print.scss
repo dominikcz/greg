@@ -120,6 +120,20 @@ html:has(.greg-print) body {
         pre {
             border: 0.5pt solid var(--pdf-rule);
             font-size: 0.85em;
+            overflow: visible;
+        }
+
+        // The site sizes code blocks for horizontal scrolling (min-width: 100% plus padding);
+        // on paper lines wrap inside the column instead.
+        pre code {
+            box-sizing: border-box;
+            width: auto;
+            min-width: 0;
+        }
+
+        pre code .line {
+            display: inline;
+            min-width: 0;
         }
 
         table {
@@ -214,6 +228,27 @@ html:has(.greg-print) body {
         margin-right: 0.15em;
     }
 
+    .pdf-code-group {
+        margin: 0.7em 0;
+    }
+
+    .pdf-code-group-item {
+        break-inside: avoid;
+        margin-bottom: 0.5em;
+    }
+
+    .pdf-code-group-label {
+        display: inline-block;
+        margin-bottom: 0.2em;
+        padding: 0 0.5em;
+        font-size: 0.8em;
+        font-weight: 600;
+        color: var(--pdf-muted);
+        border: 0.5pt solid var(--pdf-rule);
+        border-bottom: none;
+        border-radius: 3px 3px 0 0;
+    }
+
     .pdf-unlinked {
         color: inherit;
     }
@@ -224,7 +259,7 @@ html:has(.greg-print) body {
         margin: 0;
     }
 
-    .pdf-chapter:not(.pdf-break-before) {
+    .pdf-chapter:not(.pdf-break-before):not(.pdf-break-right) {
         margin-top: 2.5em;
     }
 
@@ -235,7 +270,8 @@ html:has(.greg-print) body {
     .pdf-chapter,
     .pdf-part,
     .pdf-toc,
-    .pdf-cover {
+    .pdf-cover,
+    .pdf-back-cover {
         padding-top: 1mm;
     }
 
@@ -248,6 +284,26 @@ html:has(.greg-print) body {
     .pdf-break-before,
     .pdf-part {
         break-before: page;
+    }
+
+    .pdf-break-right {
+        break-before: right;
+    }
+
+    .pdf-break-after {
+        break-after: page;
+    }
+
+    .pdf-break-avoid {
+        break-before: avoid;
+    }
+
+    .pdf-back-cover {
+        break-before: page;
+
+        > .markdown-body {
+            padding: var(--pdf-page-margin, 20mm);
+        }
     }
 
     .pdf-part {
@@ -387,6 +443,66 @@ html:has(.greg-print) body {
     }
 }
 
+.pdf-manifest {
+    position: fixed;
+    top: 3rem;
+    left: 0;
+    bottom: 0;
+    z-index: 9;
+    width: min(340px, 40vw);
+    overflow: auto;
+    padding: 0.75rem 1rem 2rem;
+    font: 13px/1.45 system-ui, sans-serif;
+    color: #1f2328;
+    background: #fff;
+    border-right: 1px solid #d1d9e0;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+
+    h3 {
+        margin: 1rem 0 0.4rem;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #59636e;
+    }
+
+    ol, ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    li {
+        margin: 0.15rem 0;
+    }
+
+    a {
+        color: #0969da;
+        text-decoration: none;
+    }
+
+    small {
+        display: block;
+        color: #59636e;
+        font-size: 11px;
+    }
+}
+
+.pdf-manifest-part {
+    margin-top: 0.6rem !important;
+}
+
+.pdf-manifest-number {
+    color: #59636e;
+    margin-right: 0.25em;
+}
+
+@media print {
+    .pdf-manifest {
+        display: none !important;
+    }
+}
+
 @media screen {
     html:has(.greg-print) body {
         background: #e9ecef;
@@ -401,6 +517,8 @@ html:has(.greg-print) body {
         box-shadow: 0 1px 8px rgba(0, 0, 0, 0.15);
 
         .pdf-break-before,
+        .pdf-break-right,
+        .pdf-back-cover,
         .pdf-part,
         .pdf-toc,
         .pdf-page-break {
@@ -409,7 +527,8 @@ html:has(.greg-print) body {
             border-top: 1px dashed #adb5bd;
         }
 
-        .pdf-cover > .markdown-body {
+        .pdf-cover > .markdown-body,
+        .pdf-back-cover > .markdown-body {
             padding: 0;
         }
     }

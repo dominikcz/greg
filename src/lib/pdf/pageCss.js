@@ -101,18 +101,29 @@ export function slotsUseToken(page, token) {
     );
 }
 
-function marginBoxes(page, tokens) {
+function marginBoxes(page, tokens, { mirrored = false, explicit = false } = {}) {
     const rules = [];
     for (const slot of ['header', 'footer']) {
-        const values = page?.[slot];
-        if (!values) continue;
+        const values = page?.[slot] || {};
         for (const [position, box] of Object.entries(SLOT_BOXES[slot])) {
-            const template = values[position];
-            if (template == null || template === '') continue;
+            // Left-hand pages of a duplex book swap the outer and inner slots.
+            const source = mirrored ? ({ left: 'right', right: 'left' }[position] ?? position) : position;
+            const template = values[source];
+            if (template == null || template === '') {
+                if (explicit && source !== position) rules.push(`    ${box} { content: none; }`);
+                continue;
+            }
             rules.push(`    ${box} { content: ${slotToCssContent(template, tokens)}; }`);
         }
     }
     return rules;
+}
+
+/** Expand a CSS margin shorthand to [top, right, bottom, left]. */
+export function expandMargin(margin) {
+    const parts = String(margin ?? '').trim().split(/\s+/).filter(Boolean);
+    const [t, r = t, b = t, l = r] = parts.length ? parts : ['0'];
+    return [t, r, b, l];
 }
 
 function emptyMarginBoxes() {
@@ -133,7 +144,8 @@ export function pageDimensions(page = {}) {
 
 /**
  * @param {Record<string, any>} book  resolved book config
- * @param {Array<{ pageName: string, chapter: string }>} [chapterPages]  named pages for `{chapter}`
+ * @param {Array<{ pageName: string, chapter: string, landscape?: boolean }>} [chapterPages]
+ *        named pages: one per chapter for `{chapter}`, and/or landscape pages
  * @param {Date} [now]
  */
 export function buildPageCss(book, chapterPages = [], now) {
@@ -141,27 +153,33 @@ export function buildPageCss(book, chapterPages = [], now) {
     const tokens = { ...bookTokens(book, now), chapter: '' };
     const { width, height } = pageDimensions(page);
     const margin = page.margin ?? '20mm 18mm';
+    const mirror = Boolean(page.mirrorMargins);
     const lines = [];
 
-    lines.push(`@page {`);
-    lines.push(`    size: ${width} ${height};`);
-    lines.push(`    margin: ${margin};`);
-    lines.push(...marginBoxes(page, tokens));
-    lines.push(`}`);
-
-    for (const { pageName, chapter } of chapterPages) {
-        lines.push(`@page ${pageName} {`);
-        lines.push(...marginBoxes(page, { ...tokens, chapter }));
+    const pageRule = (selector, body) => {
+        if (!body.length) return;
+        lines.push(`@page${selector ? ` ${selector}` : ''} {`);
+        lines.push(...body);
         lines.push(`}`);
+    };
+
+    pageRule('', [`    size: ${width} ${height};`, `    margin: ${margin};`, ...marginBoxes(page, tokens)]);
+    if (mirror) {
+        const [t, r, b, l] = expandMargin(margin);
+        pageRule(':left', [`    margin: ${t} ${l} ${b} ${r};`, ...marginBoxes(page, tokens, { mirrored: true, explicit: true })]);
     }
 
-    lines.push(`@page ${PLAIN_PAGE} {`);
-    lines.push(...emptyMarginBoxes());
-    lines.push(`}`);
-    lines.push(`@page ${COVER_PAGE} {`);
-    lines.push(`    margin: 0;`);
-    lines.push(...emptyMarginBoxes());
-    lines.push(`}`);
+    for (const { pageName, chapter, landscape } of chapterPages) {
+        const chapterTokens = { ...tokens, chapter: chapter ?? '' };
+        pageRule(pageName, [
+            ...(landscape ? [`    size: ${height} ${width};`] : []),
+            ...marginBoxes(page, chapterTokens),
+        ]);
+        if (mirror) pageRule(`${pageName}:left`, marginBoxes(page, chapterTokens, { mirrored: true, explicit: true }));
+    }
+
+    pageRule(PLAIN_PAGE, emptyMarginBoxes());
+    pageRule(COVER_PAGE, [`    margin: 0;`, ...emptyMarginBoxes()]);
 
     lines.push(`:root {`);
     lines.push(`    --pdf-page-width: ${width};`);

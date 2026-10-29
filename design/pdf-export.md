@@ -707,6 +707,23 @@ Pozostaje krok 5 (wygląd).
 Wynik: 67 → 62 strony; `--compare` z krokiem 0 — 58 identycznych, 17 *layout only* (tabele), **0 różnic treści**;
 0 zdublowanych zakładek, 71/71 pozycji spisu treści z poprawnymi numerami.
 
+### 18.8 Funkcje uzupełniające (po pilocie)
+
+| Funkcja | Implementacja |
+|---|---|
+| `CodeGroup` w druku | `flattenCodeGroups` (`rehypePdfChapter.js`): każda zakładka jako osobny blok z etykietą |
+| `backCover` | jak `cover`, na końcu dokumentu (strona bez marginesów i nagłówków) |
+| `pdf.break` (frontmatter) | `before` / `after` / `avoid` / `none`, nadpisuje `chapterBreak` |
+| `pdf.landscape` (frontmatter) | strona nazwana `…-landscape` z obróconym `size` (także z `{chapter}`) |
+| Druk dwustronny | `page.mirrorMargins` → `@page :left` z zamienionymi marginesami i polami lewe/prawe; `chapterBreak: 'right'` |
+| `PDF_OVERFLOW` | tabele / kod / obrazy szersze niż kolumna (pomiar w podglądzie o szerokości kolumny druku); kod w druku zawija się zamiast przewijać |
+| `book.locale` | trasa druku działa pod prefiksem wersji językowej (`/pl/__pdf/<book>`); CLI i lista publikacji kierują pod właściwy prefiks; `--list` liczy menu wersji; `PDF_LOCALE_MISMATCH` przy złym adresie |
+| Panel podglądu | „Zawartość” w pasku: rozdziały z numerami (przewijanie), części, strony wykluczone z powodem |
+| Test end-to-end | `npm run test:pdf` — projekt-fixture (`src/lib/pdf/__tests__/fixtures/pdf-project`) drukowany z `--strict`; sprawdza treść, okładki, numerację, odwołania, spis treści vs zakładki, `CodeGroup`, orientację, lustrzane nagłówki, wersję językową |
+
+Nadal otwarte: metadane PDF (autor, temat), `pdf.buildWithSite`, przycisk „Pobierz PDF” w serwisie, wersjonowanie,
+publiczne `markdown.*Plugins`, cache Mermaid, wydajność (etap 3).
+
 ## 17. Źródła
 
 - vitepress-export-pdf — https://github.com/condorheroblog/vitepress-export-pdf

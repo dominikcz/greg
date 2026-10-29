@@ -48,12 +48,47 @@ export function rewriteRawHtml(html, { prefix, fileUrl }) {
 }
 
 /**
+ * Code groups are tabs on the site; on paper every tab is printed, one after
+ * another, each labelled with its tab title.
+ */
+export function flattenCodeGroups(tree) {
+    visit(tree, 'element', (node) => {
+        if (node.tagName !== 'codegroup') return;
+        let labels = [];
+        try {
+            labels = JSON.parse(String(node.properties?.['data-codegroup-tabs'] ?? node.properties?.dataCodegroupTabs ?? '[]'));
+        } catch {
+            labels = [];
+        }
+        const blocks = (node.children ?? []).filter((child) => child.type === 'element');
+        node.tagName = 'div';
+        node.properties = { className: ['pdf-code-group'] };
+        node.children = blocks.map((block, index) => ({
+            type: 'element',
+            tagName: 'div',
+            properties: { className: ['pdf-code-group-item'] },
+            children: [
+                {
+                    type: 'element',
+                    tagName: 'div',
+                    properties: { className: ['pdf-code-group-label'] },
+                    children: [{ type: 'text', value: String(labels[index] ?? `Tab ${index + 1}`) }],
+                },
+                ...(block.children ?? []),
+            ],
+        }));
+        return SKIP;
+    });
+}
+
+/**
  * @param {{ chapterId: string, fileUrl: string }} options
  */
 export function rehypePdfChapter(options) {
     const prefix = chapterIdPrefix(options.chapterId);
     const fileUrl = options.fileUrl;
     return (tree) => {
+        flattenCodeGroups(tree);
         visit(tree, (node, index, parent) => {
             if (node.type === 'raw' && typeof node.value === 'string') {
                 node.value = rewriteRawHtml(node.value, { prefix, fileUrl });

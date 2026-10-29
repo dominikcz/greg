@@ -7,8 +7,8 @@ import {
     normalizeText,
     parsePageList,
 } from '../compare.js';
-import { buildPageCss, slotToCssContent, replaceTokens, slotsUseToken } from '../pageCss.js';
-import { resolveRelativeUrl, rewriteRawHtml } from '../rehypePdfChapter.js';
+import { buildPageCss, expandMargin, slotToCssContent, replaceTokens, slotsUseToken } from '../pageCss.js';
+import { flattenCodeGroups, resolveRelativeUrl, rewriteRawHtml } from '../rehypePdfChapter.js';
 import { normalizeRoute } from '../printDom.js';
 
 const apply = (a, hunks) => hunks.filter((h) => h.type !== 'insert').flatMap((h) => h.tokens);
@@ -96,9 +96,45 @@ describe('page css', () => {
         expect(css).toContain('@bottom-center { content: counter(page); }');
         expect(css).toContain('@page greg-cover {');
     });
+
+    it('mirrors margins and slots on left-hand pages and rotates landscape pages', () => {
+        const book = {
+            title: 'T',
+            page: { size: 'A4', margin: '20mm 15mm 18mm 25mm', mirrorMargins: true, header: { left: '{title}', right: '{chapter}' } },
+        };
+        expect(expandMargin('1mm')).toEqual(['1mm', '1mm', '1mm', '1mm']);
+        expect(expandMargin('1mm 2mm 3mm')).toEqual(['1mm', '2mm', '3mm', '2mm']);
+        const css = buildPageCss(book, [
+            { pageName: 'greg-ch-1', chapter: 'Intro' },
+            { pageName: 'greg-ch-1-landscape', chapter: 'Intro', landscape: true },
+        ]);
+        expect(css).toContain('@page :left {\n    margin: 20mm 25mm 18mm 15mm;');
+        expect(css).toContain('@page greg-ch-1:left {\n    @top-left { content: "Intro"; }\n    @top-right { content: "T"; }');
+        expect(css).toContain('@page greg-ch-1-landscape {\n    size: 297mm 210mm;');
+    });
 });
 
 describe('chapter rewriting', () => {
+    it('flattens code groups into labelled blocks', () => {
+        const tree = {
+            type: 'root',
+            children: [{
+                type: 'element',
+                tagName: 'codegroup',
+                properties: { 'data-codegroup-tabs': '["npm","pnpm"]' },
+                children: [
+                    { type: 'element', tagName: 'div', properties: {}, children: [{ type: 'text', value: 'A' }] },
+                    { type: 'element', tagName: 'div', properties: { hidden: true }, children: [{ type: 'text', value: 'B' }] },
+                ],
+            }],
+        };
+        flattenCodeGroups(tree);
+        const group = tree.children[0];
+        expect(group.tagName).toBe('div');
+        expect(group.properties.className).toEqual(['pdf-code-group']);
+        expect(group.children.map((item) => [item.children[0].children[0].value, item.children[1].value])).toEqual([['npm', 'A'], ['pnpm', 'B']]);
+    });
+
     it('resolves relative URLs against the markdown file', () => {
         expect(resolveRelativeUrl('images/a.png', '/manual/02-intro.md')).toBe('/manual/images/a.png');
         expect(resolveRelativeUrl('../img/a.png', '/docs/guide/x.md')).toBe('/docs/img/a.png');

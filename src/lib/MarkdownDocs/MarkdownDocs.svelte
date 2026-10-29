@@ -16,7 +16,7 @@
     import CarbonAds from "../components/CarbonAds.svelte";
     import Outline from "./Outline.svelte";
     import { useRouter } from "./useRouter.svelte";
-    import { PDF_ROUTE_PREFIX, resolveBook } from "../pdf/resolveBook.js";
+    import { resolveBook } from "../pdf/resolveBook.js";
     import {
         buildRefTargets,
         computePageNumbers,
@@ -743,12 +743,13 @@
     /** The SPA path that renders the full-page AI chat, e.g. "/docs/ai". */
     const aiRoute = $derived(withBase(currentSrcDir).replace(/\/$/, '') + '/ai');
     const aiPageMode = $derived(aiEnabled && router.active === aiRoute);
-    // Print route (`/__pdf/<book>`): renders a PDF book instead of the site layout;
-    // `/__pdf` alone ('' id) lists the available books.
+    // Print route (`[/<locale>]/__pdf/<book>`): renders a PDF book instead of the site
+    // layout; `/__pdf` alone ('' id) lists the available books. The locale prefix
+    // selects the locale's sidebar and docs root (books with `locale`).
     const pdfBookId = $derived.by(() => {
-        if (routePath !== "/__pdf" && !routePath.startsWith(PDF_ROUTE_PREFIX)) return null;
-        const id = routePath.slice(PDF_ROUTE_PREFIX.length).split("/")[0];
-        return id ? decodeURIComponent(id) : "";
+        const match = routePath.match(/(?:^|\/)__pdf(?:\/([^/]+))?\/?$/);
+        if (!match) return null;
+        return match[1] ? decodeURIComponent(match[1]) : "";
     });
     function applyCurrentVersionPrefix(pathname: string): string {
         const normalizedPath = normalizeSrcDir(pathname);

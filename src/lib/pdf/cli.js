@@ -18,7 +18,7 @@ import { loadGregConfig } from '../MarkdownDocs/loadGregConfig.js';
 import { collectFrontmatters } from '../MarkdownDocs/vitePluginFrontmatter.js';
 import { prepareMenu, parseSidebarConfig } from '../MarkdownDocs/docsUtils.js';
 import { DEFAULT_OUTPUT_BASE_DIR } from '../MarkdownDocs/versioningDefaults.js';
-import { formatManifest, getBookConfig, listBookIds, resolveBook } from './resolveBook.js';
+import { bookRoutePath, formatManifest, getBookConfig, listBookIds, resolveBook } from './resolveBook.js';
 import { anchorPageNumbers, closePdf, countPages, openPdf, readOutline } from './pdfInspect.js';
 import { computePageNumbers, normalizeNumbering } from '../MarkdownDocs/numbering.js';
 
@@ -68,23 +68,30 @@ function parseArgs(argv) {
 }
 
 function normalizeSrcDir(value) {
-    const cleaned = String(value ?? '').trim().replace(/^\/+|\/+$/g, '');
+    const cleaned = String(value ?? '').trim().replace(/\/+/g, '/').replace(/^\/+|\/+$/g, '');
     return cleaned ? `/${cleaned}` : '/';
 }
 
-/** Same data the site computes for the root locale: frontmatter map + sidebar tree. */
-export function loadDocsModel(config, root = process.cwd()) {
+/** Same data the site computes for a locale: frontmatter map + sidebar tree. */
+export function loadDocsModel(config, root = process.cwd(), locale = '/') {
     const docsDir = config.srcDir ?? 'docs';
-    const srcDir = normalizeSrcDir(Object.prototype.hasOwnProperty.call(config, 'docsBase') ? config.docsBase : '');
-    const all = collectFrontmatters({ root, docsDir, srcDir });
-    // Root locale only: drop other locale subtrees.
+    const docsBase = Object.prototype.hasOwnProperty.call(config, 'docsBase') ? config.docsBase : '';
+    const baseDir = normalizeSrcDir(docsBase);
+    const localeKey = locale && locale !== '/' ? locale : '/';
+    const srcDir = localeKey === '/' ? baseDir : normalizeSrcDir(`${docsBase}/${localeKey}`);
+    const all = collectFrontmatters({ root, docsDir, srcDir: baseDir });
+    // Only this locale's pages: other locale subtrees are dropped for the root locale.
     const otherLocales = Object.keys(config.locales ?? {})
-        .filter((key) => key !== '/' && key !== '')
-        .map((key) => normalizeSrcDir(`${srcDir}/${key}`));
+        .filter((key) => key !== '/' && key !== '' && key !== localeKey)
+        .map((key) => normalizeSrcDir(`${docsBase}/${key}`));
     const frontmatters = Object.fromEntries(
-        Object.entries(all).filter(([key]) => !otherLocales.some((prefix) => key.startsWith(prefix + '/'))),
+        Object.entries(all).filter(([key]) =>
+            (srcDir === '/' || key.startsWith(srcDir + '/'))
+            && !otherLocales.some((prefix) => key.startsWith(prefix + '/'))),
     );
-    const sidebar = config.locales?.['/']?.themeConfig?.sidebar ?? config.sidebar ?? 'auto';
+    const sidebar = config.locales?.[localeKey]?.themeConfig?.sidebar
+        ?? (localeKey === '/' ? config.sidebar : undefined)
+        ?? 'auto';
     const menu = Array.isArray(sidebar)
         ? (parseSidebarConfig(sidebar, frontmatters, srcDir) ?? prepareMenu(frontmatters, srcDir, frontmatters))
         : prepareMenu(frontmatters, srcDir, frontmatters);
@@ -103,12 +110,13 @@ function freePort() {
     });
 }
 
-async function startServer(opts) {
+async function startServer(opts, root) {
     const vite = await import('vite');
     const port = await freePort();
     if (opts.dev) {
         info('starting dev server…');
         const server = await vite.createServer({
+            root,
             logLevel: 'warn',
             server: { host: '127.0.0.1', port, strictPort: true, open: false, hmr: false },
         });
@@ -118,10 +126,11 @@ async function startServer(opts) {
     if (opts.build) {
         info('building site…');
         const started = Date.now();
-        await vite.build({ logLevel: 'warn' });
+        await vite.build({ root, logLevel: 'warn' });
         info(`build done in ${((Date.now() - started) / 1000).toFixed(1)}s`);
     }
     const server = await vite.preview({
+        root,
         logLevel: 'warn',
         preview: { host: '127.0.0.1', port, strictPort: true, open: false },
     });
@@ -217,7 +226,7 @@ export async function reconcileWithOutline(doc, tocEntries, pages) {
     return fixed;
 }
 
-async function printBook(context, baseUrl, bookId, opts) {
+async function printBook(context, baseUrl, routePath, opts) {
     const page = await context.newPage();
     const consoleErrors = [];
     page.on('pageerror', (error) => consoleErrors.push(error.message));
@@ -226,7 +235,7 @@ async function printBook(context, baseUrl, bookId, opts) {
     });
     const timings = {};
     let t = Date.now();
-    const url = new URL(`__pdf/${encodeURIComponent(bookId)}`, baseUrl).href;
+    const url = new URL(routePath.replace(/^\/+/, ''), baseUrl).href;
     await page.goto(url, { waitUntil: 'domcontentloaded' });
     try {
         await page.waitForFunction(() => window.__GREG_PDF__?.ready === true, null, { timeout: opts.timeout * 1000 });
@@ -318,10 +327,9 @@ export async function runPdfCommand(argv, { root = process.cwd() } = {}) {
     }
 
     if (opts.list) {
-        const model = loadDocsModel(config, root);
         for (const id of bookIds) {
             const book = getBookConfig(config.pdf, id, config);
-            const manifest = resolveBook({ book, ...model });
+            const manifest = resolveBook({ book, ...loadDocsModel(config, root, book.locale) });
             const numbering = normalizeNumbering(book.numbering);
             const numbers = numbering ? computePageNumbers(manifest.entries, numbering.depth) : null;
             console.log(formatManifest(id, manifest, numbers));
@@ -335,14 +343,14 @@ export async function runPdfCommand(argv, { root = process.cwd() } = {}) {
     let browserHandle;
     let exitCode = 0;
     try {
-        [server, browserHandle] = await Promise.all([startServer(opts), launchBrowser(opts.browser)]);
+        [server, browserHandle] = await Promise.all([startServer(opts, root), launchBrowser(opts.browser)]);
         info(`browser: ${browserHandle.name} ${browserHandle.version}`);
         const context = await browserHandle.browser.newContext({ colorScheme: 'light' });
         for (const id of bookIds) {
             const book = getBookConfig(config.pdf, id, config);
             const output = resolveOutput(book, config, opts, root);
             info(`printing "${id}"…`);
-            const result = await printBook(context, server.url, id, opts);
+            const result = await printBook(context, server.url, bookRoutePath(id, book, config), opts);
             fs.mkdirSync(path.dirname(output), { recursive: true });
             fs.writeFileSync(output, result.buffer);
 

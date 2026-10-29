@@ -12,8 +12,11 @@
     import MarkdownRenderer from "../MarkdownDocs/MarkdownRenderer.svelte";
     import { pathConfig, withBase } from "../MarkdownDocs/common";
     import {
+        bookRoutePath,
+        bookSrcDir,
         getBookConfig,
         listBookIds,
+        readPdfFrontmatter,
         resolveBook,
     } from "./resolveBook.js";
     import { rehypePdfChapter } from "./rehypePdfChapter.js";
@@ -31,6 +34,7 @@
         collectTocEntries,
         detectManualNumbers,
         detectManualToc,
+        detectOverflow,
         headingNumber,
         headingText,
         normalizeRoute,
@@ -96,10 +100,12 @@
 
     let items = $state<Array<Chapter | Part>>([]);
     let cover = $state<{ markdown: string; fileUrl: string } | null>(null);
+    let backCover = $state<{ markdown: string; fileUrl: string } | null>(null);
     let status = $state<"loading" | "rendering" | "finishing" | "ready" | "error">("loading");
     let errorText = $state("");
     let warnings = $state<Warning[]>([]);
     let showWarnings = $state(false);
+    let showManifest = $state(false);
     let pageCss = $state("");
     let rootEl = $state<HTMLElement | undefined>();
     let tocEl = $state<HTMLElement | undefined>();
@@ -187,6 +193,12 @@
         }
         document.title = book.title;
         warnings = [...manifest.warnings];
+        if (book.locale && bookSrcDir(book, config) !== (srcDir.replace(/\/+$/, "") || "/")) {
+            warnings.push({
+                code: "PDF_LOCALE_MISMATCH",
+                message: `Book "${bookId}" uses locale ${book.locale}; open ${bookRoutePath(bookId, book, config)} to print it.`,
+            });
+        }
 
         const used = new Set<string>();
         const built: Array<Chapter | Part> = manifest.entries.map((entry: any, index: number) =>
@@ -204,13 +216,17 @@
 
         const tokens = bookTokens(book);
         const coverPath = typeof book.cover === "string" && book.cover ? book.cover : "";
-        const [coverMarkdown] = await Promise.all([
-            coverPath
-                ? fetchText(docsUrl(coverPath)).catch((error) => {
-                      warnings.push({ code: "PDF_MISSING_PAGE", message: `Cover ${coverPath}: ${error.message}` });
+        const backCoverPath = typeof book.backCover === "string" && book.backCover ? book.backCover : "";
+        const fetchCover = (path: string, label: string) =>
+            path
+                ? fetchText(docsUrl(path)).catch((error) => {
+                      warnings.push({ code: "PDF_MISSING_PAGE", message: `${label} ${path}: ${error.message}` });
                       return null;
                   })
-                : Promise.resolve(null),
+                : Promise.resolve(null);
+        const [coverMarkdown, backCoverMarkdown] = await Promise.all([
+            fetchCover(coverPath, "Cover"),
+            fetchCover(backCoverPath, "Back cover"),
             mapLimit(built.filter((item): item is Chapter => item.kind === "page"), 8, async (chapter) => {
                 try {
                     chapter.markdown = await fetchText(chapter.fileUrl);
@@ -227,6 +243,10 @@
         if (coverMarkdown?.trim()) {
             cover = { markdown: replaceTokens(coverMarkdown, tokens), fileUrl: docsUrl(coverPath) };
             pending.add("cover");
+        }
+        if (backCoverMarkdown?.trim()) {
+            backCover = { markdown: replaceTokens(backCoverMarkdown, tokens), fileUrl: docsUrl(backCoverPath) };
+            pending.add("back-cover");
         }
         items = built;
         status = "rendering";
@@ -281,23 +301,33 @@
         for (const c of chapters) routes.set(normalizeRoute(c.entry.route, "/"), c.chapterId);
         rewriteLinks(root, chapters, { routes, base: pathConfig.base, book, warnings: found });
 
-        // Named pages: running chapter title in headers/footers ({chapter}).
+        // Named pages: running chapter title ({chapter}) and landscape pages (pdf.landscape).
         const plain: string[] = book.page?.plainPages ?? ["cover", "toc", "part"];
-        const chapterPages: Array<{ pageName: string; chapter: string }> = [];
-        if (slotsUseToken(book.page, "chapter")) {
-            let current: string | null = null;
-            for (const c of chapters) {
-                if (!current || (c.entry.level ?? 1) <= 1) {
-                    const heading = c.el.querySelector("h1, h2, h3, h4, h5, h6");
-                    const number = heading ? headingNumber(heading) : "";
-                    const title = heading ? headingText(heading) : c.entry.title;
-                    current = `greg-ch-${chapterPages.length + 1}`;
-                    chapterPages.push({ pageName: current, chapter: [number, title].filter(Boolean).join(" ") });
+        const chapterPages: Array<{ pageName: string; chapter: string; landscape?: boolean }> = [];
+        const useChapterTitle = slotsUseToken(book.page, "chapter");
+        let currentName: string | null = null;
+        let currentTitle = "";
+        for (const c of chapters) {
+            if (useChapterTitle && (!currentName || (c.entry.level ?? 1) <= 1)) {
+                const heading = c.el.querySelector("h1, h2, h3, h4, h5, h6");
+                const number = heading ? headingNumber(heading) : "";
+                currentTitle = [number, heading ? headingText(heading) : c.entry.title].filter(Boolean).join(" ");
+                currentName = `greg-ch-${chapterPages.filter((p) => !p.landscape).length + 1}`;
+                chapterPages.push({ pageName: currentName, chapter: currentTitle });
+            }
+            if (readPdfFrontmatter(c.entry.frontmatter).landscape === true) {
+                const name = `${currentName ?? "greg-page"}-landscape`;
+                if (!chapterPages.some((p) => p.pageName === name)) {
+                    chapterPages.push({ pageName: name, chapter: currentTitle, landscape: true });
                 }
-                c.el.style.setProperty("page", current);
+                c.el.style.setProperty("page", name);
+            } else if (currentName) {
+                c.el.style.setProperty("page", currentName);
             }
         }
-        root.querySelector<HTMLElement>(".pdf-cover")?.style.setProperty("page", plain.includes("cover") ? COVER_PAGE : "auto");
+        for (const coverEl of root.querySelectorAll<HTMLElement>(".pdf-cover, .pdf-back-cover")) {
+            coverEl.style.setProperty("page", plain.includes("cover") ? COVER_PAGE : "auto");
+        }
         if (plain.includes("toc")) tocEl?.style.setProperty("page", PLAIN_PAGE);
         if (plain.includes("part")) {
             for (const part of root.querySelectorAll<HTMLElement>(".pdf-part")) part.style.setProperty("page", PLAIN_PAGE);
@@ -314,6 +344,7 @@
         const brokenImages = await waitForImages(root);
         for (const src of brokenImages) found.push({ code: "PDF_MISSING_IMAGE", message: `Image ${src} could not be loaded.` });
         await document.fonts?.ready;
+        detectOverflow(chapters, found);
 
         warnings = [...warnings, ...found];
         status = "ready";
@@ -370,6 +401,24 @@
         return () => style.remove();
     });
 
+    /**
+     * Page breaks around a chapter: `chapterBreak` (level-1 chapters, 'all' pages or
+     * 'right' = start on a right-hand page) overridden per page by frontmatter
+     * `pdf.break`: 'before' | 'after' | 'avoid' | 'none'.
+     */
+    function chapterBreaks(entry: any) {
+        const mode = book?.chapterBreak;
+        const byConfig = mode !== false && ((entry.level ?? 1) <= 1 || mode === "all");
+        const requested = readPdfFrontmatter(entry.frontmatter).break;
+        const before = requested === "before" || (byConfig && requested !== "none" && requested !== "avoid");
+        return {
+            before: before && mode !== "right",
+            right: before && mode === "right",
+            after: requested === "after",
+            avoid: requested === "avoid",
+        };
+    }
+
     const statusLabel = $derived(
         isPl
             ? { loading: "Wczytywanie…", rendering: "Renderowanie…", finishing: "Składanie…", ready: "Gotowe", error: "Błąd" }[status]
@@ -381,7 +430,10 @@
     <strong>{book?.title ?? bookId}</strong>
     <span class="pdf-toolbar-status" data-status={status}>{statusLabel}</span>
     {#if manifest}
-        <span>{manifest.entries.filter((e: any) => e.kind === "page").length} {isPl ? "stron źródłowych" : "source pages"}</span>
+        <button type="button" aria-pressed={showManifest} onclick={() => (showManifest = !showManifest)}>
+            {isPl ? "Zawartość" : "Contents"}: {manifest.entries.filter((e: any) => e.kind === "page").length}
+            {#if manifest.excluded.length}(+{manifest.excluded.length} {isPl ? "wykluczone" : "excluded"}){/if}
+        </button>
     {/if}
     {#if warnings.length}
         <button type="button" onclick={() => (showWarnings = !showWarnings)}>
@@ -399,6 +451,42 @@
         </ul>
     {/if}
 </div>
+
+{#if showManifest && manifest}
+    <aside class="pdf-manifest" aria-label={isPl ? "Zawartość dokumentu" : "Book contents"}>
+        <ol class="pdf-manifest-list">
+            {#each items as item (item.key)}
+                <li class:pdf-manifest-part={item.kind === "part"} style:padding-left={`${Math.max(0, (item.entry.level ?? 1) - 1)}em`}>
+                    {#if item.kind === "part"}
+                        <strong>{item.entry.title}</strong>
+                    {:else}
+                        <a
+                            href={`#${item.chapterId}`}
+                            onclick={(event) => {
+                                event.preventDefault();
+                                document.getElementById(item.chapterId)?.scrollIntoView({ block: "start" });
+                            }}
+                        >
+                            {#if pageNumbers.get(item.entry.mdKey)}
+                                <span class="pdf-manifest-number">{pageNumbers.get(item.entry.mdKey)?.join(".")}.</span>
+                            {/if}
+                            {item.entry.title || item.entry.relPath}
+                        </a>
+                        <small>{item.entry.relPath}{item.error ? ` — ${item.error}` : ""}</small>
+                    {/if}
+                </li>
+            {/each}
+        </ol>
+        {#if manifest.excluded.length}
+            <h3>{isPl ? "Wykluczone" : "Excluded"}</h3>
+            <ul class="pdf-manifest-excluded">
+                {#each manifest.excluded as excluded (excluded.mdKey)}
+                    <li><code>{excluded.mdKey}</code> <small>{excluded.reason}</small></li>
+                {/each}
+            </ul>
+        {/if}
+    </aside>
+{/if}
 
 <div class="greg greg-print" data-theme="light" bind:this={rootEl}>
     {#if status === "error"}
@@ -434,9 +522,13 @@
                     {#if item.entry.intro}<p class="pdf-part-intro">{item.entry.intro}</p>{/if}
                 </section>
             {:else}
+                {@const breaks = chapterBreaks(item.entry)}
                 <section
                     class="pdf-chapter"
-                    class:pdf-break-before={book?.chapterBreak !== false && (item.entry.level <= 1 || book?.chapterBreak === "all")}
+                    class:pdf-break-before={breaks.before}
+                    class:pdf-break-right={breaks.right}
+                    class:pdf-break-after={breaks.after}
+                    class:pdf-break-avoid={breaks.avoid}
                     class:pdf-unnumbered={item.entry.numbered === false}
                     id={item.chapterId}
                     data-level={item.entry.level}
@@ -463,5 +555,23 @@
                 </section>
             {/if}
         {/each}
+        {#if backCover}
+            <section class="pdf-back-cover">
+                <MarkdownRenderer
+                    markdown={backCover.markdown}
+                    baseUrl={backCover.fileUrl}
+                    {docsPrefix}
+                    target="pdf"
+                    {bookId}
+                    {mermaidTheme}
+                    {mermaidThemes}
+                    {shikiExtraLangs}
+                    colorTheme="light"
+                    enableImagePreview={false}
+                    extraRehypePlugins={chapterPlugins("back-cover", backCover.fileUrl)}
+                    onrendered={() => markRendered("back-cover")}
+                />
+            </section>
+        {/if}
     {/if}
 </div>

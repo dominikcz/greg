@@ -112,6 +112,8 @@ pdf:
   books: [manual]       # only in these books
   title: Short title    # title in the PDF table of contents
   numbered: false       # no chapter number (e.g. revision history)
+  break: before         # page break: before | after | avoid | none (overrides chapterBreak)
+  landscape: true       # print this page on landscape sheets
 ---
 ```
 
@@ -147,7 +149,7 @@ For a single element, the `{.no-pdf}` / `{.pdf-only}` classes from
 | `toc` | `{ depth: 2, pageNumbers: true }` | generated table of contents; `false` to disable |
 | `numbering` | site `numbering` | `{ depth: 2, format: '1.' \| '1.1' }` — see [Numbering](#numbering-and-cross-references) |
 | `headingShift` | `'auto'` | `'auto'` aligns the first heading of each page with its level in the book; a number shifts all headings |
-| `chapterBreak` | `true` | level-1 chapters start on a new page; `'all'` for every page, `false` for none |
+| `chapterBreak` | `true` | level-1 chapters start on a new page; `'right'` on a right-hand page (duplex), `'all'` for every page, `false` for none |
 
 Numbers are generated, so headings in Markdown stay unnumbered. If numbering is
 on and a heading already starts with a number, `greg pdf` warns
@@ -158,7 +160,9 @@ is reported as `PDF_MANUAL_TOC`.
 
 `page.size` (`A3`, `A4`, `A5`, `B5`, `Letter`, `Legal` or `{ width, height }`),
 `page.orientation`, `page.margin` (CSS syntax) and the `header` / `footer` slots
-(`left`, `center`, `right`). Slots are text templates with tokens:
+(`left`, `center`, `right`). With `page.mirrorMargins: true` (duplex printing) left-hand
+pages swap the left/right margins and the left/right slots, so the inner margin and the
+outer running header stay in place. Slots are text templates with tokens:
 
 | Token | Value |
 |---|---|
@@ -176,6 +180,7 @@ the whole sheet; its content is padded with the page margins.
 `cover` points to a Markdown file. Tokens (`{title}`, `{version}`, `{date}`, …)
 are replaced before rendering and raw HTML is allowed, so a designed cover is a
 few `<div>`s. Use `::: page-break` for additional cover pages (e.g. copyright).
+`backCover` works the same way for the last page(s) of the book.
 
 ### Styling
 
@@ -198,8 +203,10 @@ Useful hooks:
 .pdf-toc-l1 { font-weight: 700; }
 ```
 
-Interactive elements are adapted for paper: `details` are expanded, header
-permalinks and buttons are hidden, images are never split.
+Interactive elements are adapted for paper: `details` are expanded, every tab of a
+code group is printed with its label, header permalinks and buttons are hidden, code
+wraps instead of scrolling, images are never split. Tables, code or images wider than
+the text column are reported as `PDF_OVERFLOW`.
 
 ## Numbering and cross references
 
@@ -238,8 +245,9 @@ a link inside the document.
 
 With `npm run dev` running, open **`/__pdf`** for the list of books, or
 **`/__pdf/<book>`** (e.g. `/__pdf/manual`) for one book: rendered as one document, with a toolbar showing the status and all
-warnings. Changes in Markdown or config reload it. Use the browser's print
-preview (`Ctrl+P`) to see real pages.
+warnings. **Contents** opens a panel with the resolved chapters (with numbers; a click
+scrolls to the chapter) and the pages left out, with the reason. Changes in Markdown or
+config reload it. Use the browser's print preview (`Ctrl+P`) to see real pages.
 
 ## CLI
 
@@ -269,6 +277,12 @@ manual (14 pages, 2 excluded)
 The report after printing lists page counts, timings and warnings, e.g. links to
 pages outside the book (`PDF_LINK_OUTSIDE_BOOK` — set `siteUrl` to keep them as
 web links), missing anchors and images.
+
+### Other languages
+
+A book is printed from the root locale unless it sets `locale` (a key of `locales`,
+e.g. `'/pl/'`): the locale's sidebar, pages and language are used, and the preview
+lives under the locale prefix (`/pl/__pdf/<book>`).
 
 ### Comparing with a reference
 

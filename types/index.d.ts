@@ -488,6 +488,8 @@ export type PdfPageConfig = {
     orientation?: 'portrait' | 'landscape';
     /** CSS margin shorthand. Default: '20mm 18mm'. */
     margin?: string;
+    /** Duplex printing: left-hand pages swap left/right margins and header/footer slots. */
+    mirrorMargins?: boolean;
     header?: PdfMarginSlots | false;
     /** Default (when neither header nor footer is set): `{ center: '{page} / {pages}' }`. */
     footer?: PdfMarginSlots | false;
@@ -521,13 +523,17 @@ export type PdfBookConfig = {
     content?: 'sidebar' | PdfContentItem[];
     /** Markdown file relative to the docs folder; tokens are replaced. */
     cover?: string | false;
+    /** Last page(s) of the book, like `cover`. */
+    backCover?: string | false;
+    /** Locale key from `locales` ('/pl/') — sidebar, docs root and language of the book. Default: root locale. */
+    locale?: string;
     toc?: false | { title?: string; depth?: number; pageNumbers?: boolean };
     /** Default: the site `numbering`. `{ depth, format }` — numbers from the book structure. */
     numbering?: boolean | { depth?: number; format?: '1.' | '1.1' };
     /** 'auto' aligns the first heading of each page with its level in the book. Default: 'auto'. */
     headingShift?: number | 'auto';
-    /** Level-1 chapters start on a new page (true), every page ('all') or none (false). Default: true. */
-    chapterBreak?: boolean | 'all';
+    /** Level-1 chapters start on a new page (true), a right-hand page ('right'), every page ('all') or none (false). Default: true. */
+    chapterBreak?: boolean | 'all' | 'right';
     page?: PdfPageConfig;
     /** Extra stylesheet(s) relative to the docs folder, loaded after the print theme. */
     css?: string | string[];
@@ -542,4 +548,22 @@ export type PdfConfig = {
     defaults?: PdfBookConfig;
     /** Books keyed by id (`greg pdf <id>`, `/__pdf/<id>`). Without books one `default` book is printed. */
     books?: Record<string, PdfBookConfig>;
+};
+
+/**
+ * `pdf` field of a page's frontmatter: `false` excludes the page from every book, or
+ * an object with per-page settings.
+ */
+export type PdfPageFrontmatter = false | {
+    include?: boolean;
+    /** Only in these books. */
+    books?: string[];
+    /** Title in the PDF table of contents. */
+    title?: string;
+    /** No chapter number in PDF (frontmatter `numbered: false` affects site and PDF). */
+    numbered?: boolean;
+    /** Page break around this page; overrides `chapterBreak`. */
+    break?: 'before' | 'after' | 'avoid' | 'none';
+    /** Print this page on landscape sheets. */
+    landscape?: boolean;
 };

@@ -110,6 +110,8 @@ pdf:
   books: [podrecznik]   # tylko w tych dokumentach
   title: Krótki tytuł   # tytuł w spisie treści PDF
   numbered: false       # bez numeru rozdziału (np. historia wersji)
+  break: before         # łamanie strony: before | after | avoid | none (nadpisuje chapterBreak)
+  landscape: true       # ta strona na arkuszach poziomych
 ---
 ```
 
@@ -145,7 +147,7 @@ z [atrybutów inline](./markdown/inline-attributes) (ukrywane przez CSS).
 | `toc` | `{ depth: 2, pageNumbers: true }` | generowany spis treści; `false` wyłącza |
 | `numbering` | `numbering` serwisu | `{ depth: 2, format: '1.' \| '1.1' }` — patrz [Numeracja](#numeracja-i-odwołania) |
 | `headingShift` | `'auto'` | `'auto'` wyrównuje pierwszy nagłówek strony do jej poziomu w dokumencie; liczba przesuwa wszystkie nagłówki |
-| `chapterBreak` | `true` | rozdziały 1. poziomu od nowej strony; `'all'` — każda strona, `false` — żadna |
+| `chapterBreak` | `true` | rozdziały 1. poziomu od nowej strony; `'right'` — od prawej strony (druk dwustronny), `'all'` — każda strona, `false` — żadna |
 
 Numery są generowane, więc nagłówki w Markdownie zostają bez numerów. Gdy
 numeracja jest włączona, a nagłówek zaczyna się od numeru, `greg pdf` zgłasza
@@ -155,7 +157,9 @@ numeracja jest włączona, a nagłówek zaczyna się od numeru, `greg pdf` zgła
 
 `page.size` (`A3`, `A4`, `A5`, `B5`, `Letter`, `Legal` albo `{ width, height }`),
 `page.orientation`, `page.margin` (składnia CSS) oraz pola `header` / `footer`
-(`left`, `center`, `right`). Pola to szablony tekstu z tokenami:
+(`left`, `center`, `right`). Przy `page.mirrorMargins: true` (druk dwustronny) strony
+lewe zamieniają marginesy lewy/prawy oraz pola lewe/prawe, więc margines wewnętrzny
+i zewnętrzne pole nagłówka zostają na miejscu. Pola to szablony tekstu z tokenami:
 
 | Token | Wartość |
 |---|---|
@@ -174,7 +178,7 @@ jako wcięcie.
 `cover` wskazuje plik Markdown. Tokeny (`{title}`, `{version}`, `{date}`, …) są
 podstawiane przed renderowaniem, a surowy HTML jest dozwolony, więc zaprojektowana
 okładka to kilka `<div>`. Kolejne strony okładki (np. prawa autorskie) oddziel
-`::: page-break`.
+`::: page-break`. `backCover` działa tak samo dla ostatniej strony (stron) dokumentu.
 
 ### Wygląd
 
@@ -197,8 +201,10 @@ Przydatne punkty zaczepienia:
 .pdf-toc-l1 { font-weight: 700; }
 ```
 
-Elementy interaktywne są dostosowane do papieru: `details` są rozwinięte, odnośniki
-przy nagłówkach i przyciski ukryte, obrazy nigdy nie są dzielone między strony.
+Elementy interaktywne są dostosowane do papieru: `details` są rozwinięte, każda zakładka
+grupy kodu jest drukowana z etykietą, odnośniki przy nagłówkach i przyciski są ukryte,
+kod się zawija zamiast przewijać, obrazy nigdy nie są dzielone między strony. Tabele,
+kod lub obrazy szersze niż kolumna tekstu są zgłaszane jako `PDF_OVERFLOW`.
 
 ## Numeracja i odwołania
 
@@ -236,8 +242,10 @@ linkiem wewnątrz dokumentu.
 
 Przy uruchomionym `npm run dev` otwórz **`/__pdf`**, aby zobaczyć listę dokumentów,
 albo **`/__pdf/<dokument>`** (np. `/__pdf/podrecznik`): dokument wyrenderowany w całości, z paskiem stanu i listą
-ostrzeżeń. Zmiany w Markdownie i konfiguracji przeładowują podgląd. Prawdziwy
-podział na strony pokaże podgląd wydruku przeglądarki (`Ctrl+P`).
+ostrzeżeń. **Zawartość** otwiera panel z rozwiązaną listą rozdziałów (z numerami;
+kliknięcie przewija do rozdziału) i stronami pominiętymi, z powodem. Zmiany w Markdownie
+i konfiguracji przeładowują podgląd. Prawdziwy podział na strony pokaże podgląd wydruku
+przeglądarki (`Ctrl+P`).
 
 ## CLI
 
@@ -259,6 +267,12 @@ greg pdf [dokument…] [opcje]
 Raport po wydruku zawiera liczbę stron, czasy i ostrzeżenia, np. linki do stron
 spoza dokumentu (`PDF_LINK_OUTSIDE_BOOK` — ustaw `siteUrl`, by zostały linkami
 do serwisu), brakujące kotwice i obrazy.
+
+### Inne wersje językowe
+
+Dokument jest drukowany z głównej wersji językowej, chyba że ustawi `locale` (klucz z
+`locales`, np. `'/pl/'`): wtedy używa menu, stron i języka tej wersji, a podgląd jest
+pod jej prefiksem (`/pl/__pdf/<dokument>`).
 
 ### Porównanie ze wzorcem
 

@@ -41,6 +41,7 @@
     "preview": "node ./bin/greg.js preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:pdf": "vitest run --config vitest.e2e.config.js",
     "fakedocs": "node fakeDocsGenerator/generate_docs.js"
   },
   "devDependencies": {

@@ -4,6 +4,8 @@ import {
     resolveBook,
     getBookConfig,
     listBookIds,
+    bookRoutePath,
+    bookSrcDir,
     formatManifest,
 } from '../resolveBook.js';
 
@@ -274,5 +276,13 @@ describe('book config helpers', () => {
         expect(site.entries.map((e) => [e.relPath, e.numbered])).toEqual([['a.md', true], ['b.md', true], ['c.md', false]]);
         const pdf = resolveBook({ book, frontmatters });
         expect(pdf.entries.map((e) => [e.relPath, e.numbered])).toEqual([['b.md', false], ['c.md', false]]);
+    });
+
+    it('builds locale-aware print routes and docs roots', () => {
+        expect(bookRoutePath('manual', {}, {})).toBe('/__pdf/manual');
+        expect(bookRoutePath('pod', { locale: '/pl/' }, {})).toBe('/pl/__pdf/pod');
+        expect(bookRoutePath('pod', { locale: '/pl/' }, { docsBase: 'docs' })).toBe('/docs/pl/__pdf/pod');
+        expect(bookSrcDir({}, { docsBase: 'docs' })).toBe('/docs');
+        expect(bookSrcDir({ locale: '/pl/' }, {})).toBe('/pl');
     });
 });

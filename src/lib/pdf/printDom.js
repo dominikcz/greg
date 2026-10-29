@@ -272,6 +272,34 @@ export function detectManualToc(chapters, warnings) {
     }
 }
 
+/**
+ * Report tables, code blocks, images and diagrams wider than the text column.
+ * The preview lays the book out at the page's content width, so screen geometry
+ * matches the printed column.
+ */
+export function detectOverflow(chapters, warnings) {
+    for (const { el, entry } of chapters) {
+        const column = el.querySelector('.markdown-body') ?? el;
+        const limit = column.clientWidth + 1;
+        if (!limit) continue;
+        const wide = [];
+        for (const node of column.querySelectorAll('table, pre, img, svg, .mermaid')) {
+            if (node.closest('table') && node.tagName !== 'TABLE') continue;
+            if (node.tagName.toLowerCase() === 'svg' && node.closest('.mermaid')) continue;
+            const width = Math.max(node.scrollWidth || 0, node.getBoundingClientRect().width);
+            if (width > limit) {
+                const label = node.tagName === 'IMG'
+                    ? `image ${node.getAttribute('src') ?? ''}`
+                    : node.tagName.toLowerCase();
+                wide.push(`${label} (${Math.round((width / limit) * 100)}% of the column)`);
+            }
+        }
+        if (wide.length) {
+            warnings.push({ code: 'PDF_OVERFLOW', message: `${entry.relPath}: ${wide.slice(0, 5).join(', ')}${wide.length > 5 ? ` and ${wide.length - 5} more` : ''} wider than the page.` });
+        }
+    }
+}
+
 /** Wait until every image has loaded (or failed), with a per-image timeout. */
 export async function waitForImages(root, timeoutMs = 15000) {
     const images = Array.from(root.querySelectorAll('img'));

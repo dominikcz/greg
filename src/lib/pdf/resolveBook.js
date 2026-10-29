@@ -105,6 +105,27 @@ export function listBookIds(pdfConfig) {
     return ids.length ? ids : [DEFAULT_BOOK_ID];
 }
 
+function normalizeRoot(value) {
+    const cleaned = String(value ?? '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/');
+    return cleaned ? `/${cleaned}` : '/';
+}
+
+/**
+ * Docs root (frontmatter key prefix) of the locale a book is printed from.
+ * `book.locale` is a key of `locales` ('/', '/pl/'); locales live under `docsBase`.
+ */
+export function bookSrcDir(book, siteConfig = {}) {
+    const docsBase = Object.prototype.hasOwnProperty.call(siteConfig, 'docsBase') ? siteConfig.docsBase : '';
+    const locale = book?.locale && book.locale !== '/' ? book.locale : '';
+    return normalizeRoot(`${docsBase ?? ''}/${locale}`);
+}
+
+/** Site path of a book's print route (without the site base), e.g. '/pl/__pdf/manual'. */
+export function bookRoutePath(bookId, book, siteConfig = {}) {
+    const prefix = book?.locale && book.locale !== '/' ? bookSrcDir(book, siteConfig) : '';
+    return `${prefix === '/' ? '' : prefix}${PDF_ROUTE_PREFIX}${encodeURIComponent(bookId)}`;
+}
+
 /**
  * Merge `pdf.defaults` into a book and apply built-in defaults.
  * @param {Record<string, any> | undefined} pdfConfig  `gregConfig.pdf`

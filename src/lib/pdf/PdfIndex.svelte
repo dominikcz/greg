@@ -5,7 +5,7 @@
      */
     import gregConfig from "virtual:greg-config";
     import { withBase } from "../MarkdownDocs/common";
-    import { getBookConfig, listBookIds, resolveBook, PDF_ROUTE_PREFIX } from "./resolveBook.js";
+    import { bookRoutePath, bookSrcDir, getBookConfig, listBookIds, resolveBook } from "./resolveBook.js";
     import "./print.scss";
 
     type Props = {
@@ -25,14 +25,16 @@
     const books = $derived(
         listBookIds(config.pdf).map((id) => {
             const book = getBookConfig(config.pdf, id, config)!;
-            const manifest = resolveBook({ book, frontmatters, menu, srcDir });
+            // Content can only be resolved for books of the locale this index is shown in.
+            const sameLocale = bookSrcDir(book, config) === (srcDir.replace(/\/+$/, "") || "/");
+            const manifest = sameLocale ? resolveBook({ book, frontmatters, menu, srcDir }) : null;
             return {
                 id,
                 book,
-                pages: manifest.entries.filter((e: any) => e.kind === "page").length,
-                excluded: manifest.excluded.length,
-                warnings: manifest.warnings.length,
-                href: withBase(`${PDF_ROUTE_PREFIX}${encodeURIComponent(id)}`),
+                pages: manifest ? manifest.entries.filter((e: any) => e.kind === "page").length : null,
+                excluded: manifest?.excluded.length ?? 0,
+                warnings: manifest?.warnings.length ?? 0,
+                href: withBase(bookRoutePath(id, book, config)),
                 output: book.output || `${config.outDir || "dist"}/pdf/${id}.pdf`,
             };
         }),
@@ -56,7 +58,8 @@
                 <div class="pdf-index-meta">
                     <code>{item.id}</code>
                     {#if item.book.version}<span>v{item.book.version}</span>{/if}
-                    <span>{item.pages} {t.pages}</span>
+                    {#if item.book.locale}<span>{item.book.locale}</span>{/if}
+                    {#if item.pages !== null}<span>{item.pages} {t.pages}</span>{/if}
                     {#if item.excluded}<span>{item.excluded} {t.excluded}</span>{/if}
                     {#if item.warnings}<span class="pdf-index-warn">{item.warnings} {t.warnings}</span>{/if}
                 </div>

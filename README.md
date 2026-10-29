@@ -193,6 +193,7 @@ When Greg is installed in a project, the `greg` command is still available via n
 | `greg build`          | Production build (auto versioning)    |
 | `greg build:static`   | Production build + static export      |
 | `greg build:markdown` | Export resolved markdown              |
+| `greg pdf`            | Print PDF books (see below)           |
 | `greg preview`        | Preview production build              |
 | `greg search-server`  | Standalone search API server          |
 
@@ -384,6 +385,20 @@ greg build:markdown
 ```
 
 Output is written to `dist/resolved-markdown` and mirrors the `docs/` structure.
+
+## PDF Export
+
+Print the same Markdown as a PDF book — content and order from the sidebar or an explicit
+list, generated table of contents with page numbers, chapter numbering, running headers,
+cover pages, bookmarks and `::: web-only` / `::: pdf-only` content:
+
+```sh
+npm i -D playwright-core pdfjs-dist   # uses the system Edge/Chrome
+npx greg pdf                          # dist/pdf/<book>.pdf
+```
+
+Live preview while writing: `/__pdf` in `greg dev`. See the
+[PDF Export guide](https://dominikcz.github.io/greg/guide/pdf) for the `pdf` config.
 
 ## TypeScript
 
