@@ -198,8 +198,8 @@ permalinks and buttons are hidden, images are never split.
 
 ## Preview
 
-With `npm run dev` running, open **`/__pdf/<book>`** (e.g. `/__pdf/manual`): the
-book rendered as one document, with a toolbar showing the status and all
+With `npm run dev` running, open **`/__pdf`** for the list of books, or
+**`/__pdf/<book>`** (e.g. `/__pdf/manual`) for one book: rendered as one document, with a toolbar showing the status and all
 warnings. Changes in Markdown or config reload it. Use the browser's print
 preview (`Ctrl+P`) to see real pages.
 

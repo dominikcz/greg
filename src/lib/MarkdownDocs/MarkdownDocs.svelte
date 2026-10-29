@@ -16,7 +16,7 @@
     import CarbonAds from "../components/CarbonAds.svelte";
     import Outline from "./Outline.svelte";
     import { useRouter } from "./useRouter.svelte";
-    import { PDF_ROUTE_PREFIX, DEFAULT_BOOK_ID } from "../pdf/resolveBook.js";
+    import { PDF_ROUTE_PREFIX } from "../pdf/resolveBook.js";
     import { useSplitter } from "./useSplitter.svelte";
     import { handleCodeGroupClick, handleCodeGroupKeydown } from "./codeGroup";
     import allFrontmatters from "virtual:greg-frontmatter";
@@ -734,11 +734,12 @@
     /** The SPA path that renders the full-page AI chat, e.g. "/docs/ai". */
     const aiRoute = $derived(withBase(currentSrcDir).replace(/\/$/, '') + '/ai');
     const aiPageMode = $derived(aiEnabled && router.active === aiRoute);
-    // Print route (`/__pdf/<book>`): renders a PDF book instead of the site layout.
+    // Print route (`/__pdf/<book>`): renders a PDF book instead of the site layout;
+    // `/__pdf` alone ('' id) lists the available books.
     const pdfBookId = $derived.by(() => {
         if (routePath !== "/__pdf" && !routePath.startsWith(PDF_ROUTE_PREFIX)) return null;
         const id = routePath.slice(PDF_ROUTE_PREFIX.length).split("/")[0];
-        return id ? decodeURIComponent(id) : DEFAULT_BOOK_ID;
+        return id ? decodeURIComponent(id) : "";
     });
     function applyCurrentVersionPrefix(pathname: string): string {
         const normalizedPath = normalizeSrcDir(pathname);
@@ -1624,7 +1625,11 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions, a11y_no_static_element_interactions -->
-{#if pdfBookId !== null}
+{#if pdfBookId === ""}
+    {#await import("../pdf/PdfIndex.svelte") then { default: PdfIndex }}
+        <PdfIndex srcDir={currentSrcDir} {menu} {frontmatters} />
+    {/await}
+{:else if pdfBookId !== null}
     {#await import("../pdf/PrintBook.svelte") then { default: PrintBook }}
         <PrintBook
             bookId={pdfBookId}

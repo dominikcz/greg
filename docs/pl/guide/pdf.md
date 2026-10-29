@@ -197,8 +197,8 @@ przy nagłówkach i przyciski ukryte, obrazy nigdy nie są dzielone między stro
 
 ## Podgląd
 
-Przy uruchomionym `npm run dev` otwórz **`/__pdf/<dokument>`** (np.
-`/__pdf/instrukcja`): dokument wyrenderowany w całości, z paskiem stanu i listą
+Przy uruchomionym `npm run dev` otwórz **`/__pdf`**, aby zobaczyć listę dokumentów,
+albo **`/__pdf/<dokument>`** (np. `/__pdf/instrukcja`): dokument wyrenderowany w całości, z paskiem stanu i listą
 ostrzeżeń. Zmiany w Markdownie i konfiguracji przeładowują podgląd. Prawdziwy
 podział na strony pokaże podgląd wydruku przeglądarki (`Ctrl+P`).
 

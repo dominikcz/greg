@@ -268,10 +268,10 @@ async function main() {
                     changed = true;
                 }
                 const peerDepsMap = {
-                    '@sveltejs/vite-plugin-svelte': gregDevDeps['@sveltejs/vite-plugin-svelte'] ?? '^6',
-                    svelte: gregDevDeps.svelte ?? '^5',
-                    vite: gregDevDeps.vite ?? '^7',
-                    ...(useTS ? { typescript: '^5' } : {}),
+                    '@sveltejs/vite-plugin-svelte': gregDevDeps['@sveltejs/vite-plugin-svelte'] ?? '^7.2.0',
+                    svelte: gregDevDeps.svelte ?? '^5.57.1',
+                    vite: gregDevDeps.vite ?? '^8.3.0',
+                    ...(useTS ? { typescript: '^6.0.3' } : {}),
                 };
                 for (const [depName, depVersion] of Object.entries(peerDepsMap)) {
                     if (!pkg.devDependencies[depName]) {
@@ -296,10 +296,10 @@ async function main() {
                 ...(addScripts ? { scripts: { greg: 'greg', dev: 'greg dev', build: 'greg build', preview: 'greg preview' } } : {}),
                 devDependencies: {
                     '@dominikcz/greg': gregDependencySpec,
-                    '@sveltejs/vite-plugin-svelte': gregDevDeps['@sveltejs/vite-plugin-svelte'] ?? '^6',
-                    svelte: gregDevDeps.svelte ?? '^5',
-                    vite: gregDevDeps.vite ?? '^7',
-                    ...(useTS ? { typescript: '^5' } : {}),
+                    '@sveltejs/vite-plugin-svelte': gregDevDeps['@sveltejs/vite-plugin-svelte'] ?? '^7.2.0',
+                    svelte: gregDevDeps.svelte ?? '^5.57.1',
+                    vite: gregDevDeps.vite ?? '^8.3.0',
+                    ...(useTS ? { typescript: '^6.0.3' } : {}),
                 },
             };
             writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
