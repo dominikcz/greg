@@ -31,6 +31,14 @@ html:has(.greg-print) body {
     height: auto;
     overflow: visible;
     background: #fff;
+    color-scheme: light;
+}
+
+// The app root (often `height: 100vh`) must grow with the book, otherwise the
+// sticky toolbar scrolls away once the first viewport is passed.
+html:has(.greg-print) body > :has(.greg-print) {
+    height: auto !important;
+    min-height: 100vh;
 }
 
 .greg-print {
@@ -423,8 +431,12 @@ html:has(.greg-print) body {
         padding: 0.15rem 0.6rem;
         border: 1px solid #d1d9e0;
         border-radius: 4px;
+        color: inherit;
         background: #fff;
         cursor: pointer;
+
+        &:hover { background: #eef1f4; }
+        &[aria-pressed="true"] { background: #e2e8f0; }
     }
 
     [data-status="ready"] { color: #1a7f37; font-weight: 600; }
@@ -504,6 +516,9 @@ html:has(.greg-print) body {
 }
 
 @media screen {
+    // The canvas takes the root background, so the gray reaches past the viewport
+    // even when the app root has a fixed height (e.g. #app { height: 100vh }).
+    html:has(.greg-print),
     html:has(.greg-print) body {
         background: #e9ecef;
     }
