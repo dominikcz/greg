@@ -14,7 +14,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import yaml from 'js-yaml';
+import { load as loadYaml } from 'js-yaml';
 
 const VIRTUAL_ID = 'virtual:greg-frontmatter';
 const RESOLVED_ID = '\0' + VIRTUAL_ID;
@@ -24,7 +24,7 @@ function parseFrontmatter(content) {
     const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     if (!m) return {};
     try {
-        const parsed = yaml.load(m[1]);
+        const parsed = loadYaml(m[1]);
         return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
             ? parsed
             : {};

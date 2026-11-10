@@ -39,3 +39,6 @@ Greg wspiera diagramy Mermaid.
 Output:
 
 <!--@include: @/snippets/mermaid-sequence.md-->
+
+Więcej typów diagramów (schemat blokowy, klasy, stany, ER, Gantt, wykres kołowy i inne)
+znajdziesz w [galerii diagramów Mermaid](./mermaid-gallery).

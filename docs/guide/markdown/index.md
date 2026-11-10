@@ -18,3 +18,4 @@ Greg extends standard Markdown with a rich set of authoring features.
 - [Math equations](./math)
 - [Inline attributes on links and images](./inline-attributes)
 - [Svelte components and Mermaid](./components-and-mermaid)
+- [Mermaid diagram gallery](./mermaid-gallery)

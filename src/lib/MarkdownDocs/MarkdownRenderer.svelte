@@ -213,6 +213,10 @@
         }
     }
 
+    // Greg follows Mermaid's defaults (ELK layout, "neo" look); the built-in themes
+    // style both the neo and the classic look, so diagrams can still opt into classic.
+    const MERMAID_DEFAULTS = { startOnLoad: false };
+
     async function initMermaid(
         root: HTMLElement,
         themeConfig: Record<string, unknown> = {},
@@ -227,7 +231,7 @@
                 b.dataset.mermaidSrc = b.textContent ?? "";
         }
         const { default: mermaid } = await import("mermaid");
-        mermaid.initialize({ startOnLoad: false, ...themeConfig });
+        mermaid.initialize({ ...MERMAID_DEFAULTS, ...themeConfig });
         await mermaid.run({ nodes: blocks });
     }
 
@@ -249,7 +253,7 @@
             b.textContent = b.dataset.mermaidSrc ?? "";
         }
         const { default: mermaid } = await import("mermaid");
-        mermaid.initialize({ startOnLoad: false, ...themeConfig });
+        mermaid.initialize({ ...MERMAID_DEFAULTS, ...themeConfig });
         await mermaid.run({ nodes: blocks });
     }
 

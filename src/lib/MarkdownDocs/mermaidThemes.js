@@ -28,13 +28,20 @@ const MATERIAL_CSS = `
         rx: 4px !important; ry: 4px !important;
         filter: var(--mmd-shadow-sm);
     }
+    /* Mermaid 12 "neo" look draws shapes as paths (a fill path plus a sketched
+       outline path inside g.outer-path) instead of plain rects. */
+    .node path.label-container, .node .outer-path path {
+        fill:   var(--mmd-node-bg) !important;
+        stroke: none               !important;
+    }
+    .node path.label-container { filter: var(--mmd-shadow-sm); }
     .node .label {
         font-family: "Roboto","Noto Sans SC",-apple-system,sans-serif;
         font-weight: 500;
         fill: var(--mmd-text) !important;
         font-size: 14px;
     }
-    .edgePath .path {
+    .edgePath .path, path.flowchart-link {
         stroke: var(--mmd-line) !important; stroke-width: 2px !important;
         stroke-linecap: round;
     }
@@ -45,6 +52,10 @@ const MATERIAL_CSS = `
         font-family: "Roboto","Noto Sans SC",-apple-system,sans-serif;
         font-weight: 500; font-size: 13px;
     }
+    /* Mermaid 12 paints .labelBkg and the inner <p> with its own (dark) background. */
+    .labelBkg { background-color: var(--mmd-node-bg) !important; }
+    .edgeLabel p { background-color: transparent !important; color: var(--mmd-text) !important; }
+    .edgeLabel rect { fill: var(--mmd-node-bg) !important; opacity: 1 !important; }
 
     /* ── Sequence diagram ─────────────────────────────────── */
     .actor rect, g.actor rect, rect.actor {
@@ -85,7 +96,7 @@ const MATERIAL_CSS = `
         rx: 4px !important; ry: 4px !important;
         filter: var(--mmd-shadow-md) !important;
     }
-    .noteText, text.noteText {
+    .noteText, text.noteText, .noteText tspan {
         fill: var(--mmd-text) !important;
         font-family: "Roboto","Noto Sans SC",-apple-system,sans-serif; font-weight: 500;
     }
@@ -136,7 +147,7 @@ const MATERIAL_CSS = `
         rx: 4px !important; ry: 4px !important;
         filter: var(--mmd-shadow-sm) !important;
     }
-    .start-state circle, .end-state circle, circle[id*="start"], circle[id*="end"] {
+    .start-state circle, .end-state circle, circle[id*="start"], circle[id*="end"], circle.state-start {
         fill: var(--mmd-accent-1) !important; stroke: none !important;
         filter: var(--mmd-shadow-acc1);
     }
@@ -196,16 +207,16 @@ const MATERIAL_CSS = `
         fill: var(--mmd-text) !important;
         font-family: "Roboto","Noto Sans SC",-apple-system,sans-serif; font-weight: 400;
     }
-    .slice, path.slice, svg[aria-roledescription="pie"] path {
+    path.slice, svg[aria-roledescription="pie"] path.pieCircle {
         stroke: var(--mmd-canvas) !important; stroke-width: 2px !important;
         filter: var(--mmd-shadow-sm) !important;
     }
-    .pieChart .slice0 { fill: var(--mmd-accent-1) !important; }
-    .pieChart .slice1 { fill: var(--mmd-accent-2) !important; }
-    .pieChart .slice2 { fill: var(--mmd-accent-3) !important; }
-    .pieChart .slice3 { fill: var(--mmd-accent-4) !important; }
-    .pieChart .slice4 { fill: var(--mmd-accent-5) !important; }
-    .pieChart .slice5 { fill: var(--mmd-accent-6) !important; }
+    /* Slice and legend colours come from themeVariables pie1…pie6. */
+    text.slice {
+        fill: #ffffff !important; stroke: none !important;
+        font-family: "Roboto","Noto Sans SC",-apple-system,sans-serif; font-weight: 500;
+    }
+    .pieOuterCircle { stroke: var(--mmd-border) !important; stroke-width: 1px !important; }
 
     /* ── Journey diagram ──────────────────────────────────── */
     .section0, .section1, .section2 {
@@ -268,6 +279,11 @@ export const MERMAID_THEMES = {
             tertiaryColor: '#ffffff',
             fontFamily: '"Roboto", "Noto Sans SC", -apple-system, sans-serif',
             fontSize: '14px',
+            // Shadow used by the neo look (mermaid default is a light-grey glow).
+            dropShadow: 'var(--mmd-shadow-sm)',
+            // Same values as --mmd-accent-1…6 (light) in __theme.scss.
+            pie1: '#6200ee', pie2: '#03dac6', pie3: '#b00020',
+            pie4: '#018786', pie5: '#3700b3', pie6: '#cf6679',
         },
         themeCSS: MATERIAL_CSS,
     },
@@ -291,6 +307,11 @@ export const MERMAID_THEMES = {
             tertiaryColor: '#2d2d44',
             fontFamily: '"Roboto", "Noto Sans SC", -apple-system, sans-serif',
             fontSize: '14px',
+            dropShadow: 'var(--mmd-shadow-sm)',
+            // --mmd-accent-1…6 (dark) from __theme.scss; pie4 uses #018786 because
+            // accent-4 duplicates accent-2 there and pie slices must be distinguishable.
+            pie1: '#bb86fc', pie2: '#03dac6', pie3: '#cf6679',
+            pie4: '#018786', pie5: '#7c4dff', pie6: '#ef9a9a',
         },
         themeCSS: MATERIAL_CSS,
     },

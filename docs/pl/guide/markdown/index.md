@@ -18,3 +18,4 @@ Greg rozszerza standardowy Markdown o bogaty zestaw funkcji autorskich.
 - [Wzory matematyczne](./math)
 - [Atrybuty inline dla linków i obrazów](./inline-attributes)
 - [Komponenty Svelte i Mermaid](./components-and-mermaid)
+- [Galeria diagramów Mermaid](./mermaid-gallery)

@@ -41,3 +41,6 @@ Greg supports Mermaid diagrams.
 Output:
 
 <!--@include: @/snippets/mermaid-sequence.md-->
+
+More diagram types (flowchart, class, state, ER, Gantt, pie and more) are shown in
+the [Mermaid diagram gallery](./mermaid-gallery).
